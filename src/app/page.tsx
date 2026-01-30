@@ -163,16 +163,16 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-80 relative">
-        {/* Header */}
-        <header className="sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">
+        {/* Header - Desktop Only */}
+        <header className="hidden lg:block sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">
           <div className="px-8 py-5 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-text-primary tracking-tight">{steps[activeStep].fullName}</h2>
               <p className="text-sm text-text-tertiary mt-1">Step {activeStep + 1} of {steps.length}</p>
             </div>
-            
+
             {generatedFiles && (
-              <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wide">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wide">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 Report Ready
               </span>
@@ -181,8 +181,8 @@ export default function Home() {
         </header>
 
          {/* Mobile Header (Only visible on small screens) */}
-         <div className="lg:hidden p-4 border-b border-surface-200 bg-surface-100 sticky top-0 z-40">
-           <div className="flex items-center justify-between mb-4">
+         <div className="lg:hidden p-4 border-b border-surface-200 bg-surface-100/95 backdrop-blur-xl sticky top-0 z-40">
+           <div className="flex items-center justify-between">
              <div className="flex items-center gap-3">
                <div className="w-10 h-10 rounded-lg bg-brand flex items-center justify-center text-white">
                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -190,40 +190,85 @@ export default function Home() {
                  </svg>
                </div>
                <div>
-                  <h1 className="text-sm font-bold text-text-primary">Valuation Report</h1>
-                  <p className="text-xs text-text-tertiary">Batra & Associates</p>
+                  <h1 className="text-base font-bold text-text-primary">{steps[activeStep].fullName}</h1>
+                  <p className="text-xs text-text-tertiary">Step {activeStep + 1} of {steps.length}</p>
                </div>
              </div>
-             <button
-               onClick={() => {
-                 const form = document.querySelector('form');
-                 if (form) form.requestSubmit();
-               }}
-               disabled={isGenerating}
-               className="btn btn-primary px-3 py-2 text-xs"
-             >
-               {isGenerating ? '...' : 'Generate'}
-             </button>
-           </div>
-           
-           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-             {steps.map((step) => (
-                <button
-                  key={step.id}
-                  onClick={() => setActiveStep(step.id)}
-                  className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                    activeStep === step.id 
-                      ? 'bg-brand text-white border-brand' 
-                      : 'bg-surface-200 text-text-secondary border-transparent'
-                  }`}
-                >
-                  {step.name}
-                </button>
-             ))}
+             {generatedFiles && (
+               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                 Ready
+               </span>
+             )}
            </div>
          </div>
 
-        <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+         {/* Mobile Bottom Navigation */}
+         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-100/95 backdrop-blur-xl border-t border-surface-200 safe-area-bottom">
+           <div className="grid grid-cols-6 h-16">
+             {steps.map((step) => (
+               <button
+                 key={step.id}
+                 onClick={() => setActiveStep(step.id)}
+                 className={`flex flex-col items-center justify-center gap-1 transition-all ${
+                   activeStep === step.id
+                     ? 'text-brand'
+                     : 'text-text-tertiary'
+                 }`}
+               >
+                 <svg className={`w-5 h-5 ${activeStep === step.id ? 'scale-110' : ''} transition-transform`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeStep === step.id ? 2.5 : 1.5}>
+                   <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
+                 </svg>
+                 <span className={`text-[10px] font-medium ${activeStep === step.id ? 'text-brand' : ''}`}>{step.name}</span>
+               </button>
+             ))}
+           </div>
+         </nav>
+
+         {/* Mobile Floating Action Button */}
+         <div className="lg:hidden fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3">
+           {generatedFiles && (
+             <div className="flex flex-col gap-2 animate-fade-in">
+               <button
+                 onClick={() => downloadFile(generatedFiles.pdf!, 'Valuation_Report.pdf', 'application/pdf')}
+                 className="w-12 h-12 rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 flex items-center justify-center"
+               >
+                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                 </svg>
+               </button>
+               <button
+                 onClick={() => downloadFile(generatedFiles.docx!, 'Valuation_Report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')}
+                 className="w-12 h-12 rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/30 flex items-center justify-center"
+               >
+                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M9 21h6a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0010.586 3H9a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                 </svg>
+               </button>
+             </div>
+           )}
+           <button
+             onClick={() => {
+               const form = document.querySelector('form');
+               if (form) form.requestSubmit();
+             }}
+             disabled={isGenerating}
+             className="w-14 h-14 rounded-full bg-brand text-white shadow-lg shadow-brand/30 flex items-center justify-center disabled:opacity-50"
+           >
+             {isGenerating ? (
+               <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
+                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+               </svg>
+             ) : (
+               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+               </svg>
+             )}
+           </button>
+         </div>
+
+        <div className="p-4 lg:p-8 pb-36 lg:pb-8 max-w-5xl mx-auto">
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-4">
@@ -246,7 +291,8 @@ export default function Home() {
             setActiveSection={setActiveStep}
           />
           
-          <div className="nav-footer">
+          {/* Desktop Navigation Footer */}
+          <div className="nav-footer hidden lg:flex">
             <button
               type="button"
               onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
@@ -259,7 +305,7 @@ export default function Home() {
               Previous Step
             </button>
 
-            <div className="nav-dots hidden sm:flex">
+            <div className="nav-dots flex">
               {steps.map((_, i) => (
                 <button
                   key={i}
@@ -277,6 +323,32 @@ export default function Home() {
               className="btn btn-ghost disabled:opacity-30 flex items-center gap-2"
             >
               Next Step
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile Swipe Navigation Hint */}
+          <div className="lg:hidden flex justify-center gap-4 py-4">
+            <button
+              type="button"
+              onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
+              disabled={activeStep === 0}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-200 text-text-secondary disabled:opacity-30 text-sm font-medium"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
+              disabled={activeStep === steps.length - 1}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-200 text-text-secondary disabled:opacity-30 text-sm font-medium"
+            >
+              Next
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>

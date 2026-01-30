@@ -323,3 +323,63 @@
 .animate-pulse {
   animation: pulse 2s ease-in-out infinite;
 }
+
+/* Mobile-specific styles */
+@layer components {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Mobile form improvements */
+@media (max-width: 1023px) {
+  .form-input,
+  .form-select {
+    @apply py-3.5 text-base;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  .form-label {
+    @apply text-xs mb-2;
+  }
+
+  .glass-card {
+    @apply p-4 rounded-xl;
+  }
+
+  .glass-card-title {
+    @apply text-xs mb-4;
+  }
+
+  .owner-card {
+    @apply p-4;
+  }
+
+  .dropzone {
+    @apply p-6;
+  }
+
+  .nav-footer {
+    @apply pt-6 mt-6;
+  }
+
+  .btn {
+    @apply py-3 text-sm;
+  }
+
+  .calc-preview {
+    @apply p-4;
+  }
+
+  .calc-value {
+    @apply text-base;
+  }
+
+  .calc-total {
+    @apply text-2xl;
+  }
+
+  .photo-grid {
+    @apply grid-cols-2 gap-3;
+  }
+}
