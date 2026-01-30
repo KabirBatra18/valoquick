@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import puppeteerCore from 'puppeteer-core';
 import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
 import { ValuationReport } from '@/types/valuation';
+
+// Configure for serverless
+export const maxDuration = 60;
+
+async function getBrowser() {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+    // Running on Vercel/serverless - use puppeteer-core with @sparticuz/chromium
+    const executablePath = await chromium.executablePath();
+    return puppeteerCore.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath,
+      headless: chromium.headless,
+    });
+  } else {
+    // Running locally - use regular puppeteer
+    return puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,10 +34,7 @@ export async function POST(request: NextRequest) {
     const htmlContent = generateHTML(data);
 
     // Generate PDF using Puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+    const browser = await getBrowser();
 
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
