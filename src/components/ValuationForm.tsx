@@ -472,6 +472,7 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoPage, setPhotoPage] = useState(0);
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const galleryInputRef = React.useRef<HTMLInputElement>(null);
   const PHOTOS_PER_PAGE = 6;
 
   // Crop image to square
@@ -530,8 +531,25 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
     }
   };
 
+  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file) => {
+        processAndAddPhoto(file);
+      });
+    }
+    // Reset input so same file can be selected again
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = '';
+    }
+  };
+
   const openCamera = () => {
     cameraInputRef.current?.click();
+  };
+
+  const openGallery = () => {
+    galleryInputRef.current?.click();
   };
 
   const totalPhotoPages = Math.ceil(photos.length / PHOTOS_PER_PAGE);
@@ -885,57 +903,83 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
           <div className="glass-card">
             <h3 className="glass-card-title">Property Photos</h3>
 
-            {/* Hidden camera input */}
+            {/* Hidden camera input - NO multiple attribute for mobile camera */}
             <input
               ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
               onChange={handleCameraCapture}
-              className="hidden"
+              style={{ display: 'none' }}
+            />
+
+            {/* Hidden gallery input - with multiple for selecting from gallery */}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleGallerySelect}
+              style={{ display: 'none' }}
               multiple
             />
 
-            {/* Upload options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              {/* Camera Button */}
+            {/* Upload options - 3 buttons on mobile, 2 on desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+              {/* Camera Button - Primary on mobile */}
               <button
                 type="button"
                 onClick={openCamera}
-                className="flex flex-col items-center justify-center gap-3 p-6 bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-dashed border-brand/40 rounded-2xl hover:border-brand hover:from-brand/30 hover:to-brand/10 transition-all duration-300"
+                className="flex flex-col items-center justify-center gap-2 p-5 bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-brand/40 rounded-2xl hover:border-brand hover:from-brand/30 hover:to-brand/10 active:scale-[0.98] transition-all duration-200"
               >
-                <div className="w-14 h-14 rounded-xl bg-brand/20 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="w-12 h-12 rounded-xl bg-brand/20 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-text-primary">Take Photo</p>
-                  <p className="text-xs text-text-tertiary mt-1">Use camera to capture</p>
+                  <p className="text-sm font-semibold text-text-primary">Camera</p>
+                  <p className="text-xs text-text-tertiary">Take photo</p>
                 </div>
               </button>
 
-              {/* Upload Button */}
+              {/* Gallery Button - For mobile photo library */}
+              <button
+                type="button"
+                onClick={openGallery}
+                className="flex flex-col items-center justify-center gap-2 p-5 border-2 border-surface-300 rounded-2xl hover:border-text-tertiary hover:bg-surface-200/30 active:scale-[0.98] transition-all duration-200"
+              >
+                <div className="w-12 h-12 rounded-xl bg-surface-200 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-text-primary">Gallery</p>
+                  <p className="text-xs text-text-tertiary">Choose photo</p>
+                </div>
+              </button>
+
+              {/* Upload/Drop Button - For desktop */}
               <div
                 {...getRootProps()}
-                className={`flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 ${
+                className={`flex flex-col items-center justify-center gap-2 p-5 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200 ${
                   isDragActive
                     ? 'border-brand bg-brand/10'
                     : 'border-surface-300 hover:border-text-tertiary hover:bg-surface-200/30'
                 }`}
               >
                 <input {...getInputProps()} />
-                <div className="w-14 h-14 rounded-xl bg-surface-200 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="w-12 h-12 rounded-xl bg-surface-200 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-text-primary">
-                    {isDragActive ? 'Drop here' : 'Upload Photos'}
+                  <p className="text-sm font-semibold text-text-primary">
+                    {isDragActive ? 'Drop here' : 'Files'}
                   </p>
-                  <p className="text-xs text-text-tertiary mt-1">Drag & drop or browse</p>
+                  <p className="text-xs text-text-tertiary">Drag or browse</p>
                 </div>
               </div>
             </div>
