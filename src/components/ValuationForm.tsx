@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useDropzone } from 'react-dropzone';
 import {
   ValuationReport,
@@ -39,12 +40,363 @@ const FormSelect = ({ label, options, ...props }: {
   </div>
 );
 
+// Reusable Combobox Component - Text input with dropdown suggestions
+const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: {
+  label: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const inputWrapperRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Update position when dropdown opens or window scrolls/resizes
+  useEffect(() => {
+    const updatePosition = () => {
+      if (isOpen && inputWrapperRef.current) {
+        const rect = inputWrapperRef.current.getBoundingClientRect();
+        setPosition({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+    };
+
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        // Also check if click is on the portal dropdown
+        const dropdown = document.getElementById(`dropdown-${label.replace(/\s+/g, '-')}`);
+        if (dropdown && dropdown.contains(target)) return;
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [label]);
+
+  const filteredOptions = options.filter(opt =>
+    opt.value && opt.label.toLowerCase().includes(value.toLowerCase())
+  );
+
+  const dropdownContent = isOpen && filteredOptions.length > 0 && mounted && (
+    <div
+      id={`dropdown-${label.replace(/\s+/g, '-')}`}
+      style={{
+        position: 'fixed',
+        top: position.top,
+        left: position.left,
+        width: position.width,
+        zIndex: 99999,
+      }}
+      className="bg-[rgb(30,30,35)] border border-[rgba(255,255,255,0.15)] rounded-xl shadow-2xl max-h-60 overflow-y-auto"
+    >
+      {filteredOptions.map(opt => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => {
+            onChange(opt.value);
+            setIsOpen(false);
+          }}
+          className={`w-full px-4 py-3 text-left text-sm hover:bg-[rgba(255,255,255,0.1)] transition-colors first:rounded-t-xl last:rounded-b-xl ${
+            value === opt.value ? 'bg-[rgba(99,102,241,0.2)] text-white' : 'text-[rgba(255,255,255,0.85)]'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="form-group" ref={containerRef}>
+      <label className="form-label">{label}</label>
+      <div ref={inputWrapperRef}>
+        <div className="flex">
+          <input
+            className="form-input flex-1 rounded-r-none border-r-0"
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onFocus={() => setIsOpen(true)}
+            placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+          />
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="px-4 bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] border-l-0 rounded-r-xl hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200 flex items-center justify-center min-w-[48px]"
+            title="Show options"
+          >
+            <svg
+              className={`w-5 h-5 text-[rgba(255,255,255,0.7)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      {mounted && dropdownContent && createPortal(dropdownContent, document.body)}
+    </div>
+  );
+};
+
+// Dropdown Options
+const CITY_OPTIONS = [
+  { value: 'NEW DELHI', label: 'New Delhi' },
+  { value: 'MUMBAI', label: 'Mumbai' },
+  { value: 'BANGALORE', label: 'Bangalore' },
+  { value: 'CHENNAI', label: 'Chennai' },
+  { value: 'KOLKATA', label: 'Kolkata' },
+  { value: 'HYDERABAD', label: 'Hyderabad' },
+  { value: 'PUNE', label: 'Pune' },
+  { value: 'AHMEDABAD', label: 'Ahmedabad' },
+  { value: 'JAIPUR', label: 'Jaipur' },
+  { value: 'LUCKNOW', label: 'Lucknow' },
+  { value: 'CHANDIGARH', label: 'Chandigarh' },
+  { value: 'NOIDA', label: 'Noida' },
+  { value: 'GURGAON', label: 'Gurgaon' },
+  { value: 'GHAZIABAD', label: 'Ghaziabad' },
+  { value: 'FARIDABAD', label: 'Faridabad' },
+];
+
+const BOUNDARY_OPTIONS = [
+  { value: '', label: 'Select...' },
+  { value: 'Road', label: 'Road' },
+  { value: '20\' Road', label: '20\' Road' },
+  { value: '30\' Road', label: '30\' Road' },
+  { value: '36\' Road', label: '36\' Road' },
+  { value: '40\' Road', label: '40\' Road' },
+  { value: '60\' Road', label: '60\' Road' },
+  { value: 'Park', label: 'Park' },
+  { value: 'Lane', label: 'Lane' },
+  { value: 'Common Passage', label: 'Common Passage' },
+  { value: 'Adjoining Plot', label: 'Adjoining Plot' },
+  { value: 'Neighbour Property', label: 'Neighbour Property' },
+  { value: 'Open Land', label: 'Open Land' },
+  { value: 'Nallah', label: 'Nallah' },
+  { value: 'Boundary Wall', label: 'Boundary Wall' },
+];
+
+const PURPOSE_OPTIONS = [
+  { value: 'To assess Fair Market Value of the property for property gain purpose', label: 'Capital Gains (Property Gain)' },
+  { value: 'To assess Fair Market Value for capital gains tax calculation', label: 'Capital Gains Tax' },
+  { value: 'To assess Fair Market Value as on 01-04-2001 for income tax purpose', label: 'Income Tax (FMV as on 01-04-2001)' },
+  { value: 'For mortgage/loan against property purpose', label: 'Mortgage/Loan Purpose' },
+  { value: 'For insurance coverage assessment', label: 'Insurance Purpose' },
+  { value: 'For legal proceedings and dispute resolution', label: 'Legal Proceedings' },
+  { value: 'For inheritance and settlement of estate', label: 'Inheritance/Settlement' },
+  { value: 'For sale/purchase transaction', label: 'Sale/Purchase' },
+  { value: 'For stamp duty and registration purpose', label: 'Stamp Duty/Registration' },
+  { value: 'For wealth tax assessment', label: 'Wealth Tax' },
+];
+
+const LAND_RATE_SOURCE_OPTIONS = [
+  { value: '', label: 'Select...' },
+  { value: 'L&DO rates', label: 'L&DO Rates' },
+  { value: 'Circle Rate', label: 'Circle Rate' },
+  { value: 'DDA rates', label: 'DDA Rates' },
+  { value: 'Municipal rates', label: 'Municipal Rates' },
+  { value: 'Market rate as per sale instances', label: 'Market Rate (Sale Instances)' },
+  { value: 'State PWD rates', label: 'State PWD Rates' },
+  { value: 'Collector rates', label: 'Collector Rates' },
+];
+
+const ROOF_OPTIONS = [
+  { value: 'R.C.C', label: 'R.C.C (Reinforced Cement Concrete)' },
+  { value: 'RCC Slab', label: 'RCC Slab' },
+  { value: 'RCC with waterproofing', label: 'RCC with Waterproofing' },
+  { value: 'Asbestos Sheets', label: 'Asbestos Sheets' },
+  { value: 'GI/Metal Sheets', label: 'GI/Metal Sheets' },
+  { value: 'Mangalore Tiles', label: 'Mangalore Tiles' },
+  { value: 'Stone Slabs', label: 'Stone Slabs' },
+  { value: 'Mud Terrace', label: 'Mud Terrace' },
+  { value: 'Pre-fabricated', label: 'Pre-fabricated' },
+];
+
+const BRICKWORK_OPTIONS = [
+  { value: '9" thick brick masonry', label: '9" Thick Brick Masonry' },
+  { value: '4.5" thick brick masonry', label: '4.5" Thick Brick Masonry' },
+  { value: '6" thick brick masonry', label: '6" Thick Brick Masonry' },
+  { value: 'AAC Blocks', label: 'AAC Blocks' },
+  { value: 'Concrete Blocks', label: 'Concrete Blocks' },
+  { value: 'Fly Ash Bricks', label: 'Fly Ash Bricks' },
+  { value: 'Red Brick', label: 'Red Brick' },
+  { value: 'Hollow Blocks', label: 'Hollow Blocks' },
+];
+
+const FLOORING_OPTIONS = [
+  { value: 'Marble', label: 'Marble' },
+  { value: 'Italian Marble', label: 'Italian Marble' },
+  { value: 'Vitrified Tiles', label: 'Vitrified Tiles' },
+  { value: 'Ceramic Tiles', label: 'Ceramic Tiles' },
+  { value: 'Granite', label: 'Granite' },
+  { value: 'Kota Stone', label: 'Kota Stone' },
+  { value: 'Terrazzo/Mosaic', label: 'Terrazzo/Mosaic' },
+  { value: 'Red Oxide', label: 'Red Oxide' },
+  { value: 'Cement Flooring', label: 'Cement Flooring' },
+  { value: 'Wooden/Laminate', label: 'Wooden/Laminate' },
+  { value: 'IPS Flooring', label: 'IPS (Indian Patent Stone)' },
+];
+
+const TILES_OPTIONS = [
+  { value: 'Glazed tiles in bathroom', label: 'Glazed Tiles in Bathroom' },
+  { value: 'Ceramic tiles in bathroom', label: 'Ceramic Tiles in Bathroom' },
+  { value: 'Vitrified tiles in bathroom', label: 'Vitrified Tiles in Bathroom' },
+  { value: 'Designer tiles in bathroom', label: 'Designer Tiles in Bathroom' },
+  { value: 'Plain tiles in bathroom', label: 'Plain Tiles in Bathroom' },
+  { value: 'Glazed tiles upto dado level', label: 'Glazed Tiles upto Dado Level' },
+  { value: 'Full height tiles in bathroom', label: 'Full Height Tiles in Bathroom' },
+];
+
+const ELECTRICAL_OPTIONS = [
+  { value: 'Internal conduit', label: 'Internal Conduit' },
+  { value: 'Concealed wiring', label: 'Concealed Wiring' },
+  { value: 'Surface wiring', label: 'Surface Wiring' },
+  { value: 'PVC conduit', label: 'PVC Conduit' },
+  { value: 'Concealed copper wiring', label: 'Concealed Copper Wiring' },
+];
+
+const ELECTRICAL_SWITCHES_OPTIONS = [
+  { value: 'Good quality', label: 'Good Quality' },
+  { value: 'Superior quality', label: 'Superior Quality' },
+  { value: 'Modular switches', label: 'Modular Switches' },
+  { value: 'Standard quality', label: 'Standard Quality' },
+  { value: 'Premium branded', label: 'Premium Branded' },
+];
+
+const SANITARY_FIXTURES_OPTIONS = [
+  { value: 'White', label: 'White' },
+  { value: 'Coloured', label: 'Coloured' },
+  { value: 'Superior white', label: 'Superior White' },
+  { value: 'Superior coloured', label: 'Superior Coloured' },
+  { value: 'Branded (Hindware/Jaquar)', label: 'Branded (Hindware/Jaquar)' },
+  { value: 'Premium imported', label: 'Premium Imported' },
+];
+
+const WOODWORK_OPTIONS = [
+  { value: 'Doors & windows are of Teak wood', label: 'Teak Wood Doors & Windows' },
+  { value: 'Sal wood doors & windows', label: 'Sal Wood Doors & Windows' },
+  { value: 'Pine wood doors & windows', label: 'Pine Wood Doors & Windows' },
+  { value: 'Flush doors with teak frame', label: 'Flush Doors with Teak Frame' },
+  { value: 'Flush doors with sal frame', label: 'Flush Doors with Sal Frame' },
+  { value: 'PVC doors', label: 'PVC Doors' },
+  { value: 'Aluminium windows', label: 'Aluminium Windows' },
+  { value: 'UPVC windows', label: 'UPVC Windows' },
+  { value: 'Teak wood with glass panels', label: 'Teak Wood with Glass Panels' },
+];
+
+const FLOOR_HEIGHT_OPTIONS = [
+  { value: '9\'0"', label: '9\'0"' },
+  { value: '9\'6"', label: '9\'6"' },
+  { value: '10\'0"', label: '10\'0"' },
+  { value: '10\'6"', label: '10\'6"' },
+  { value: '11\'0"', label: '11\'0"' },
+  { value: '11\'6"', label: '11\'6"' },
+  { value: '12\'0"', label: '12\'0"' },
+  { value: '14\'0"', label: '14\'0"' },
+];
+
+const FOUNDATION_OPTIONS = [
+  { value: 'Brick / RCC', label: 'Brick / RCC' },
+  { value: 'RCC', label: 'RCC' },
+  { value: 'Brick', label: 'Brick' },
+  { value: 'Stone', label: 'Stone' },
+  { value: 'Pile foundation', label: 'Pile Foundation' },
+  { value: 'Raft foundation', label: 'Raft Foundation' },
+  { value: 'Strip foundation', label: 'Strip Foundation' },
+];
+
+const PARTITIONS_OPTIONS = [
+  { value: 'Brick walls', label: 'Brick Walls' },
+  { value: 'Concrete blocks', label: 'Concrete Blocks' },
+  { value: 'AAC blocks', label: 'AAC Blocks' },
+  { value: 'Plywood partitions', label: 'Plywood Partitions' },
+  { value: 'Glass partitions', label: 'Glass Partitions' },
+  { value: 'Gypsum partitions', label: 'Gypsum Partitions' },
+];
+
+const ROOFING_TERRACING_OPTIONS = [
+  { value: 'Mud Phuska', label: 'Mud Phuska' },
+  { value: 'Lime Terracing', label: 'Lime Terracing' },
+  { value: 'Waterproof treatment', label: 'Waterproof Treatment' },
+  { value: 'IPS (Indian Patent Stone)', label: 'IPS (Indian Patent Stone)' },
+  { value: 'China mosaic', label: 'China Mosaic' },
+  { value: 'Brick bat coba', label: 'Brick Bat Coba' },
+  { value: 'Heat insulation treatment', label: 'Heat Insulation Treatment' },
+];
+
+const SEWER_DISPOSAL_OPTIONS = [
+  { value: 'Public sewer', label: 'Public Sewer' },
+  { value: 'Septic tank', label: 'Septic Tank' },
+  { value: 'Both public sewer and septic tank', label: 'Both' },
+  { value: 'Soak pit', label: 'Soak Pit' },
+];
+
+const COMPOUND_WALL_HEIGHT_OPTIONS = [
+  { value: '3 ft', label: '3 ft' },
+  { value: '4 ft', label: '4 ft' },
+  { value: '5 ft', label: '5 ft' },
+  { value: '6 ft', label: '6 ft' },
+  { value: '7 ft', label: '7 ft' },
+  { value: '8 ft', label: '8 ft' },
+];
+
+const COMPOUND_WALL_TYPE_OPTIONS = [
+  { value: 'Brick masonry', label: 'Brick Masonry' },
+  { value: 'RCC', label: 'RCC' },
+  { value: 'Stone', label: 'Stone' },
+  { value: 'Iron grills', label: 'Iron Grills' },
+  { value: 'Wire mesh', label: 'Wire Mesh' },
+  { value: 'Brick with iron grills', label: 'Brick with Iron Grills' },
+  { value: 'RCC with iron grills', label: 'RCC with Iron Grills' },
+];
+
+const EXTERIOR_OPTIONS = [
+  { value: '', label: 'Select...' },
+  { value: 'Cement plaster with paint', label: 'Cement Plaster with Paint' },
+  { value: 'Exterior is of stone with stone railings', label: 'Stone with Stone Railings' },
+  { value: 'Texture paint finish', label: 'Texture Paint Finish' },
+  { value: 'Tiles cladding', label: 'Tiles Cladding' },
+  { value: 'Glass facade', label: 'Glass Facade' },
+  { value: 'ACP cladding', label: 'ACP Cladding' },
+  { value: 'Exposed brick finish', label: 'Exposed Brick Finish' },
+  { value: 'Weather coat paint', label: 'Weather Coat Paint' },
+];
+
 export default function ValuationForm({ onGenerate, activeSection }: ValuationFormProps) {
   // Property Address
   const [propertyNo, setPropertyNo] = useState('');
   const [block, setBlock] = useState('');
   const [area, setArea] = useState('');
-  const [city, setCity] = useState('NEW DELHI');
+  const [city, setCity] = useState('');
 
   // Boundaries
   const [northBoundary, setNorthBoundary] = useState('');
@@ -61,78 +413,132 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
   const [referenceNo, setReferenceNo] = useState('');
   const [valuationDate, setValuationDate] = useState('');
   const [valuationForDate, setValuationForDate] = useState('');
-  const [purpose, setPurpose] = useState('To assess Fair Market Value of the property for property gain purpose');
+  const [purpose, setPurpose] = useState('');
 
   // Land Details
   const [plotArea, setPlotArea] = useState<number>(0);
   const [landRatePerSqm, setLandRatePerSqm] = useState<number>(0);
   const [landRateSource, setLandRateSource] = useState('');
-  const [locationIncreasePercent, setLocationIncreasePercent] = useState<number>(10);
-  const [landShareFraction, setLandShareFraction] = useState('1/3');
-  const [landShareDecimal, setLandShareDecimal] = useState<number>(0.333);
+  const [locationIncreasePercent, setLocationIncreasePercent] = useState<number>(0);
+  const [landShareFraction, setLandShareFraction] = useState('');
+  const [landShareDecimal, setLandShareDecimal] = useState<number>(0);
 
   // Construction Details
   const [floorArea, setFloorArea] = useState<number>(0);
-  const [plinthAreaRate, setPlinthAreaRate] = useState<number>(2810);
-  const [costIndex, setCostIndex] = useState<number>(166);
-  const [specificationIncreasePercent, setSpecificationIncreasePercent] = useState<number>(35);
+  const [plinthAreaRate, setPlinthAreaRate] = useState<number>(0);
+  const [costIndex, setCostIndex] = useState<number>(0);
+  const [specificationIncreasePercent, setSpecificationIncreasePercent] = useState<number>(0);
 
   // Depreciation
   const [yearOfConstruction, setYearOfConstruction] = useState('');
-  const [estimatedLifeYears, setEstimatedLifeYears] = useState<number>(80);
+  const [estimatedLifeYears, setEstimatedLifeYears] = useState<number>(0);
   const [ageAtValuation, setAgeAtValuation] = useState<number>(0);
 
   // Building Specifications
-  const [roof, setRoof] = useState('R.C.C');
-  const [brickwork, setBrickwork] = useState('9" thick brick masonry');
-  const [flooring, setFlooring] = useState('Marble');
-  const [tiles, setTiles] = useState('Glazed tiles in bathroom');
-  const [electrical, setElectrical] = useState('Internal conduit');
-  const [electricalSwitches, setElectricalSwitches] = useState('Good quality');
-  const [sanitaryFixtures, setSanitaryFixtures] = useState('White');
-  const [woodwork, setWoodwork] = useState('Doors & windows are of Teak wood');
+  const [roof, setRoof] = useState('');
+  const [brickwork, setBrickwork] = useState('');
+  const [flooring, setFlooring] = useState('');
+  const [tiles, setTiles] = useState('');
+  const [electrical, setElectrical] = useState('');
+  const [electricalSwitches, setElectricalSwitches] = useState('');
+  const [sanitaryFixtures, setSanitaryFixtures] = useState('');
+  const [woodwork, setWoodwork] = useState('');
   const [exterior, setExterior] = useState('');
 
   // Technical Details
-  const [floorHeight, setFloorHeight] = useState('10\'6"');
-  const [constructionType, setConstructionType] = useState('Load Bearing + RCC framed');
-  const [foundationType, setFoundationType] = useState('Brick / RCC');
-  const [partitions, setPartitions] = useState('Brick walls');
-  const [roofingTerracing, setRoofingTerracing] = useState('Mud Phuska');
+  const [floorHeight, setFloorHeight] = useState('');
+  const [constructionType, setConstructionType] = useState('');
+  const [foundationType, setFoundationType] = useState('');
+  const [partitions, setPartitions] = useState('');
+  const [roofingTerracing, setRoofingTerracing] = useState('');
   const [architecturalFeatures, setArchitecturalFeatures] = useState('');
-  const [noOfWaterClosets, setNoOfWaterClosets] = useState<number>(2);
-  const [noOfSinks, setNoOfSinks] = useState<number>(2);
-  const [sanitaryFittingsClass, setSanitaryFittingsClass] = useState('Superior');
-  const [compoundWallHeight, setCompoundWallHeight] = useState('5 ft');
-  const [compoundWallType, setCompoundWallType] = useState('Brick masonry');
+  const [noOfWaterClosets, setNoOfWaterClosets] = useState<number>(0);
+  const [noOfSinks, setNoOfSinks] = useState<number>(0);
+  const [sanitaryFittingsClass, setSanitaryFittingsClass] = useState('');
+  const [compoundWallHeight, setCompoundWallHeight] = useState('');
+  const [compoundWallType, setCompoundWallType] = useState('');
   const [overheadTank, setOverheadTank] = useState('');
   const [noOfPumps, setNoOfPumps] = useState('');
-  const [sewerDisposal, setSewerDisposal] = useState('Public sewer');
+  const [sewerDisposal, setSewerDisposal] = useState('');
 
   // General Details
-  const [propertyType, setPropertyType] = useState('Residential');
-  const [localityClass, setLocalityClass] = useState('Middle Class');
-  const [plotShape, setPlotShape] = useState('Rectangular Plot');
+  const [propertyType, setPropertyType] = useState('');
+  const [localityClass, setLocalityClass] = useState('');
+  const [plotShape, setPlotShape] = useState('');
   const [isLeasehold, setIsLeasehold] = useState(false);
-  const [buildingOccupancy, setBuildingOccupancy] = useState('Owner occupied');
+  const [buildingOccupancy, setBuildingOccupancy] = useState('');
 
   // Photos
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoPage, setPhotoPage] = useState(0);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const PHOTOS_PER_PAGE = 6;
+
+  // Crop image to square
+  const cropToSquare = (imageSrc: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = Math.min(img.width, img.height);
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const offsetX = (img.width - size) / 2;
+          const offsetY = (img.height - size) / 2;
+          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+          resolve(canvas.toDataURL('image/jpeg', 0.9));
+        } else {
+          resolve(imageSrc);
+        }
+      };
+      img.src = imageSrc;
+    });
+  };
+
+  const processAndAddPhoto = useCallback(async (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const croppedImage = await cropToSquare(reader.result as string);
+      setPhotos((prev) => [...prev, croppedImage]);
+    };
+    reader.readAsDataURL(file);
+  }, []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPhotos((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+      processAndAddPhoto(file);
     });
-  }, []);
+  }, [processAndAddPhoto]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
   });
+
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file) => {
+        processAndAddPhoto(file);
+      });
+    }
+    // Reset input so same file can be selected again
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
+  };
+
+  const openCamera = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const totalPhotoPages = Math.ceil(photos.length / PHOTOS_PER_PAGE);
+  const currentPagePhotos = photos.slice(
+    photoPage * PHOTOS_PER_PAGE,
+    (photoPage + 1) * PHOTOS_PER_PAGE
+  );
 
   const addOwner = () => setCurrentOwners([...currentOwners, { name: '', share: '' }]);
 
@@ -204,17 +610,17 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
               <FormInput label="Property No." value={propertyNo} onChange={(e) => setPropertyNo(e.target.value)} placeholder="e.g., D-44" required />
               <FormInput label="Block" value={block} onChange={(e) => setBlock(e.target.value)} placeholder="e.g., F" required />
               <FormInput label="Area / Colony" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g., TAGORE GARDEN" required />
-              <FormInput label="City" value={city} onChange={(e) => setCity(e.target.value)} required />
+              <FormSelectWithCustom label="City" options={CITY_OPTIONS} value={city} onChange={setCity} placeholder="Enter city name" />
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Property Boundaries</h3>
             <div className="grid-2">
-              <FormInput label="North" value={northBoundary} onChange={(e) => setNorthBoundary(e.target.value)} placeholder="e.g., 36' Road" />
-              <FormInput label="South" value={southBoundary} onChange={(e) => setSouthBoundary(e.target.value)} placeholder="e.g., Road" />
-              <FormInput label="East" value={eastBoundary} onChange={(e) => setEastBoundary(e.target.value)} placeholder="e.g., Plot No 43" />
-              <FormInput label="West" value={westBoundary} onChange={(e) => setWestBoundary(e.target.value)} placeholder="e.g., Plot No 45" />
+              <FormSelectWithCustom label="North" options={BOUNDARY_OPTIONS} value={northBoundary} onChange={setNorthBoundary} placeholder="e.g., Plot No 43" />
+              <FormSelectWithCustom label="South" options={BOUNDARY_OPTIONS} value={southBoundary} onChange={setSouthBoundary} placeholder="e.g., Plot No 45" />
+              <FormSelectWithCustom label="East" options={BOUNDARY_OPTIONS} value={eastBoundary} onChange={setEastBoundary} placeholder="e.g., Road" />
+              <FormSelectWithCustom label="West" options={BOUNDARY_OPTIONS} value={westBoundary} onChange={setWestBoundary} placeholder="e.g., 36' Road" />
             </div>
           </div>
 
@@ -222,17 +628,20 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
             <h3 className="glass-card-title">Property Classification</h3>
             <div className="grid-3">
               <FormSelect label="Property Type" value={propertyType} onChange={(e) => setPropertyType(e.target.value)} options={[
+                { value: '', label: 'Select...' },
                 { value: 'Residential', label: 'Residential' },
                 { value: 'Commercial', label: 'Commercial' },
                 { value: 'Industrial', label: 'Industrial' },
                 { value: 'Mixed', label: 'Mixed Use' },
               ]} />
               <FormSelect label="Locality Class" value={localityClass} onChange={(e) => setLocalityClass(e.target.value)} options={[
+                { value: '', label: 'Select...' },
                 { value: 'High Class', label: 'High Class' },
                 { value: 'Middle Class', label: 'Middle Class' },
                 { value: 'Poor Class', label: 'Poor Class' },
               ]} />
               <FormSelect label="Plot Shape" value={plotShape} onChange={(e) => setPlotShape(e.target.value)} options={[
+                { value: '', label: 'Select...' },
                 { value: 'Rectangular Plot', label: 'Rectangular' },
                 { value: 'Square Plot', label: 'Square' },
                 { value: 'Irregular Plot', label: 'Irregular' },
@@ -242,6 +651,7 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
                 { value: 'leasehold', label: 'Leasehold' },
               ]} />
               <FormSelect label="Building Occupancy" value={buildingOccupancy} onChange={(e) => setBuildingOccupancy(e.target.value)} options={[
+                { value: '', label: 'Select...' },
                 { value: 'Owner occupied', label: 'Owner Occupied' },
                 { value: 'Tenanted', label: 'Tenanted' },
                 { value: 'Both', label: 'Both' },
@@ -324,7 +734,7 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
               <FormInput label="Valuation For Date" value={valuationForDate} onChange={(e) => setValuationForDate(e.target.value)} placeholder="e.g., 1-4-2001" required />
             </div>
             <div className="mt-4">
-              <FormInput label="Purpose of Valuation" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
+              <FormSelectWithCustom label="Purpose of Valuation" options={PURPOSE_OPTIONS} value={purpose} onChange={setPurpose} placeholder="Enter custom purpose" />
             </div>
           </div>
 
@@ -333,7 +743,7 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
             <div className="grid-2">
               <FormInput label="Plot Area (Sqm)" type="number" step="0.0001" value={plotArea || ''} onChange={(e) => setPlotArea(parseFloat(e.target.value) || 0)} required />
               <FormInput label="Land Rate (Rs/Sqm)" type="number" value={landRatePerSqm || ''} onChange={(e) => setLandRatePerSqm(parseFloat(e.target.value) || 0)} required />
-              <FormInput label="Land Rate Source" value={landRateSource} onChange={(e) => setLandRateSource(e.target.value)} placeholder="e.g., L&DO rates from 1-4-1998" />
+              <FormSelectWithCustom label="Land Rate Source" options={LAND_RATE_SOURCE_OPTIONS} value={landRateSource} onChange={setLandRateSource} placeholder="e.g., L&DO rates from 1-4-1998" />
               <FormInput label="Location Increase (%)" type="number" value={locationIncreasePercent} onChange={(e) => setLocationIncreasePercent(parseFloat(e.target.value) || 0)} />
               <FormInput label="Land Share Fraction" value={landShareFraction} onChange={(e) => setLandShareFraction(e.target.value)} placeholder="e.g., 1/3" />
               <FormInput label="Land Share Decimal" type="number" step="0.001" value={landShareDecimal} onChange={(e) => setLandShareDecimal(parseFloat(e.target.value) || 0)} />
@@ -404,17 +814,17 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
           <div className="glass-card">
             <h3 className="glass-card-title">Building Specifications</h3>
             <div className="grid-2">
-              <FormInput label="Roof" value={roof} onChange={(e) => setRoof(e.target.value)} />
-              <FormInput label="Brickwork" value={brickwork} onChange={(e) => setBrickwork(e.target.value)} />
-              <FormInput label="Flooring" value={flooring} onChange={(e) => setFlooring(e.target.value)} />
-              <FormInput label="Tiles" value={tiles} onChange={(e) => setTiles(e.target.value)} />
-              <FormInput label="Electrical" value={electrical} onChange={(e) => setElectrical(e.target.value)} />
-              <FormInput label="Electrical Switches" value={electricalSwitches} onChange={(e) => setElectricalSwitches(e.target.value)} />
-              <FormInput label="Sanitary Fixtures" value={sanitaryFixtures} onChange={(e) => setSanitaryFixtures(e.target.value)} />
-              <FormInput label="Woodwork" value={woodwork} onChange={(e) => setWoodwork(e.target.value)} />
+              <FormSelectWithCustom label="Roof" options={ROOF_OPTIONS} value={roof} onChange={setRoof} placeholder="Enter roof type" />
+              <FormSelectWithCustom label="Brickwork" options={BRICKWORK_OPTIONS} value={brickwork} onChange={setBrickwork} placeholder="Enter brickwork type" />
+              <FormSelectWithCustom label="Flooring" options={FLOORING_OPTIONS} value={flooring} onChange={setFlooring} placeholder="Enter flooring type" />
+              <FormSelectWithCustom label="Tiles" options={TILES_OPTIONS} value={tiles} onChange={setTiles} placeholder="Enter tiles details" />
+              <FormSelectWithCustom label="Electrical" options={ELECTRICAL_OPTIONS} value={electrical} onChange={setElectrical} placeholder="Enter electrical type" />
+              <FormSelectWithCustom label="Electrical Switches" options={ELECTRICAL_SWITCHES_OPTIONS} value={electricalSwitches} onChange={setElectricalSwitches} placeholder="Enter switches quality" />
+              <FormSelectWithCustom label="Sanitary Fixtures" options={SANITARY_FIXTURES_OPTIONS} value={sanitaryFixtures} onChange={setSanitaryFixtures} placeholder="Enter fixtures type" />
+              <FormSelectWithCustom label="Woodwork" options={WOODWORK_OPTIONS} value={woodwork} onChange={setWoodwork} placeholder="Enter woodwork details" />
             </div>
             <div className="mt-4">
-              <FormInput label="Exterior Finish" value={exterior} onChange={(e) => setExterior(e.target.value)} placeholder="e.g., Exterior is of stone with stone railings" />
+              <FormSelectWithCustom label="Exterior Finish" options={EXTERIOR_OPTIONS} value={exterior} onChange={setExterior} placeholder="e.g., Exterior is of stone with stone railings" />
             </div>
           </div>
         </div>
@@ -426,16 +836,17 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
           <div className="glass-card">
             <h3 className="glass-card-title">Construction Details</h3>
             <div className="grid-2">
-              <FormInput label="Floor Height" value={floorHeight} onChange={(e) => setFloorHeight(e.target.value)} />
+              <FormSelectWithCustom label="Floor Height" options={FLOOR_HEIGHT_OPTIONS} value={floorHeight} onChange={setFloorHeight} placeholder="e.g., 10 feet 6 inches" />
               <FormSelect label="Construction Type" value={constructionType} onChange={(e) => setConstructionType(e.target.value)} options={[
+                { value: '', label: 'Select...' },
                 { value: 'Load Bearing', label: 'Load Bearing' },
                 { value: 'RCC Frame', label: 'RCC Frame' },
                 { value: 'Steel Frame', label: 'Steel Frame' },
                 { value: 'Load Bearing + RCC framed', label: 'Load Bearing + RCC Framed' },
               ]} />
-              <FormInput label="Foundation Type" value={foundationType} onChange={(e) => setFoundationType(e.target.value)} />
-              <FormInput label="Partitions" value={partitions} onChange={(e) => setPartitions(e.target.value)} />
-              <FormInput label="Roofing & Terracing" value={roofingTerracing} onChange={(e) => setRoofingTerracing(e.target.value)} />
+              <FormSelectWithCustom label="Foundation Type" options={FOUNDATION_OPTIONS} value={foundationType} onChange={setFoundationType} placeholder="Enter foundation type" />
+              <FormSelectWithCustom label="Partitions" options={PARTITIONS_OPTIONS} value={partitions} onChange={setPartitions} placeholder="Enter partition type" />
+              <FormSelectWithCustom label="Roofing & Terracing" options={ROOFING_TERRACING_OPTIONS} value={roofingTerracing} onChange={setRoofingTerracing} placeholder="Enter roofing details" />
               <FormInput label="Architectural Features" value={architecturalFeatures} onChange={(e) => setArchitecturalFeatures(e.target.value)} placeholder="e.g., Stone exterior with railing" />
             </div>
           </div>
@@ -446,6 +857,7 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
               <FormInput label="No. of Water Closets" type="number" value={noOfWaterClosets} onChange={(e) => setNoOfWaterClosets(parseInt(e.target.value) || 0)} />
               <FormInput label="No. of Sinks" type="number" value={noOfSinks} onChange={(e) => setNoOfSinks(parseInt(e.target.value) || 0)} />
               <FormSelect label="Sanitary Fittings Class" value={sanitaryFittingsClass} onChange={(e) => setSanitaryFittingsClass(e.target.value)} options={[
+                { value: '', label: 'Select...' },
                 { value: 'Superior coloured', label: 'Superior Coloured' },
                 { value: 'Superior white', label: 'Superior White' },
                 { value: 'Superior', label: 'Superior' },
@@ -453,15 +865,15 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
               ]} />
               <FormInput label="Overhead Tank" value={overheadTank} onChange={(e) => setOverheadTank(e.target.value)} placeholder="e.g., 2 tanks of 500L each" />
               <FormInput label="No. of Pumps" value={noOfPumps} onChange={(e) => setNoOfPumps(e.target.value)} placeholder="e.g., 1, 1HP" />
-              <FormInput label="Sewer Disposal" value={sewerDisposal} onChange={(e) => setSewerDisposal(e.target.value)} />
+              <FormSelectWithCustom label="Sewer Disposal" options={SEWER_DISPOSAL_OPTIONS} value={sewerDisposal} onChange={setSewerDisposal} placeholder="Enter sewer disposal type" />
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Compound Wall</h3>
             <div className="grid-2">
-              <FormInput label="Height" value={compoundWallHeight} onChange={(e) => setCompoundWallHeight(e.target.value)} />
-              <FormInput label="Type" value={compoundWallType} onChange={(e) => setCompoundWallType(e.target.value)} />
+              <FormSelectWithCustom label="Height" options={COMPOUND_WALL_HEIGHT_OPTIONS} value={compoundWallHeight} onChange={setCompoundWallHeight} placeholder="e.g., 5 ft" />
+              <FormSelectWithCustom label="Type" options={COMPOUND_WALL_TYPE_OPTIONS} value={compoundWallType} onChange={setCompoundWallType} placeholder="Enter wall type" />
             </div>
           </div>
         </div>
@@ -473,42 +885,153 @@ export default function ValuationForm({ onGenerate, activeSection }: ValuationFo
           <div className="glass-card">
             <h3 className="glass-card-title">Property Photos</h3>
 
-            <div
-              {...getRootProps()}
-              className={`dropzone ${isDragActive ? 'active' : ''}`}
-            >
-              <input {...getInputProps()} />
-              <div className="dropzone-icon">
-                <svg className="w-7 h-7 text-[rgba(255,255,255,0.4)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+            {/* Hidden camera input */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleCameraCapture}
+              className="hidden"
+              multiple
+            />
+
+            {/* Upload options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {/* Camera Button */}
+              <button
+                type="button"
+                onClick={openCamera}
+                className="flex flex-col items-center justify-center gap-3 p-6 bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-dashed border-brand/40 rounded-2xl hover:border-brand hover:from-brand/30 hover:to-brand/10 transition-all duration-300"
+              >
+                <div className="w-14 h-14 rounded-xl bg-brand/20 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-text-primary">Take Photo</p>
+                  <p className="text-xs text-text-tertiary mt-1">Use camera to capture</p>
+                </div>
+              </button>
+
+              {/* Upload Button */}
+              <div
+                {...getRootProps()}
+                className={`flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 ${
+                  isDragActive
+                    ? 'border-brand bg-brand/10'
+                    : 'border-surface-300 hover:border-text-tertiary hover:bg-surface-200/30'
+                }`}
+              >
+                <input {...getInputProps()} />
+                <div className="w-14 h-14 rounded-xl bg-surface-200 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-text-primary">
+                    {isDragActive ? 'Drop here' : 'Upload Photos'}
+                  </p>
+                  <p className="text-xs text-text-tertiary mt-1">Drag & drop or browse</p>
+                </div>
               </div>
-              <p className="dropzone-text">
-                {isDragActive ? 'Drop photos here...' : 'Drag & drop photos here'}
-              </p>
-              <p className="dropzone-subtext">or click to browse</p>
-              <p className="dropzone-subtext mt-2 text-xs opacity-70">Supports: JPG, PNG, WEBP</p>
             </div>
 
+            {/* Photo Grid - 2x3 layout */}
             {photos.length > 0 && (
               <div className="mt-6">
-                <p className="text-sm mb-4 text-text-muted">{photos.length} photo(s) added</p>
-                <div className="photo-grid">
-                  {photos.map((photo, index) => (
-                    <div key={index} className="photo-item">
-                      <img src={photo} alt={`Property ${index + 1}`} />
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-text-secondary">
+                    {photos.length} photo{photos.length !== 1 ? 's' : ''} added
+                    {totalPhotoPages > 1 && (
+                      <span className="text-text-tertiary ml-2">
+                        (Page {photoPage + 1} of {totalPhotoPages})
+                      </span>
+                    )}
+                  </p>
+                  {totalPhotoPages > 1 && (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => removePhoto(index)}
-                        className="delete-btn"
+                        onClick={() => setPhotoPage(Math.max(0, photoPage - 1))}
+                        disabled={photoPage === 0}
+                        className="p-2 rounded-lg bg-surface-200 hover:bg-surface-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPhotoPage(Math.min(totalPhotoPages - 1, photoPage + 1))}
+                        disabled={photoPage >= totalPhotoPages - 1}
+                        className="p-2 rounded-lg bg-surface-200 hover:bg-surface-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
                     </div>
-                  ))}
+                  )}
                 </div>
+
+                {/* 2x3 Grid for square photos */}
+                <div className="grid grid-cols-2 gap-4">
+                  {currentPagePhotos.map((photo, index) => {
+                    const actualIndex = photoPage * PHOTOS_PER_PAGE + index;
+                    return (
+                      <div
+                        key={actualIndex}
+                        className="relative aspect-square rounded-xl overflow-hidden border-2 border-surface-200 hover:border-brand/50 transition-colors group"
+                      >
+                        <img
+                          src={photo}
+                          alt={`Property ${actualIndex + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-2 left-2 text-xs text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                          Photo {actualIndex + 1}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(actualIndex)}
+                          className="absolute top-2 right-2 p-2 rounded-lg bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Page indicator dots */}
+                {totalPhotoPages > 1 && (
+                  <div className="flex justify-center gap-2 mt-4">
+                    {Array.from({ length: totalPhotoPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setPhotoPage(i)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          i === photoPage
+                            ? 'w-6 bg-brand'
+                            : 'bg-surface-300 hover:bg-text-tertiary'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Info text */}
+                <p className="text-xs text-text-tertiary text-center mt-4">
+                  Photos are automatically cropped to square. 6 photos per page in the report.
+                </p>
               </div>
             )}
           </div>

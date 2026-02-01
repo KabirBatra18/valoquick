@@ -218,19 +218,34 @@ function generateHTML(data: ValuationReport): string {
     .photo-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin: 20px 0;
+      grid-template-rows: repeat(3, 1fr);
+      gap: 12px;
+      margin: 15px 0;
+      height: calc(100% - 60px);
+    }
+    .photo-item {
+      aspect-ratio: 1;
+      overflow: hidden;
+      border: 2px solid #333;
+      border-radius: 8px;
     }
     .photo-item img {
       width: 100%;
-      height: 200px;
+      height: 100%;
       object-fit: cover;
-      border: 1px solid #ccc;
     }
     .photo-caption {
       text-align: center;
       font-weight: bold;
-      margin: 20px 0 10px 0;
+      font-size: 11pt;
+      margin: 10px 0;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    .photo-page {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
     .cover-photo {
       text-align: center;
@@ -592,32 +607,34 @@ function generateHTML(data: ValuationReport): string {
     </div>
   </div>
 
-  <!-- Photo Pages -->
-  ${photos.length > 0 ? `
-  <div class="page">
-    <p class="photo-caption">PHOTOGRAPHS OF PROPERTY SITUATED AT ${propertyAddress.fullAddress}</p>
-    <div class="photo-grid">
-      ${photos.slice(0, 6).map((photo, i) => `
-        <div class="photo-item">
-          <img src="${photo}" alt="Property photo ${i + 1}">
-        </div>
-      `).join('')}
-    </div>
-  </div>
-  ` : ''}
+  <!-- Photo Pages - 6 photos per page in 2x3 grid -->
+  ${(() => {
+    const photosPerPage = 6;
+    const totalPages = Math.ceil(photos.length / photosPerPage);
+    let photoPages = '';
 
-  ${photos.length > 6 ? `
-  <div class="page">
-    <p class="photo-caption">PHOTOGRAPHS OF PROPERTY SITUATED AT ${propertyAddress.fullAddress}</p>
-    <div class="photo-grid">
-      ${photos.slice(6, 12).map((photo, i) => `
-        <div class="photo-item">
-          <img src="${photo}" alt="Property photo ${i + 7}">
+    for (let page = 0; page < totalPages; page++) {
+      const startIdx = page * photosPerPage;
+      const pagePhotos = photos.slice(startIdx, startIdx + photosPerPage);
+
+      photoPages += `
+      <div class="page">
+        <div class="photo-page">
+          <p class="photo-caption">PHOTOGRAPHS OF PROPERTY SITUATED AT ${propertyAddress.fullAddress}${totalPages > 1 ? ` (Page ${page + 1} of ${totalPages})` : ''}</p>
+          <div class="photo-grid">
+            ${pagePhotos.map((photo, i) => `
+              <div class="photo-item">
+                <img src="${photo}" alt="Property photo ${startIdx + i + 1}">
+              </div>
+            `).join('')}
+          </div>
         </div>
-      `).join('')}
-    </div>
-  </div>
-  ` : ''}
+      </div>
+      `;
+    }
+
+    return photoPages;
+  })()}
 
 </body>
 </html>
