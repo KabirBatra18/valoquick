@@ -15,7 +15,7 @@ async function getBrowser() {
       args: chromium.args,
       defaultViewport: null,
       executablePath,
-      headless: chromium.headless,
+      headless: true,
     });
   } else {
     // Running locally - use regular puppeteer
