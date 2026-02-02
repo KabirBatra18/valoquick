@@ -854,7 +854,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                         setCivicAmenities(civicAmenities.filter(a => a !== amenity.id));
                       }
                     }}
-                    className="w-4 h-4 rounded border-surface-300 text-brand focus:ring-brand"
+                    className="w-4 h-4 rounded border-surface-300 focus:ring-brand"
+                    style={{ accentColor: '#6366f1' }}
                   />
                   <span className="text-sm">{amenity.label}</span>
                 </label>
