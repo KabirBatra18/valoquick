@@ -95,6 +95,7 @@ function generateHTML(data: ValuationReport): string {
 
   const currentOwnersText = currentOwners.map(o => `${o.name} -${o.share} Share`).join('<br>');
   const currentOwnersShort = currentOwners.map(o => o.name).join(' & ');
+  const fullAddressUpper = propertyAddress.fullAddress.toUpperCase();
 
   // Format numbers for display
   const formatCurrency = (num: number) => `Rs${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}/-`;
@@ -284,7 +285,7 @@ function generateHTML(data: ValuationReport): string {
 
     <div class="title">
       VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
-      IMMOVABLE PROPERTY SITUATED AT – ${propertyAddress.fullAddress}
+      IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
     <div class="owners">
@@ -330,7 +331,7 @@ function generateHTML(data: ValuationReport): string {
 
     <div class="title">
       VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
-      IMMOVABLE PROPERTY SITUATED AT – ${propertyAddress.fullAddress}
+      IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
     <div class="owners">
@@ -350,7 +351,7 @@ function generateHTML(data: ValuationReport): string {
       <tr><td>3</td><td>Name of owner/owners</td><td>IN ${originalOwnerYear}- ${originalOwner}<br>Current Owners-${currentOwnersShort}</td></tr>
       <tr><td>4</td><td>If the property is under joint ownership/co-ownership, share of each owner.</td><td>Joint Ownership<br>${currentOwnersText}</td></tr>
       <tr><td>5</td><td>Brief description of property</td><td>Ground floor of the residential property which consist of GF, FF, and SF</td></tr>
-      <tr><td>6</td><td>Location, street, and ward no.</td><td>${propertyAddress.fullAddress}</td></tr>
+      <tr><td>6</td><td>Location, street, and ward no.</td><td>${fullAddressUpper}</td></tr>
       <tr><td>7</td><td>Survey/ Plot no. of land</td><td>As above.</td></tr>
       <tr><td>8</td><td>Is the property situated in residential/ mixed area/ commercial/ industrial area?</td><td>${generalDetails.propertyType}</td></tr>
       <tr><td>9</td><td>Classification of locality- high class/ middle class/ poor class</td><td>${generalDetails.localityClass}</td></tr>
@@ -495,10 +496,10 @@ function generateHTML(data: ValuationReport): string {
 
     <div class="title">
       VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
-      IMMOVABLE PROPERTY SITUATED AT – ${propertyAddress.fullAddress}
+      IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
-    <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE IMMOVABLE PROPERTY SITUATED AT–${propertyAddress.fullAddress}</strong></p>
+    <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE IMMOVABLE PROPERTY SITUATED AT–${fullAddressUpper}</strong></p>
 
     <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for the ground floor of the building which consist of three floors {Ground floor, First floor, and Second floor}</p>
 
@@ -620,7 +621,7 @@ function generateHTML(data: ValuationReport): string {
       photoPages += `
       <div class="page">
         <div class="photo-page">
-          <p class="photo-caption">PHOTOGRAPHS OF PROPERTY SITUATED AT ${propertyAddress.fullAddress}${totalPages > 1 ? ` (Page ${page + 1} of ${totalPages})` : ''}</p>
+          <p class="photo-caption">PHOTOGRAPHS OF PROPERTY SITUATED AT ${fullAddressUpper}${totalPages > 1 ? ` (Page ${page + 1} of ${totalPages})` : ''}</p>
           <div class="photo-grid">
             ${pagePhotos.map((photo, i) => `
               <div class="photo-item">
