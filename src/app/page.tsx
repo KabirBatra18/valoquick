@@ -17,11 +17,100 @@ const steps = [
   { id: 6, name: 'Location', fullName: 'Property Location', icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
 ];
 
+// Generation progress steps
+const generationSteps = [
+  { id: 0, label: 'Preparing data', description: 'Validating and organizing report data...' },
+  { id: 1, label: 'Processing images', description: 'Optimizing photos for the report...' },
+  { id: 2, label: 'Generating PDF', description: 'Creating your valuation report...' },
+  { id: 3, label: 'Finalizing', description: 'Almost done...' },
+];
+
+// Loading Overlay Component
+const GeneratingOverlay = ({ currentStep, progress }: { currentStep: number; progress: number }) => (
+  <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="bg-surface-100 rounded-2xl p-6 lg:p-8 max-w-md w-full shadow-2xl border border-surface-200">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand to-brand-dark flex items-center justify-center">
+          <svg className="w-8 h-8 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-bold text-text-primary">Generating Report</h3>
+        <p className="text-sm text-text-tertiary mt-1">Please wait while we create your PDF</p>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-6">
+        <div className="h-2 bg-surface-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-brand to-brand-light transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-xs text-text-tertiary text-center mt-2">{Math.round(progress)}%</p>
+      </div>
+
+      {/* Steps */}
+      <div className="space-y-3">
+        {generationSteps.map((step, idx) => (
+          <div
+            key={step.id}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+              idx === currentStep
+                ? 'bg-brand/10 border border-brand/30'
+                : idx < currentStep
+                  ? 'bg-surface-200/50'
+                  : 'opacity-40'
+            }`}
+          >
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+              idx < currentStep
+                ? 'bg-green-500 text-white'
+                : idx === currentStep
+                  ? 'bg-brand text-white'
+                  : 'bg-surface-300 text-text-tertiary'
+            }`}>
+              {idx < currentStep ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : idx === currentStep ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : (
+                <span className="text-xs font-medium">{idx + 1}</span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium ${idx <= currentStep ? 'text-text-primary' : 'text-text-tertiary'}`}>
+                {step.label}
+              </p>
+              {idx === currentStep && (
+                <p className="text-xs text-text-tertiary truncate">{step.description}</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tip */}
+      <p className="text-[10px] text-text-tertiary text-center mt-6">
+        This may take 15-30 seconds depending on the number of photos
+      </p>
+    </div>
+  </div>
+);
+
 export default function Home() {
   const [view, setView] = useState<'dashboard' | 'editor'>('dashboard');
   const [currentReportId, setCurrentReportId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ReportFormData>(DEFAULT_FORM_DATA);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
+  const [generationProgress, setGenerationProgress] = useState(0);
   const [generatedFiles, setGeneratedFiles] = useState<{ pdf?: string; docx?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -95,8 +184,35 @@ export default function Home() {
     setFormData(prev => ({ ...prev, ...newData }));
   }, []);
 
+  // Compress image to reduce size
+  const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+
+        // Scale down if too large
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(base64); // Return original if error
+      img.src = base64;
+    });
+  };
+
   const handleGenerate = async (data: ValuationReport) => {
     setIsGenerating(true);
+    setGenerationStep(0);
+    setGenerationProgress(0);
     setError(null);
     setGeneratedFiles(null);
 
@@ -110,18 +226,61 @@ export default function Home() {
     }
 
     try {
+      // Step 0: Preparing data
+      setGenerationStep(0);
+      setGenerationProgress(10);
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Step 1: Processing images
+      setGenerationStep(1);
+      setGenerationProgress(20);
+
+      // Compress photos to reduce payload size
+      const compressedPhotos: string[] = [];
+      for (let i = 0; i < data.photos.length; i++) {
+        const compressed = await compressImage(data.photos[i]);
+        compressedPhotos.push(compressed);
+        // Update progress during image compression
+        const imageProgress = 20 + ((i + 1) / data.photos.length) * 30;
+        setGenerationProgress(imageProgress);
+      }
+
+      const optimizedData = { ...data, photos: compressedPhotos };
+
+      // Step 2: Generating PDF
+      setGenerationStep(2);
+      setGenerationProgress(55);
+
+      // Start progress animation while waiting for response
+      const progressInterval = setInterval(() => {
+        setGenerationProgress(prev => {
+          if (prev < 90) return prev + 2;
+          return prev;
+        });
+      }, 500);
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(optimizedData),
       });
+
+      clearInterval(progressInterval);
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to generate report');
       }
 
+      // Step 3: Finalizing
+      setGenerationStep(3);
+      setGenerationProgress(95);
+
       const result = await response.json();
+
+      setGenerationProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setGeneratedFiles(result);
 
       // Mark report as concluded after successful generation
@@ -132,6 +291,8 @@ export default function Home() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsGenerating(false);
+      setGenerationStep(0);
+      setGenerationProgress(0);
     }
   };
 
@@ -164,6 +325,10 @@ export default function Home() {
   // Show Editor
   return (
     <div className="flex min-h-screen bg-surface-50 text-text-primary">
+      {/* Generation Loading Overlay */}
+      {isGenerating && (
+        <GeneratingOverlay currentStep={generationStep} progress={generationProgress} />
+      )}
       {/* Sidebar */}
       <aside className="w-80 border-r border-surface-200 bg-surface-100 flex flex-col fixed inset-y-0 z-50 h-screen hidden lg:flex">
         <div className="p-6 border-b border-surface-200">
