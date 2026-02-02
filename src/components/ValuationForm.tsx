@@ -133,7 +133,7 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
       }}
       className={`rounded-xl shadow-2xl max-h-60 overflow-y-auto ${
         theme === 'light'
-          ? 'bg-white border border-slate-200'
+          ? 'bg-white border border-neutral-200'
           : 'bg-[rgb(24,24,27)] border border-[rgba(255,255,255,0.2)]'
       }`}
     >
@@ -149,7 +149,7 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
             theme === 'light'
               ? value === opt.value
                 ? 'bg-indigo-50 text-indigo-700 font-medium'
-                : 'text-slate-700 hover:bg-slate-50'
+                : 'text-neutral-800 hover:bg-neutral-100'
               : value === opt.value
                 ? 'bg-[rgba(99,102,241,0.25)] text-white font-medium'
                 : 'text-[rgba(255,255,255,0.95)] hover:bg-[rgba(255,255,255,0.12)]'
@@ -179,14 +179,14 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
             onClick={() => setIsOpen(!isOpen)}
             className={`px-4 border-l-0 rounded-r-xl transition-all duration-200 flex items-center justify-center min-w-[48px] ${
               theme === 'light'
-                ? 'bg-slate-100 border border-slate-200 hover:bg-slate-200'
+                ? 'bg-neutral-100 border border-neutral-300 hover:bg-neutral-200'
                 : 'bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.18)]'
             }`}
             title="Show options"
           >
             <svg
               className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
-                theme === 'light' ? 'text-slate-500' : 'text-[rgba(255,255,255,0.9)]'
+                theme === 'light' ? 'text-neutral-600' : 'text-[rgba(255,255,255,0.9)]'
               }`}
               fill="none"
               viewBox="0 0 24 24"

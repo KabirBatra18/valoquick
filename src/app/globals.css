@@ -21,13 +21,13 @@
   --color-brand: #4f46e5;
   --color-brand-light: #6366f1;
   --color-brand-dark: #4338ca;
-  --color-surface-50: #f8fafc;
+  --color-surface-50: #fafafa;
   --color-surface-100: #ffffff;
-  --color-surface-200: #e2e8f0;
-  --color-surface-300: #cbd5e1;
-  --color-text-primary: #1e293b;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #64748b;
+  --color-surface-200: #e5e5e5;
+  --color-surface-300: #d4d4d4;
+  --color-text-primary: #171717;
+  --color-text-secondary: #262626;
+  --color-text-tertiary: #404040;
 }
 
 :root {
@@ -90,13 +90,13 @@
   }
 
   [data-theme="light"] .glass-card {
-    @apply bg-white/90 border-slate-200;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    @apply bg-white border-neutral-200;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 
   [data-theme="light"] .glass-card:hover {
-    border-color: rgba(79, 70, 229, 0.4);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-color: rgba(79, 70, 229, 0.5);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
   }
 
   .glass-card-title {
@@ -145,18 +145,18 @@
 
   [data-theme="light"] .form-input,
   [data-theme="light"] .form-select {
-    @apply bg-white border-slate-200;
+    @apply bg-white border-neutral-300;
   }
 
   [data-theme="light"] .form-input:hover,
   [data-theme="light"] .form-select:hover {
-    @apply border-slate-300 bg-slate-50;
+    @apply border-neutral-400 bg-neutral-50;
   }
 
   [data-theme="light"] .form-input:focus,
   [data-theme="light"] .form-select:focus {
     @apply border-brand bg-white;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
   }
 
   .form-select {
@@ -206,11 +206,11 @@
   }
 
   [data-theme="light"] .btn-secondary {
-    @apply bg-white border-slate-200 text-slate-700;
+    @apply bg-white border-neutral-300 text-neutral-800;
   }
 
   [data-theme="light"] .btn-secondary:hover:not(:disabled) {
-    @apply bg-slate-50 border-slate-300;
+    @apply bg-neutral-100 border-neutral-400;
   }
 
   .btn-ghost {
@@ -256,12 +256,12 @@
   }
 
   [data-theme="light"] .dropzone {
-    @apply border-slate-300 bg-slate-50/50;
+    @apply border-neutral-300 bg-neutral-50;
   }
 
   [data-theme="light"] .dropzone:hover {
     @apply border-brand;
-    background: rgba(79, 70, 229, 0.04);
+    background: rgba(79, 70, 229, 0.05);
   }
 
   .dropzone-icon {
