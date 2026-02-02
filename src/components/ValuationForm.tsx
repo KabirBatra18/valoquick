@@ -750,35 +750,66 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Property Classification</h3>
             <div className="grid-3">
-              <FormSelect label="Property Type" value={propertyType} onChange={(e) => setPropertyType(e.target.value)} options={[
-                { value: '', label: 'Select...' },
-                { value: 'Residential', label: 'Residential' },
-                { value: 'Commercial', label: 'Commercial' },
-                { value: 'Industrial', label: 'Industrial' },
-                { value: 'Mixed', label: 'Mixed Use' },
-              ]} />
-              <FormSelect label="Locality Class" value={localityClass} onChange={(e) => setLocalityClass(e.target.value)} options={[
-                { value: '', label: 'Select...' },
-                { value: 'High Class', label: 'High Class' },
-                { value: 'Middle Class', label: 'Middle Class' },
-                { value: 'Poor Class', label: 'Poor Class' },
-              ]} />
-              <FormSelect label="Plot Shape" value={plotShape} onChange={(e) => setPlotShape(e.target.value)} options={[
-                { value: '', label: 'Select...' },
-                { value: 'Rectangular Plot', label: 'Rectangular' },
-                { value: 'Square Plot', label: 'Square' },
-                { value: 'Irregular Plot', label: 'Irregular' },
-              ]} />
-              <FormSelect label="Land Type" value={isLeasehold ? 'leasehold' : 'freehold'} onChange={(e) => setIsLeasehold(e.target.value === 'leasehold')} options={[
-                { value: 'freehold', label: 'Freehold' },
-                { value: 'leasehold', label: 'Leasehold' },
-              ]} />
-              <FormSelect label="Building Occupancy" value={buildingOccupancy} onChange={(e) => setBuildingOccupancy(e.target.value)} options={[
-                { value: '', label: 'Select...' },
-                { value: 'Owner occupied', label: 'Owner Occupied' },
-                { value: 'Tenanted', label: 'Tenanted' },
-                { value: 'Both', label: 'Both' },
-              ]} />
+              <FormSelectWithCustom
+                label="Property Type"
+                value={propertyType}
+                onChange={setPropertyType}
+                options={[
+                  { value: 'Residential', label: 'Residential' },
+                  { value: 'Commercial', label: 'Commercial' },
+                  { value: 'Industrial', label: 'Industrial' },
+                  { value: 'Mixed', label: 'Mixed Use' },
+                  { value: 'Agricultural', label: 'Agricultural' },
+                ]}
+                placeholder="e.g., Residential"
+              />
+              <FormSelectWithCustom
+                label="Locality Class"
+                value={localityClass}
+                onChange={setLocalityClass}
+                options={[
+                  { value: 'High Class', label: 'High Class' },
+                  { value: 'Middle Class', label: 'Middle Class' },
+                  { value: 'Poor Class', label: 'Poor Class' },
+                  { value: 'Premium', label: 'Premium' },
+                ]}
+                placeholder="e.g., Middle Class"
+              />
+              <FormSelectWithCustom
+                label="Plot Shape"
+                value={plotShape}
+                onChange={setPlotShape}
+                options={[
+                  { value: 'Rectangular Plot', label: 'Rectangular' },
+                  { value: 'Square Plot', label: 'Square' },
+                  { value: 'Irregular Plot', label: 'Irregular' },
+                  { value: 'L-Shaped Plot', label: 'L-Shaped' },
+                  { value: 'Triangular Plot', label: 'Triangular' },
+                ]}
+                placeholder="e.g., Rectangular"
+              />
+              <FormSelectWithCustom
+                label="Land Type"
+                value={isLeasehold ? 'Leasehold' : 'Freehold'}
+                onChange={(val) => setIsLeasehold(val === 'Leasehold')}
+                options={[
+                  { value: 'Freehold', label: 'Freehold' },
+                  { value: 'Leasehold', label: 'Leasehold' },
+                ]}
+                placeholder="e.g., Freehold"
+              />
+              <FormSelectWithCustom
+                label="Building Occupancy"
+                value={buildingOccupancy}
+                onChange={setBuildingOccupancy}
+                options={[
+                  { value: 'Owner occupied', label: 'Owner Occupied' },
+                  { value: 'Tenanted', label: 'Tenanted' },
+                  { value: 'Vacant', label: 'Vacant' },
+                  { value: 'Both', label: 'Both (Owner + Tenant)' },
+                ]}
+                placeholder="e.g., Owner Occupied"
+              />
             </div>
           </div>
         </div>
