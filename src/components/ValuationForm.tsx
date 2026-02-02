@@ -9,12 +9,15 @@ import {
   DEFAULT_COMPANY_DETAILS,
   calculateValues,
 } from '@/types/valuation';
+import { ReportFormData } from '@/types/report';
 
 interface ValuationFormProps {
   onGenerate: (data: ValuationReport) => void;
   isGenerating: boolean;
   activeSection: number;
   setActiveSection: (section: number) => void;
+  initialData?: ReportFormData;
+  onDataChange?: (data: ReportFormData) => void;
 }
 
 // Reusable Input Component
@@ -391,87 +394,166 @@ const EXTERIOR_OPTIONS = [
   { value: 'Weather coat paint', label: 'Weather Coat Paint' },
 ];
 
-export default function ValuationForm({ onGenerate, activeSection }: ValuationFormProps) {
+export default function ValuationForm({ onGenerate, activeSection, initialData, onDataChange }: ValuationFormProps) {
   // Property Address
-  const [propertyNo, setPropertyNo] = useState('');
-  const [block, setBlock] = useState('');
-  const [area, setArea] = useState('');
-  const [city, setCity] = useState('');
+  const [propertyNo, setPropertyNo] = useState(initialData?.propertyNo || '');
+  const [block, setBlock] = useState(initialData?.block || '');
+  const [area, setArea] = useState(initialData?.area || '');
+  const [city, setCity] = useState(initialData?.city || '');
 
   // Boundaries
-  const [northBoundary, setNorthBoundary] = useState('');
-  const [southBoundary, setSouthBoundary] = useState('');
-  const [eastBoundary, setEastBoundary] = useState('');
-  const [westBoundary, setWestBoundary] = useState('');
+  const [northBoundary, setNorthBoundary] = useState(initialData?.northBoundary || '');
+  const [southBoundary, setSouthBoundary] = useState(initialData?.southBoundary || '');
+  const [eastBoundary, setEastBoundary] = useState(initialData?.eastBoundary || '');
+  const [westBoundary, setWestBoundary] = useState(initialData?.westBoundary || '');
 
   // Owner Details
-  const [originalOwner, setOriginalOwner] = useState('');
-  const [originalOwnerYear, setOriginalOwnerYear] = useState('');
-  const [currentOwners, setCurrentOwners] = useState<Owner[]>([{ name: '', share: '' }]);
+  const [originalOwner, setOriginalOwner] = useState(initialData?.originalOwner || '');
+  const [originalOwnerYear, setOriginalOwnerYear] = useState(initialData?.originalOwnerYear || '');
+  const [currentOwners, setCurrentOwners] = useState<Owner[]>(initialData?.currentOwners || [{ name: '', share: '' }]);
 
   // Valuation Inputs
-  const [referenceNo, setReferenceNo] = useState('');
-  const [valuationDate, setValuationDate] = useState('');
-  const [valuationForDate, setValuationForDate] = useState('');
-  const [purpose, setPurpose] = useState('');
+  const [referenceNo, setReferenceNo] = useState(initialData?.referenceNo || '');
+  const [valuationDate, setValuationDate] = useState(initialData?.valuationDate || '');
+  const [valuationForDate, setValuationForDate] = useState(initialData?.valuationForDate || '');
+  const [purpose, setPurpose] = useState(initialData?.purpose || '');
 
   // Land Details
-  const [plotArea, setPlotArea] = useState<number>(0);
-  const [landRatePerSqm, setLandRatePerSqm] = useState<number>(0);
-  const [landRateSource, setLandRateSource] = useState('');
-  const [locationIncreasePercent, setLocationIncreasePercent] = useState<number>(0);
-  const [landShareFraction, setLandShareFraction] = useState('');
-  const [landShareDecimal, setLandShareDecimal] = useState<number>(0);
+  const [plotArea, setPlotArea] = useState<number>(initialData?.plotArea || 0);
+  const [landRatePerSqm, setLandRatePerSqm] = useState<number>(initialData?.landRatePerSqm || 0);
+  const [landRateSource, setLandRateSource] = useState(initialData?.landRateSource || '');
+  const [locationIncreasePercent, setLocationIncreasePercent] = useState<number>(initialData?.locationIncreasePercent || 0);
+  const [landShareFraction, setLandShareFraction] = useState(initialData?.landShareFraction || '');
+  const [landShareDecimal, setLandShareDecimal] = useState<number>(initialData?.landShareDecimal || 0);
 
   // Construction Details
-  const [floorArea, setFloorArea] = useState<number>(0);
-  const [plinthAreaRate, setPlinthAreaRate] = useState<number>(0);
-  const [costIndex, setCostIndex] = useState<number>(0);
-  const [specificationIncreasePercent, setSpecificationIncreasePercent] = useState<number>(0);
+  const [floorArea, setFloorArea] = useState<number>(initialData?.floorArea || 0);
+  const [plinthAreaRate, setPlinthAreaRate] = useState<number>(initialData?.plinthAreaRate || 0);
+  const [costIndex, setCostIndex] = useState<number>(initialData?.costIndex || 0);
+  const [specificationIncreasePercent, setSpecificationIncreasePercent] = useState<number>(initialData?.specificationIncreasePercent || 0);
 
   // Depreciation
-  const [yearOfConstruction, setYearOfConstruction] = useState('');
-  const [estimatedLifeYears, setEstimatedLifeYears] = useState<number>(0);
-  const [ageAtValuation, setAgeAtValuation] = useState<number>(0);
+  const [yearOfConstruction, setYearOfConstruction] = useState(initialData?.yearOfConstruction || '');
+  const [estimatedLifeYears, setEstimatedLifeYears] = useState<number>(initialData?.estimatedLifeYears || 0);
+  const [ageAtValuation, setAgeAtValuation] = useState<number>(initialData?.ageAtValuation || 0);
 
   // Building Specifications
-  const [roof, setRoof] = useState('');
-  const [brickwork, setBrickwork] = useState('');
-  const [flooring, setFlooring] = useState('');
-  const [tiles, setTiles] = useState('');
-  const [electrical, setElectrical] = useState('');
-  const [electricalSwitches, setElectricalSwitches] = useState('');
-  const [sanitaryFixtures, setSanitaryFixtures] = useState('');
-  const [woodwork, setWoodwork] = useState('');
-  const [exterior, setExterior] = useState('');
+  const [roof, setRoof] = useState(initialData?.roof || '');
+  const [brickwork, setBrickwork] = useState(initialData?.brickwork || '');
+  const [flooring, setFlooring] = useState(initialData?.flooring || '');
+  const [tiles, setTiles] = useState(initialData?.tiles || '');
+  const [electrical, setElectrical] = useState(initialData?.electrical || '');
+  const [electricalSwitches, setElectricalSwitches] = useState(initialData?.electricalSwitches || '');
+  const [sanitaryFixtures, setSanitaryFixtures] = useState(initialData?.sanitaryFixtures || '');
+  const [woodwork, setWoodwork] = useState(initialData?.woodwork || '');
+  const [exterior, setExterior] = useState(initialData?.exterior || '');
 
   // Technical Details
-  const [floorHeight, setFloorHeight] = useState('');
-  const [constructionType, setConstructionType] = useState('');
-  const [foundationType, setFoundationType] = useState('');
-  const [partitions, setPartitions] = useState('');
-  const [roofingTerracing, setRoofingTerracing] = useState('');
-  const [architecturalFeatures, setArchitecturalFeatures] = useState('');
-  const [noOfWaterClosets, setNoOfWaterClosets] = useState<number>(0);
-  const [noOfSinks, setNoOfSinks] = useState<number>(0);
-  const [sanitaryFittingsClass, setSanitaryFittingsClass] = useState('');
-  const [compoundWallHeight, setCompoundWallHeight] = useState('');
-  const [compoundWallType, setCompoundWallType] = useState('');
-  const [overheadTank, setOverheadTank] = useState('');
-  const [noOfPumps, setNoOfPumps] = useState('');
-  const [sewerDisposal, setSewerDisposal] = useState('');
+  const [floorHeight, setFloorHeight] = useState(initialData?.floorHeight || '');
+  const [constructionType, setConstructionType] = useState(initialData?.constructionType || '');
+  const [foundationType, setFoundationType] = useState(initialData?.foundationType || '');
+  const [partitions, setPartitions] = useState(initialData?.partitions || '');
+  const [roofingTerracing, setRoofingTerracing] = useState(initialData?.roofingTerracing || '');
+  const [architecturalFeatures, setArchitecturalFeatures] = useState(initialData?.architecturalFeatures || '');
+  const [noOfWaterClosets, setNoOfWaterClosets] = useState<number>(initialData?.noOfWaterClosets || 0);
+  const [noOfSinks, setNoOfSinks] = useState<number>(initialData?.noOfSinks || 0);
+  const [sanitaryFittingsClass, setSanitaryFittingsClass] = useState(initialData?.sanitaryFittingsClass || '');
+  const [compoundWallHeight, setCompoundWallHeight] = useState(initialData?.compoundWallHeight || '');
+  const [compoundWallType, setCompoundWallType] = useState(initialData?.compoundWallType || '');
+  const [overheadTank, setOverheadTank] = useState(initialData?.overheadTank || '');
+  const [noOfPumps, setNoOfPumps] = useState(initialData?.noOfPumps || '');
+  const [sewerDisposal, setSewerDisposal] = useState(initialData?.sewerDisposal || '');
 
   // General Details
-  const [propertyType, setPropertyType] = useState('');
-  const [localityClass, setLocalityClass] = useState('');
-  const [plotShape, setPlotShape] = useState('');
-  const [isLeasehold, setIsLeasehold] = useState(false);
-  const [buildingOccupancy, setBuildingOccupancy] = useState('');
+  const [propertyType, setPropertyType] = useState(initialData?.propertyType || '');
+  const [localityClass, setLocalityClass] = useState(initialData?.localityClass || '');
+  const [plotShape, setPlotShape] = useState(initialData?.plotShape || '');
+  const [isLeasehold, setIsLeasehold] = useState(initialData?.isLeasehold || false);
+  const [buildingOccupancy, setBuildingOccupancy] = useState(initialData?.buildingOccupancy || '');
 
   // Photos
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
   const [photoPage, setPhotoPage] = useState(0);
   const PHOTOS_PER_PAGE = 6;
+
+  // Sync form data changes to parent for auto-save
+  useEffect(() => {
+    if (onDataChange) {
+      onDataChange({
+        propertyNo,
+        block,
+        area,
+        city,
+        northBoundary,
+        southBoundary,
+        eastBoundary,
+        westBoundary,
+        originalOwner,
+        originalOwnerYear,
+        currentOwners,
+        referenceNo,
+        valuationDate,
+        valuationForDate,
+        purpose,
+        plotArea,
+        landRatePerSqm,
+        landRateSource,
+        locationIncreasePercent,
+        landShareFraction,
+        landShareDecimal,
+        floorArea,
+        plinthAreaRate,
+        costIndex,
+        specificationIncreasePercent,
+        yearOfConstruction,
+        estimatedLifeYears,
+        ageAtValuation,
+        roof,
+        brickwork,
+        flooring,
+        tiles,
+        electrical,
+        electricalSwitches,
+        sanitaryFixtures,
+        woodwork,
+        exterior,
+        floorHeight,
+        constructionType,
+        foundationType,
+        partitions,
+        roofingTerracing,
+        architecturalFeatures,
+        noOfWaterClosets,
+        noOfSinks,
+        sanitaryFittingsClass,
+        compoundWallHeight,
+        compoundWallType,
+        overheadTank,
+        noOfPumps,
+        sewerDisposal,
+        propertyType,
+        localityClass,
+        plotShape,
+        isLeasehold,
+        buildingOccupancy,
+        photos,
+      });
+    }
+  }, [
+    propertyNo, block, area, city,
+    northBoundary, southBoundary, eastBoundary, westBoundary,
+    originalOwner, originalOwnerYear, currentOwners,
+    referenceNo, valuationDate, valuationForDate, purpose,
+    plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
+    floorArea, plinthAreaRate, costIndex, specificationIncreasePercent,
+    yearOfConstruction, estimatedLifeYears, ageAtValuation,
+    roof, brickwork, flooring, tiles, electrical, electricalSwitches, sanitaryFixtures, woodwork, exterior,
+    floorHeight, constructionType, foundationType, partitions, roofingTerracing, architecturalFeatures,
+    noOfWaterClosets, noOfSinks, sanitaryFittingsClass, compoundWallHeight, compoundWallType,
+    overheadTank, noOfPumps, sewerDisposal,
+    propertyType, localityClass, plotShape, isLeasehold, buildingOccupancy,
+    photos, onDataChange
+  ]);
 
   // Crop image to square
   const cropToSquare = (imageSrc: string): Promise<string> => {

@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Dashboard from '@/components/Dashboard';
 import ValuationForm from '@/components/ValuationForm';
 import { ValuationReport } from '@/types/valuation';
+import { ReportFormData, DEFAULT_FORM_DATA } from '@/types/report';
+import { getReport, saveReport, createNewReport, updateReportStatus } from '@/utils/storage';
 
 const steps = [
   { id: 0, name: 'Property', fullName: 'Property Details', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -14,15 +17,88 @@ const steps = [
 ];
 
 export default function Home() {
+  const [view, setView] = useState<'dashboard' | 'editor'>('dashboard');
+  const [currentReportId, setCurrentReportId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<ReportFormData>(DEFAULT_FORM_DATA);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<{ pdf?: string; docx?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Auto-save every 5 seconds when in editor
+  useEffect(() => {
+    if (view !== 'editor' || !currentReportId) return;
+
+    const saveInterval = setInterval(() => {
+      const report = getReport(currentReportId);
+      if (report) {
+        report.formData = formData;
+        saveReport(report);
+        setLastSaved(new Date());
+      }
+    }, 5000);
+
+    return () => clearInterval(saveInterval);
+  }, [view, currentReportId, formData]);
+
+  // Save when leaving editor
+  const handleBackToDashboard = useCallback(() => {
+    if (currentReportId) {
+      const report = getReport(currentReportId);
+      if (report) {
+        report.formData = formData;
+        saveReport(report);
+      }
+    }
+    setView('dashboard');
+    setCurrentReportId(null);
+    setFormData(DEFAULT_FORM_DATA);
+    setActiveStep(0);
+    setGeneratedFiles(null);
+    setError(null);
+  }, [currentReportId, formData]);
+
+  const handleOpenReport = (reportId: string) => {
+    let report = getReport(reportId);
+
+    // If report doesn't exist (new report), create it
+    if (!report) {
+      report = createNewReport();
+      report.metadata.id = reportId;
+      saveReport(report);
+    }
+
+    setCurrentReportId(reportId);
+    setFormData(report.formData);
+    setView('editor');
+    setActiveStep(0);
+  };
+
+  const handleCreateReport = () => {
+    const newReport = createNewReport();
+    saveReport(newReport);
+    handleOpenReport(newReport.metadata.id);
+  };
+
+  // Update form data handler - passed to ValuationForm
+  const handleFormDataChange = useCallback((newData: Partial<ReportFormData>) => {
+    setFormData(prev => ({ ...prev, ...newData }));
+  }, []);
 
   const handleGenerate = async (data: ValuationReport) => {
     setIsGenerating(true);
     setError(null);
     setGeneratedFiles(null);
+
+    // Save before generating
+    if (currentReportId) {
+      const report = getReport(currentReportId);
+      if (report) {
+        report.formData = formData;
+        saveReport(report);
+      }
+    }
 
     try {
       const response = await fetch('/api/generate', {
@@ -38,6 +114,11 @@ export default function Home() {
 
       const result = await response.json();
       setGeneratedFiles(result);
+
+      // Mark report as concluded after successful generation
+      if (currentReportId) {
+        updateReportStatus(currentReportId, 'concluded');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -61,11 +142,31 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
+  // Show Dashboard
+  if (view === 'dashboard') {
+    return (
+      <Dashboard
+        onOpenReport={handleOpenReport}
+        onCreateReport={handleCreateReport}
+      />
+    );
+  }
+
+  // Show Editor
   return (
     <div className="flex min-h-screen bg-surface-50 text-text-primary">
       {/* Sidebar */}
       <aside className="w-80 border-r border-surface-200 bg-surface-100 flex flex-col fixed inset-y-0 z-50 h-screen hidden lg:flex">
         <div className="p-6 border-b border-surface-200">
+          <button
+            onClick={handleBackToDashboard}
+            className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-4"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span className="text-sm font-medium">Back to Dashboard</span>
+          </button>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand to-brand-dark flex items-center justify-center text-white shadow-lg shadow-brand/20">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -74,7 +175,9 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-text-primary tracking-tight">Valuation Report</h1>
-              <p className="text-xs text-text-tertiary">Batra & Associates</p>
+              <p className="text-xs text-text-tertiary">
+                {lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Auto-saving...'}
+              </p>
             </div>
           </div>
         </div>
@@ -86,8 +189,8 @@ export default function Home() {
               key={step.id}
               onClick={() => setActiveStep(step.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                activeStep === step.id 
-                  ? 'bg-surface-200 text-text-primary' 
+                activeStep === step.id
+                  ? 'bg-surface-200 text-text-primary'
                   : 'text-text-secondary hover:bg-surface-200/50 hover:text-text-primary'
               }`}
             >
@@ -119,15 +222,6 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   Download PDF
-                </button>
-                <button
-                  onClick={() => downloadFile(generatedFiles.docx!, 'Valuation_Report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-100 border border-surface-200 text-xs font-medium text-text-secondary hover:border-blue-500/30 hover:text-blue-400 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  Download DOCX
                 </button>
               </div>
             </div>
@@ -180,25 +274,28 @@ export default function Home() {
           </div>
         </header>
 
-         {/* Mobile Header (Only visible on small screens) */}
+         {/* Mobile Header */}
          <div className="lg:hidden p-4 border-b border-surface-200 bg-surface-100/95 backdrop-blur-xl sticky top-0 z-40">
            <div className="flex items-center justify-between">
-             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-lg bg-brand flex items-center justify-center text-white">
-                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                 </svg>
-               </div>
-               <div>
-                  <h1 className="text-base font-bold text-text-primary">{steps[activeStep].fullName}</h1>
-                  <p className="text-xs text-text-tertiary">Step {activeStep + 1} of {steps.length}</p>
-               </div>
+             <button
+               onClick={handleBackToDashboard}
+               className="flex items-center gap-2 text-text-secondary"
+             >
+               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+               </svg>
+             </button>
+             <div className="text-center">
+                <h1 className="text-base font-bold text-text-primary">{steps[activeStep].fullName}</h1>
+                <p className="text-xs text-text-tertiary">Step {activeStep + 1} of {steps.length}</p>
              </div>
-             {generatedFiles && (
+             {generatedFiles ? (
                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                  Ready
                </span>
+             ) : (
+               <div className="w-10" /> // Spacer
              )}
            </div>
          </div>
@@ -235,14 +332,6 @@ export default function Home() {
                >
                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                 </svg>
-               </button>
-               <button
-                 onClick={() => downloadFile(generatedFiles.docx!, 'Valuation_Report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')}
-                 className="w-12 h-12 rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/30 flex items-center justify-center"
-               >
-                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M9 21h6a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0010.586 3H9a2 2 0 00-2 2v14a2 2 0 002 2z" />
                  </svg>
                </button>
              </div>
@@ -283,14 +372,16 @@ export default function Home() {
               </div>
             </div>
           )}
-          
+
           <ValuationForm
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
             activeSection={activeStep}
             setActiveSection={setActiveStep}
+            initialData={formData}
+            onDataChange={handleFormDataChange}
           />
-          
+
           {/* Desktop Navigation Footer */}
           <div className="nav-footer hidden lg:flex">
             <button
@@ -329,7 +420,7 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Mobile Swipe Navigation Hint */}
+          {/* Mobile Swipe Navigation */}
           <div className="lg:hidden flex justify-center gap-4 py-4">
             <button
               type="button"
