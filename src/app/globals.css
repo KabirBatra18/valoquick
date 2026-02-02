@@ -166,6 +166,189 @@
     background-size: 1.25rem;
   }
 
+  /* ========== INPUT DESIGN VARIANTS ========== */
+
+  /* Design 1: Minimal Clean - Subtle, refined borders */
+  [data-input-design="minimal"] .form-input,
+  [data-input-design="minimal"] .form-select {
+    @apply bg-transparent border-b border-t-0 border-l-0 border-r-0 rounded-none px-1 py-3;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  [data-input-design="minimal"] .form-input:focus,
+  [data-input-design="minimal"] .form-select:focus {
+    @apply bg-transparent;
+    border-color: #6366f1;
+    box-shadow: none;
+  }
+  [data-theme="light"][data-input-design="minimal"] .form-input,
+  [data-theme="light"][data-input-design="minimal"] .form-select {
+    @apply bg-transparent;
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+  [data-theme="light"][data-input-design="minimal"] .form-input:focus,
+  [data-theme="light"][data-input-design="minimal"] .form-select:focus {
+    border-color: #4f46e5;
+  }
+
+  /* Design 2: Rounded Pill - Soft, friendly appearance */
+  [data-input-design="pill"] .form-input,
+  [data-input-design="pill"] .form-select {
+    @apply rounded-full px-6 py-3 border-2;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  [data-input-design="pill"] .form-input:focus,
+  [data-input-design="pill"] .form-select:focus {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: #6366f1;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+  [data-theme="light"][data-input-design="pill"] .form-input,
+  [data-theme="light"][data-input-design="pill"] .form-select {
+    background: #f5f5f5;
+    border-color: #e5e5e5;
+  }
+  [data-theme="light"][data-input-design="pill"] .form-input:focus,
+  [data-theme="light"][data-input-design="pill"] .form-select:focus {
+    background: rgba(79, 70, 229, 0.05);
+    border-color: #4f46e5;
+  }
+
+  /* Design 3: Outlined Bold - Strong, professional borders */
+  [data-input-design="outlined"] .form-input,
+  [data-input-design="outlined"] .form-select {
+    @apply rounded-lg px-4 py-3 border-2 bg-transparent;
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  [data-input-design="outlined"] .form-input:hover,
+  [data-input-design="outlined"] .form-select:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  [data-input-design="outlined"] .form-input:focus,
+  [data-input-design="outlined"] .form-select:focus {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.05);
+    box-shadow: none;
+  }
+  [data-theme="light"][data-input-design="outlined"] .form-input,
+  [data-theme="light"][data-input-design="outlined"] .form-select {
+    border-color: #d4d4d4;
+    background: transparent;
+  }
+  [data-theme="light"][data-input-design="outlined"] .form-input:focus,
+  [data-theme="light"][data-input-design="outlined"] .form-select:focus {
+    border-color: #4f46e5;
+    background: rgba(79, 70, 229, 0.03);
+  }
+
+  /* Design 4: Neumorphic - Soft 3D pressed effect */
+  [data-input-design="neumorphic"] .form-input,
+  [data-input-design="neumorphic"] .form-select {
+    @apply rounded-2xl px-5 py-3.5 border-0;
+    background: #1a1a1f;
+    box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.05);
+  }
+  [data-input-design="neumorphic"] .form-input:focus,
+  [data-input-design="neumorphic"] .form-select:focus {
+    box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.05), 0 0 0 2px #6366f1;
+  }
+  [data-theme="light"][data-input-design="neumorphic"] .form-input,
+  [data-theme="light"][data-input-design="neumorphic"] .form-select {
+    background: #f0f0f0;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.1), inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+  }
+  [data-theme="light"][data-input-design="neumorphic"] .form-input:focus,
+  [data-theme="light"][data-input-design="neumorphic"] .form-select:focus {
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.1), inset -3px -3px 6px rgba(255, 255, 255, 0.8), 0 0 0 2px #4f46e5;
+  }
+
+  /* Design 5: Floating Glass - Elevated with subtle glow */
+  [data-input-design="floating"] .form-input,
+  [data-input-design="floating"] .form-select {
+    @apply rounded-xl px-4 py-3 border;
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  [data-input-design="floating"] .form-input:focus,
+  [data-input-design="floating"] .form-select:focus {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  [data-theme="light"][data-input-design="floating"] .form-input,
+  [data-theme="light"][data-input-design="floating"] .form-select {
+    background: white;
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+  [data-theme="light"][data-input-design="floating"] .form-input:focus,
+  [data-theme="light"][data-input-design="floating"] .form-select:focus {
+    border-color: rgba(79, 70, 229, 0.3);
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Design 6: Sharp Modern - Crisp edges, bold contrast */
+  [data-input-design="sharp"] .form-input,
+  [data-input-design="sharp"] .form-select {
+    @apply rounded-none px-4 py-3 border-2;
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  [data-input-design="sharp"] .form-input:focus,
+  [data-input-design="sharp"] .form-select:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: #6366f1;
+    box-shadow: 4px 4px 0 #6366f1;
+  }
+  [data-theme="light"][data-input-design="sharp"] .form-input,
+  [data-theme="light"][data-input-design="sharp"] .form-select {
+    background: white;
+    border-color: #171717;
+  }
+  [data-theme="light"][data-input-design="sharp"] .form-input:focus,
+  [data-theme="light"][data-input-design="sharp"] .form-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 4px 4px 0 #4f46e5;
+  }
+
+  /* Design 7: Gradient Border - Colorful accent borders */
+  [data-input-design="gradient"] .form-input,
+  [data-input-design="gradient"] .form-select {
+    @apply rounded-xl px-4 py-3 border-2;
+    background: rgba(15, 15, 20, 0.8);
+    border-color: transparent;
+    background-clip: padding-box;
+    position: relative;
+  }
+  [data-input-design="gradient"] .form-group {
+    position: relative;
+  }
+  [data-input-design="gradient"] .form-input,
+  [data-input-design="gradient"] .form-select {
+    border: 2px solid rgba(99, 102, 241, 0.3);
+  }
+  [data-input-design="gradient"] .form-input:focus,
+  [data-input-design="gradient"] .form-select:focus {
+    border-color: transparent;
+    background: linear-gradient(#0f1015, #0f1015) padding-box, linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4) border-box;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+  [data-theme="light"][data-input-design="gradient"] .form-input,
+  [data-theme="light"][data-input-design="gradient"] .form-select {
+    background: white;
+    border: 2px solid rgba(79, 70, 229, 0.2);
+  }
+  [data-theme="light"][data-input-design="gradient"] .form-input:focus,
+  [data-theme="light"][data-input-design="gradient"] .form-select:focus {
+    background: linear-gradient(white, white) padding-box, linear-gradient(135deg, #4f46e5, #7c3aed, #0891b2) border-box;
+    border-color: transparent;
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.2);
+  }
+
+  /* ========== END INPUT DESIGN VARIANTS ========== */
+
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer border border-transparent;
     transition: all 0.2s ease;
