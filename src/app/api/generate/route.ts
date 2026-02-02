@@ -289,7 +289,7 @@ function generateHTML(data: ValuationReport): string {
 
     <div class="owners">
       <p><strong>OWNERS- IN ${originalOwnerYear} ${originalOwner}</strong></p>
-      <p style="margin-left: 40px;"><strong>CURRENT OWNERS-${currentOwnersShort}</strong></p>
+      <p><strong>CURRENT OWNERS-${currentOwnersShort}</strong></p>
     </div>
 
     <p><strong>ON BEHALF OF OWNERS</strong></p>
@@ -335,7 +335,7 @@ function generateHTML(data: ValuationReport): string {
 
     <div class="owners">
       <p><strong>OWNERS- IN ${originalOwnerYear}-${originalOwner}</strong></p>
-      <p style="margin-left: 40px;"><strong>CURRENT OWNERS-${currentOwnersShort}</strong></p>
+      <p><strong>CURRENT OWNERS-${currentOwnersShort}</strong></p>
     </div>
 
     <div class="ref-date">
