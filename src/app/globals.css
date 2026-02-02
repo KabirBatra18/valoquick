@@ -442,7 +442,7 @@
   }
 
   .form-label {
-    @apply text-[10px] mb-1.5;
+    @apply text-xs mb-1.5;
   }
 
   .form-group {
