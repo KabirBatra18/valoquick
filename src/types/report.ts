@@ -99,6 +99,12 @@ export interface ReportFormData {
 
   // Photos
   photos: string[];
+
+  // Location
+  locationLat: number | null;
+  locationLng: number | null;
+  locationCapturedAt: string;
+  locationMapUrl: string;
 }
 
 // Default empty form data
@@ -165,6 +171,10 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   buildingOccupancy: '',
   civicAmenities: [],
   photos: [],
+  locationLat: null,
+  locationLng: null,
+  locationCapturedAt: '',
+  locationMapUrl: '',
 };
 
 // Calculate completion percentage

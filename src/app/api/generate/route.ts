@@ -97,6 +97,7 @@ function generateHTML(data: ValuationReport): string {
     buildingSpecs,
     calculatedValues,
     photos,
+    location,
   } = data;
 
   const currentOwnersText = currentOwners.map(o => `${o.name} -${o.share} Share`).join('<br>');
@@ -699,6 +700,58 @@ function generateHTML(data: ValuationReport): string {
 
     return photoPages;
   })()}
+
+  <!-- Location Map Page -->
+  ${location ? `
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <h1>${companyName}</h1>
+        <p>${companySubtitle}</p>
+        <p>${companyAddress}</p>
+        <p>${companyContact} ${companyEmail}</p>
+      </div>
+      <div class="header-right">
+        <p><strong>${valuerName}</strong></p>
+        <p>${valuerQualification}</p>
+        <p>${valuerDesignation}</p>
+        <p>${valuerCategoryNo}</p>
+      </div>
+    </div>
+
+    <p class="section-title" style="text-align: center; text-decoration: none;">LOCATION MAP</p>
+    <p style="text-align: center; margin-bottom: 20px; font-size: 10pt;">
+      Property situated at ${fullAddressUpper}
+    </p>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <img src="${location.mapUrl}" alt="Property Location Map" style="max-width: 100%; height: auto; border: 2px solid #333; border-radius: 8px;" />
+    </div>
+
+    <table style="width: 60%; margin: 30px auto;">
+      <tr>
+        <td style="text-align: center; padding: 15px; background-color: #f5f5f5;">
+          <strong>Latitude</strong><br>
+          <span style="font-family: monospace; font-size: 14pt;">${location.lat.toFixed(6)}° N</span>
+        </td>
+        <td style="text-align: center; padding: 15px; background-color: #f5f5f5;">
+          <strong>Longitude</strong><br>
+          <span style="font-family: monospace; font-size: 14pt;">${location.lng.toFixed(6)}° E</span>
+        </td>
+      </tr>
+    </table>
+
+    <p style="text-align: center; font-size: 10pt; color: #666; margin-top: 20px;">
+      Location captured on ${location.capturedAt}
+    </p>
+
+    <div style="margin-top: 40px; text-align: center;">
+      <p style="font-size: 9pt; color: #888;">
+        Map data © Google Maps
+      </p>
+    </div>
+  </div>
+  ` : ''}
 
 </body>
 </html>

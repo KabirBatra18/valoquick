@@ -895,6 +895,70 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [photoPage, setPhotoPage] = useState(0);
   const PHOTOS_PER_PAGE = 6;
 
+  // Location
+  const [locationLat, setLocationLat] = useState<number | null>(initialData?.locationLat || null);
+  const [locationLng, setLocationLng] = useState<number | null>(initialData?.locationLng || null);
+  const [locationCapturedAt, setLocationCapturedAt] = useState(initialData?.locationCapturedAt || '');
+  const [locationMapUrl, setLocationMapUrl] = useState(initialData?.locationMapUrl || '');
+  const [isCapturingLocation, setIsCapturingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyA8HFiUeXIbsStOMmjDYKyWc8EyNww5G_s';
+
+  const captureLocation = () => {
+    setIsCapturingLocation(true);
+    setLocationError(null);
+
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      setIsCapturingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const now = new Date();
+        const capturedAt = `${now.toLocaleDateString('en-IN')} at ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+
+        // Generate Google Maps Static API URL
+        const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=17&size=600x400&maptype=roadmap&markers=color:red%7C${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
+
+        setLocationLat(lat);
+        setLocationLng(lng);
+        setLocationCapturedAt(capturedAt);
+        setLocationMapUrl(mapUrl);
+        setIsCapturingLocation(false);
+      },
+      (error) => {
+        let errorMessage = 'Failed to get location';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied. Please enable location access.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+        setLocationError(errorMessage);
+        setIsCapturingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const clearLocation = () => {
+    setLocationLat(null);
+    setLocationLng(null);
+    setLocationCapturedAt('');
+    setLocationMapUrl('');
+    setLocationError(null);
+  };
+
   // Sync form data changes to parent for auto-save
   useEffect(() => {
     if (onDataChange) {
@@ -961,6 +1025,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         buildingOccupancy,
         civicAmenities,
         photos,
+        locationLat,
+        locationLng,
+        locationCapturedAt,
+        locationMapUrl,
       });
     }
   }, [
@@ -977,7 +1045,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     noOfWaterClosets, noOfSinks, sanitaryFittingsClass, compoundWallHeight, compoundWallType,
     overheadTank, noOfPumps, sewerDisposal,
     propertyType, localityClass, plotShape, isLeasehold, buildingOccupancy, civicAmenities,
-    photos, onDataChange
+    photos, locationLat, locationLng, locationCapturedAt, locationMapUrl, onDataChange
   ]);
 
   // Crop image to square
@@ -1101,6 +1169,12 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       },
       buildingSpecs: { roof, brickwork, flooring, tiles, electrical, electricalSwitches, sanitaryFixtures, woodwork, exterior },
       calculatedValues, photos,
+      location: locationLat && locationLng ? {
+        lat: locationLat,
+        lng: locationLng,
+        capturedAt: locationCapturedAt,
+        mapUrl: locationMapUrl,
+      } : undefined,
     };
     onGenerate(reportData);
   };
@@ -1640,6 +1714,97 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 <p className="text-[10px] lg:text-xs text-text-tertiary text-center mt-3 lg:mt-4">
                   Photos auto-cropped to square. 6 per page in report.
                 </p>
+              </div>
+            )}
+          </div>
+
+          {/* Location Capture */}
+          <div className="glass-card">
+            <h3 className="glass-card-title">Property Location</h3>
+            <p className="text-xs lg:text-sm text-text-tertiary mb-3 lg:mb-4">
+              Capture GPS coordinates when at the property for the location map in the report
+            </p>
+
+            {!locationLat ? (
+              <div className="text-center py-6 lg:py-8">
+                <button
+                  type="button"
+                  onClick={captureLocation}
+                  disabled={isCapturingLocation}
+                  className="inline-flex items-center gap-2 lg:gap-3 px-5 lg:px-6 py-3 lg:py-4 bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-brand/40 rounded-xl lg:rounded-2xl hover:border-brand hover:from-brand/30 hover:to-brand/10 active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+                >
+                  {isCapturingLocation ? (
+                    <>
+                      <svg className="animate-spin w-5 h-5 lg:w-6 lg:h-6 text-brand" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span className="text-sm lg:text-base font-medium text-text-primary">Getting Location...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 lg:w-6 lg:h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm lg:text-base font-medium text-text-primary">Capture Current Location</span>
+                    </>
+                  )}
+                </button>
+
+                {locationError && (
+                  <p className="text-xs lg:text-sm text-red-400 mt-3">{locationError}</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Map Preview */}
+                <div className="relative rounded-xl overflow-hidden border-2 border-surface-200">
+                  <img
+                    src={locationMapUrl}
+                    alt="Property Location Map"
+                    className="w-full h-48 lg:h-64 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={clearLocation}
+                    className="absolute top-2 right-2 p-2 rounded-lg bg-black/50 text-white hover:bg-red-500 transition-all"
+                    title="Remove location"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Coordinates */}
+                <div className="grid grid-cols-2 gap-3 lg:gap-4">
+                  <div className="p-3 lg:p-4 bg-surface-100 rounded-lg lg:rounded-xl border border-surface-200">
+                    <p className="text-[10px] lg:text-xs text-text-tertiary uppercase tracking-wide mb-1">Latitude</p>
+                    <p className="text-sm lg:text-base font-mono font-medium text-text-primary">{locationLat?.toFixed(6)}° N</p>
+                  </div>
+                  <div className="p-3 lg:p-4 bg-surface-100 rounded-lg lg:rounded-xl border border-surface-200">
+                    <p className="text-[10px] lg:text-xs text-text-tertiary uppercase tracking-wide mb-1">Longitude</p>
+                    <p className="text-sm lg:text-base font-mono font-medium text-text-primary">{locationLng?.toFixed(6)}° E</p>
+                  </div>
+                </div>
+
+                <p className="text-[10px] lg:text-xs text-text-tertiary text-center">
+                  Captured on {locationCapturedAt}
+                </p>
+
+                {/* Recapture button */}
+                <button
+                  type="button"
+                  onClick={captureLocation}
+                  disabled={isCapturingLocation}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface-200 text-text-secondary hover:bg-surface-300 transition-colors text-xs lg:text-sm font-medium disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Recapture Location
+                </button>
               </div>
             )}
           </div>

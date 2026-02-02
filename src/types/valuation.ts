@@ -180,6 +180,14 @@ export interface ValuationReport {
 
   // Photos
   photos: string[]; // Base64 encoded images
+
+  // Location
+  location?: {
+    lat: number;
+    lng: number;
+    capturedAt: string;
+    mapUrl: string;
+  };
 }
 
 // Default company details (fixed for Batra & Associates)
