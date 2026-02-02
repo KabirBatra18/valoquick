@@ -77,6 +77,16 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-text-tertiary;
   }
+
+  /* Checkbox styling - brand purple */
+  input[type="checkbox"] {
+    accent-color: #6366f1;
+  }
+
+  input[type="checkbox"]:checked {
+    background-color: #6366f1;
+    border-color: #6366f1;
+  }
 }
 
 @layer components {
