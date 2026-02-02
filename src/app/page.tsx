@@ -26,6 +26,14 @@ export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+  // Apply saved theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('valoquick_theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
+
   // Auto-save every 5 seconds when in editor
   useEffect(() => {
     if (view !== 'editor' || !currentReportId) return;

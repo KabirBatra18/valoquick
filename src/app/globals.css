@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
 @theme {
+  /* Brand colors - shared */
   --color-brand: #6366f1;
   --color-brand-light: #818cf8;
   --color-brand-dark: #4f46e5;
+
+  /* Dark theme (default) */
   --color-surface-50: #0f1015;
   --color-surface-100: #18181b;
   --color-surface-200: #27272a;
@@ -11,6 +14,20 @@
   --color-text-primary: #ffffff;
   --color-text-secondary: #d4d4d8;
   --color-text-tertiary: #a1a1aa;
+}
+
+/* Light theme overrides */
+[data-theme="light"] {
+  --color-brand: #4f46e5;
+  --color-brand-light: #6366f1;
+  --color-brand-dark: #4338ca;
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #ffffff;
+  --color-surface-200: #e2e8f0;
+  --color-surface-300: #cbd5e1;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748b;
 }
 
 :root {
@@ -24,10 +41,23 @@
     background-image:
       radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
       radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.05), transparent 25%);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  [data-theme="light"] body,
+  body[data-theme="light"] {
+    background-image:
+      radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.06), transparent 30%),
+      radial-gradient(circle at 85% 30%, rgba(79, 70, 229, 0.04), transparent 30%);
   }
 
   ::selection {
     background: #6366f1;
+    color: white;
+  }
+
+  [data-theme="light"] ::selection {
+    background: #4f46e5;
     color: white;
   }
 
@@ -59,6 +89,16 @@
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.05);
   }
 
+  [data-theme="light"] .glass-card {
+    @apply bg-white/90 border-slate-200;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  [data-theme="light"] .glass-card:hover {
+    border-color: rgba(79, 70, 229, 0.4);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
   .glass-card-title {
     @apply text-sm font-semibold text-text-primary uppercase tracking-wider mb-6 flex items-center gap-3;
   }
@@ -70,6 +110,11 @@
     background: #6366f1;
     border-radius: 4px;
     box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+  }
+
+  [data-theme="light"] .glass-card-title::before {
+    background: #4f46e5;
+    box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
   }
 
   .form-group {
@@ -96,6 +141,22 @@
   .form-select:focus {
     @apply border-brand bg-surface-100;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+  }
+
+  [data-theme="light"] .form-input,
+  [data-theme="light"] .form-select {
+    @apply bg-white border-slate-200;
+  }
+
+  [data-theme="light"] .form-input:hover,
+  [data-theme="light"] .form-select:hover {
+    @apply border-slate-300 bg-slate-50;
+  }
+
+  [data-theme="light"] .form-input:focus,
+  [data-theme="light"] .form-select:focus {
+    @apply border-brand bg-white;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
   }
 
   .form-select {
@@ -128,12 +189,28 @@
     box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
   }
 
+  [data-theme="light"] .btn-primary {
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  }
+
+  [data-theme="light"] .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  }
+
   .btn-secondary {
     @apply bg-surface-200 text-text-primary border-surface-300;
   }
 
   .btn-secondary:hover:not(:disabled) {
     @apply bg-surface-300 border-text-tertiary;
+  }
+
+  [data-theme="light"] .btn-secondary {
+    @apply bg-white border-slate-200 text-slate-700;
+  }
+
+  [data-theme="light"] .btn-secondary:hover:not(:disabled) {
+    @apply bg-slate-50 border-slate-300;
   }
 
   .btn-ghost {
@@ -176,6 +253,15 @@
   .dropzone.active {
     @apply border-brand;
     background: rgba(99, 102, 241, 0.1);
+  }
+
+  [data-theme="light"] .dropzone {
+    @apply border-slate-300 bg-slate-50/50;
+  }
+
+  [data-theme="light"] .dropzone:hover {
+    @apply border-brand;
+    background: rgba(79, 70, 229, 0.04);
   }
 
   .dropzone-icon {
@@ -237,6 +323,11 @@
     @apply relative mt-6 border rounded-2xl p-6 overflow-hidden;
     background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.05));
     border-color: rgba(99, 102, 241, 0.2);
+  }
+
+  [data-theme="light"] .calc-preview {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.06), rgba(16, 185, 129, 0.04));
+    border-color: rgba(79, 70, 229, 0.15);
   }
 
   .calc-label {

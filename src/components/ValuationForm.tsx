@@ -54,11 +54,27 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputWrapperRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
+    // Check initial theme
+    const currentTheme = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | null;
+    if (currentTheme) setTheme(currentTheme);
+
+    // Watch for theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          const newTheme = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | null;
+          setTheme(newTheme || 'dark');
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
   }, []);
 
   // Update position when dropdown opens or window scrolls/resizes
@@ -115,7 +131,11 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
         width: position.width,
         zIndex: 99999,
       }}
-      className="bg-[rgb(24,24,27)] border border-[rgba(255,255,255,0.2)] rounded-xl shadow-2xl max-h-60 overflow-y-auto"
+      className={`rounded-xl shadow-2xl max-h-60 overflow-y-auto ${
+        theme === 'light'
+          ? 'bg-white border border-slate-200'
+          : 'bg-[rgb(24,24,27)] border border-[rgba(255,255,255,0.2)]'
+      }`}
     >
       {filteredOptions.map(opt => (
         <button
@@ -125,8 +145,14 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
             onChange(opt.value);
             setIsOpen(false);
           }}
-          className={`w-full px-4 py-3 text-left text-sm hover:bg-[rgba(255,255,255,0.12)] transition-colors first:rounded-t-xl last:rounded-b-xl ${
-            value === opt.value ? 'bg-[rgba(99,102,241,0.25)] text-white font-medium' : 'text-[rgba(255,255,255,0.95)]'
+          className={`w-full px-4 py-3 text-left text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
+            theme === 'light'
+              ? value === opt.value
+                ? 'bg-indigo-50 text-indigo-700 font-medium'
+                : 'text-slate-700 hover:bg-slate-50'
+              : value === opt.value
+                ? 'bg-[rgba(99,102,241,0.25)] text-white font-medium'
+                : 'text-[rgba(255,255,255,0.95)] hover:bg-[rgba(255,255,255,0.12)]'
           }`}
         >
           {opt.label}
@@ -151,11 +177,17 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="px-4 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] border-l-0 rounded-r-xl hover:bg-[rgba(255,255,255,0.18)] transition-all duration-200 flex items-center justify-center min-w-[48px]"
+            className={`px-4 border-l-0 rounded-r-xl transition-all duration-200 flex items-center justify-center min-w-[48px] ${
+              theme === 'light'
+                ? 'bg-slate-100 border border-slate-200 hover:bg-slate-200'
+                : 'bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.18)]'
+            }`}
             title="Show options"
           >
             <svg
-              className={`w-5 h-5 text-[rgba(255,255,255,0.9)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
+                theme === 'light' ? 'text-slate-500' : 'text-[rgba(255,255,255,0.9)]'
+              }`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
