@@ -115,7 +115,7 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
         width: position.width,
         zIndex: 99999,
       }}
-      className="bg-[rgb(30,30,35)] border border-[rgba(255,255,255,0.15)] rounded-xl shadow-2xl max-h-60 overflow-y-auto"
+      className="bg-[rgb(24,24,27)] border border-[rgba(255,255,255,0.2)] rounded-xl shadow-2xl max-h-60 overflow-y-auto"
     >
       {filteredOptions.map(opt => (
         <button
@@ -125,8 +125,8 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
             onChange(opt.value);
             setIsOpen(false);
           }}
-          className={`w-full px-4 py-3 text-left text-sm hover:bg-[rgba(255,255,255,0.1)] transition-colors first:rounded-t-xl last:rounded-b-xl ${
-            value === opt.value ? 'bg-[rgba(99,102,241,0.2)] text-white' : 'text-[rgba(255,255,255,0.85)]'
+          className={`w-full px-4 py-3 text-left text-sm hover:bg-[rgba(255,255,255,0.12)] transition-colors first:rounded-t-xl last:rounded-b-xl ${
+            value === opt.value ? 'bg-[rgba(99,102,241,0.25)] text-white font-medium' : 'text-[rgba(255,255,255,0.95)]'
           }`}
         >
           {opt.label}
@@ -151,11 +151,11 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="px-4 bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] border-l-0 rounded-r-xl hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200 flex items-center justify-center min-w-[48px]"
+            className="px-4 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] border-l-0 rounded-r-xl hover:bg-[rgba(255,255,255,0.18)] transition-all duration-200 flex items-center justify-center min-w-[48px]"
             title="Show options"
           >
             <svg
-              className={`w-5 h-5 text-[rgba(255,255,255,0.7)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 text-[rgba(255,255,255,0.9)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
