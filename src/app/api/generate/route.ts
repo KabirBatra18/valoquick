@@ -187,6 +187,65 @@ function generateHTML(data: ValuationReport): string {
       font-size: 12pt;
       margin: 20px 0 10px 0;
       text-decoration: underline;
+      page-break-after: avoid;
+    }
+
+    /* Prevent orphaned headings and awkward page breaks */
+    h1, h2, h3, h4, h5, h6, .section-title, .part-title, strong {
+      page-break-after: avoid;
+      orphans: 3;
+      widows: 3;
+    }
+
+    table {
+      page-break-inside: avoid;
+    }
+
+    tr {
+      page-break-inside: avoid;
+    }
+
+    .keep-together {
+      page-break-inside: avoid;
+    }
+
+    .section-block {
+      page-break-inside: avoid;
+    }
+
+    .part-header {
+      page-break-after: avoid;
+      page-break-inside: avoid;
+    }
+
+    p + table, .section-title + table, strong + table {
+      page-break-before: avoid;
+    }
+
+    /* Ensure parts start cleanly */
+    .new-section {
+      page-break-before: always;
+    }
+
+    /* Keep section title with following content */
+    .section-title + table,
+    .section-title + .specs-list,
+    .section-title + .calculation-box,
+    .section-title + p {
+      page-break-before: avoid;
+    }
+
+    /* Prevent awkward breaks inside calculation boxes */
+    .calculation-box {
+      page-break-inside: avoid;
+    }
+
+    .specs-list {
+      page-break-inside: avoid;
+    }
+
+    .declaration {
+      page-break-inside: avoid;
     }
     .calculation-box {
       margin: 15px 0;
@@ -358,12 +417,11 @@ function generateHTML(data: ValuationReport): string {
       <tr><td>10</td><td>Proximity to civic amenities</td><td>${generalDetails.proximityToCivicAmenities}</td></tr>
       <tr><td>11</td><td>Means and proximity to surface communication by which the locality is served</td><td>${generalDetails.surfaceCommunication}</td></tr>
     </table>
-
-    <p class="section-title">LAND:</p>
   </div>
 
   <!-- Page 3: Land & Improvements -->
   <div class="page">
+    <p class="section-title">LAND:</p>
     <table>
       <tr><td>12</td><td>Area of land supported by documentary proof<br>shape, dimensions and physical features</td><td>Plot Area – ${formatNumber(valuationInputs.plotArea, 4)}Sqm<br>${generalDetails.plotShape}</td></tr>
       <tr><td>13</td><td>Road or lanes on which the land is abutting</td><td>North – ${boundaries.north}<br>South – ${boundaries.south}<br>East – ${boundaries.east}<br>West – ${boundaries.west}</td></tr>
@@ -421,12 +479,11 @@ function generateHTML(data: ValuationReport): string {
       <tr><td>43</td><td>For item of work done on contract, produce copies of agreement.</td><td>Not Available</td></tr>
       <tr><td>44</td><td>For item of work done by engaging labour directly, give detail rate of materials and labour supported by documentary proof.</td><td>Not available</td></tr>
     </table>
-
-    <p class="section-title">PART-II</p>
   </div>
 
   <!-- Page 5: Building Technical Details -->
   <div class="page">
+    <p class="section-title" style="text-decoration: none; margin-bottom: 5px;">PART-II</p>
     <p class="section-title">BUILDING - TECHNICAL DETAILS</p>
     <table>
       <tr><td>1</td><td>No. of floors and height of each floor</td><td>${technicalDetails.heightOfFloors}</td></tr>

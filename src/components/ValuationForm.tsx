@@ -28,6 +28,349 @@ const FormInput = ({ label, ...props }: { label: string } & React.InputHTMLAttri
   </div>
 );
 
+// Modern Date Picker Component
+const FormDatePicker = ({ label, value, onChange, required }: {
+  label: string;
+  value: string; // DD-MM-YYYY format
+  onChange: (value: string) => void;
+  required?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLDivElement>(null);
+
+  // Parse DD-MM-YYYY to Date object
+  const parseDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, day);
+      }
+    }
+    return null;
+  };
+
+  // Format Date to DD-MM-YYYY
+  const formatDate = (date: Date): string => {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const currentDate = parseDate(value) || new Date();
+  const [viewMonth, setViewMonth] = useState(currentDate.getMonth());
+  const [viewYear, setViewYear] = useState(currentDate.getFullYear());
+
+  useEffect(() => {
+    setMounted(true);
+    const currentTheme = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | null;
+    if (currentTheme) setTheme(currentTheme);
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          const newTheme = document.documentElement.getAttribute('data-theme') as 'dark' | 'light' | null;
+          setTheme(newTheme || 'dark');
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const updatePosition = () => {
+      if (isOpen && inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const calendarHeight = 340;
+
+        setPosition({
+          top: spaceBelow > calendarHeight ? rect.bottom + 4 : rect.top - calendarHeight - 4,
+          left: Math.min(rect.left, window.innerWidth - 300),
+        });
+      }
+    };
+
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        const dropdown = document.getElementById(`datepicker-${label.replace(/\s+/g, '-')}`);
+        if (dropdown && dropdown.contains(target)) return;
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [label]);
+
+  // Update view when value changes externally
+  useEffect(() => {
+    const parsed = parseDate(value);
+    if (parsed) {
+      setViewMonth(parsed.getMonth());
+      setViewYear(parsed.getFullYear());
+    }
+  }, [value]);
+
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();
+
+  const handleSelectDate = (day: number) => {
+    const newDate = new Date(viewYear, viewMonth, day);
+    onChange(formatDate(newDate));
+    setIsOpen(false);
+  };
+
+  const handlePrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    setViewMonth(today.getMonth());
+    setViewYear(today.getFullYear());
+    onChange(formatDate(today));
+    setIsOpen(false);
+  };
+
+  const selectedDate = parseDate(value);
+  const isSelectedDay = (day: number) => {
+    if (!selectedDate) return false;
+    return selectedDate.getDate() === day &&
+           selectedDate.getMonth() === viewMonth &&
+           selectedDate.getFullYear() === viewYear;
+  };
+
+  const isToday = (day: number) => {
+    const today = new Date();
+    return today.getDate() === day &&
+           today.getMonth() === viewMonth &&
+           today.getFullYear() === viewYear;
+  };
+
+  const daysInMonth = getDaysInMonth(viewMonth, viewYear);
+  const firstDay = getFirstDayOfMonth(viewMonth, viewYear);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const emptyDays = Array.from({ length: firstDay }, (_, i) => i);
+
+  const calendarContent = isOpen && mounted && (
+    <div
+      id={`datepicker-${label.replace(/\s+/g, '-')}`}
+      style={{
+        position: 'fixed',
+        top: position.top,
+        left: position.left,
+        zIndex: 99999,
+      }}
+      className={`w-[280px] rounded-2xl shadow-2xl overflow-hidden ${
+        theme === 'light'
+          ? 'bg-white border border-neutral-200'
+          : 'bg-[rgb(24,24,27)] border border-[rgba(255,255,255,0.15)]'
+      }`}
+    >
+      {/* Header */}
+      <div className={`flex items-center justify-between p-3 ${
+        theme === 'light' ? 'bg-neutral-50' : 'bg-[rgba(255,255,255,0.05)]'
+      }`}>
+        <button
+          type="button"
+          onClick={handlePrevMonth}
+          className={`p-2 rounded-lg transition-colors ${
+            theme === 'light'
+              ? 'hover:bg-neutral-200 text-neutral-600'
+              : 'hover:bg-[rgba(255,255,255,0.1)] text-white'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={viewMonth}
+            onChange={(e) => setViewMonth(parseInt(e.target.value))}
+            className={`text-sm font-medium bg-transparent border-none outline-none cursor-pointer ${
+              theme === 'light' ? 'text-neutral-800' : 'text-white'
+            }`}
+          >
+            {MONTHS.map((month, i) => (
+              <option key={month} value={i} className={theme === 'light' ? 'bg-white' : 'bg-[rgb(24,24,27)]'}>
+                {month}
+              </option>
+            ))}
+          </select>
+          <select
+            value={viewYear}
+            onChange={(e) => setViewYear(parseInt(e.target.value))}
+            className={`text-sm font-medium bg-transparent border-none outline-none cursor-pointer ${
+              theme === 'light' ? 'text-neutral-800' : 'text-white'
+            }`}
+          >
+            {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 50 + i).map((year) => (
+              <option key={year} value={year} className={theme === 'light' ? 'bg-white' : 'bg-[rgb(24,24,27)]'}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          onClick={handleNextMonth}
+          className={`p-2 rounded-lg transition-colors ${
+            theme === 'light'
+              ? 'hover:bg-neutral-200 text-neutral-600'
+              : 'hover:bg-[rgba(255,255,255,0.1)] text-white'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 px-2 py-2">
+        {DAYS.map((day) => (
+          <div key={day} className={`text-center text-xs font-medium py-1 ${
+            theme === 'light' ? 'text-neutral-400' : 'text-[rgba(255,255,255,0.4)]'
+          }`}>
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Days grid */}
+      <div className="grid grid-cols-7 px-2 pb-2 gap-1">
+        {emptyDays.map((_, i) => (
+          <div key={`empty-${i}`} className="w-8 h-8" />
+        ))}
+        {days.map((day) => (
+          <button
+            key={day}
+            type="button"
+            onClick={() => handleSelectDate(day)}
+            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+              isSelectedDay(day)
+                ? 'bg-brand text-white shadow-lg shadow-brand/30'
+                : isToday(day)
+                  ? theme === 'light'
+                    ? 'bg-indigo-50 text-brand font-semibold'
+                    : 'bg-brand/20 text-brand-light font-semibold'
+                  : theme === 'light'
+                    ? 'text-neutral-700 hover:bg-neutral-100'
+                    : 'text-white hover:bg-[rgba(255,255,255,0.1)]'
+            }`}
+          >
+            {day}
+          </button>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className={`flex items-center justify-between px-3 py-2 border-t ${
+        theme === 'light' ? 'border-neutral-100' : 'border-[rgba(255,255,255,0.1)]'
+      }`}>
+        <button
+          type="button"
+          onClick={handleToday}
+          className="text-xs font-medium text-brand hover:text-brand-light transition-colors"
+        >
+          Today
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsOpen(false)}
+          className={`text-xs font-medium transition-colors ${
+            theme === 'light' ? 'text-neutral-500 hover:text-neutral-700' : 'text-[rgba(255,255,255,0.5)] hover:text-white'
+          }`}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="form-group" ref={containerRef}>
+      <label className="form-label">{label}</label>
+      <div ref={inputRef}>
+        <div className="flex gap-2">
+          <input
+            className="form-input flex-1"
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="DD-MM-YYYY"
+            required={required}
+          />
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className={`px-3 rounded-xl transition-all duration-200 flex items-center justify-center ${
+              theme === 'light'
+                ? 'bg-neutral-100 border border-neutral-300 hover:bg-neutral-200'
+                : 'bg-surface-200 border border-surface-300 hover:bg-surface-300'
+            }`}
+            title="Open calendar"
+          >
+            <svg
+              className={`w-5 h-5 ${
+                theme === 'light' ? 'text-neutral-600' : 'text-text-secondary'
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      {mounted && calendarContent && createPortal(calendarContent, document.body)}
+    </div>
+  );
+};
+
 // Reusable Select Component
 const FormSelect = ({ label, options, ...props }: {
   label: string;
@@ -55,6 +398,8 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [searchQuery, setSearchQuery] = useState(''); // Track what user is typing for filtering
+  const [isSearching, setIsSearching] = useState(false); // Track if user is actively searching
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputWrapperRef = React.useRef<HTMLDivElement>(null);
 
@@ -102,6 +447,14 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
     };
   }, [isOpen]);
 
+  // Reset search state when dropdown closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery('');
+      setIsSearching(false);
+    }
+  }, [isOpen]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -117,9 +470,12 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [label]);
 
-  const filteredOptions = options.filter(opt =>
-    opt.value && opt.label.toLowerCase().includes(value.toLowerCase())
-  );
+  // Only filter when user is actively searching, otherwise show all options
+  const filteredOptions = options.filter(opt => {
+    if (!opt.value) return false; // Skip empty values
+    if (!isSearching || !searchQuery) return true; // Show all when not searching
+    return opt.label.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const dropdownContent = isOpen && filteredOptions.length > 0 && mounted && (
     <div
@@ -141,10 +497,7 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
         <button
           key={opt.value}
           type="button"
-          onClick={() => {
-            onChange(opt.value);
-            setIsOpen(false);
-          }}
+          onClick={() => handleSelectOption(opt.value)}
           className={`w-full px-4 py-3 text-left text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
             theme === 'light'
               ? value === opt.value
@@ -161,6 +514,21 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
     </div>
   );
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+    setSearchQuery(newValue);
+    setIsSearching(true);
+    if (!isOpen) setIsOpen(true);
+  };
+
+  const handleSelectOption = (optValue: string) => {
+    onChange(optValue);
+    setIsOpen(false);
+    setIsSearching(false);
+    setSearchQuery('');
+  };
+
   return (
     <div className="form-group" ref={containerRef}>
       <label className="form-label">{label}</label>
@@ -170,13 +538,19 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
             className="form-input flex-1"
             type="text"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onFocus={() => setIsOpen(true)}
+            onChange={handleInputChange}
+            onFocus={() => {
+              setIsOpen(true);
+              setIsSearching(false); // Don't filter on focus, show all options
+            }}
             placeholder={placeholder || `Enter ${label.toLowerCase()}`}
           />
           <button
             type="button"
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => {
+              setIsOpen(!isOpen);
+              setIsSearching(false); // Show all options when clicking button
+            }}
             className={`px-3 rounded-xl transition-all duration-200 flex items-center justify-center ${
               theme === 'light'
                 ? 'bg-neutral-100 border border-neutral-300 hover:bg-neutral-200'
@@ -448,9 +822,17 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [originalOwnerYear, setOriginalOwnerYear] = useState(initialData?.originalOwnerYear || '');
   const [currentOwners, setCurrentOwners] = useState<Owner[]>(initialData?.currentOwners || [{ name: '', share: '' }]);
 
+  // Helper to format date as DD-MM-YYYY (used for default value)
+  const formatDateDDMMYYYY = (date: Date): string => {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   // Valuation Inputs
   const [referenceNo, setReferenceNo] = useState(initialData?.referenceNo || '');
-  const [valuationDate, setValuationDate] = useState(initialData?.valuationDate || '');
+  const [valuationDate, setValuationDate] = useState(initialData?.valuationDate || formatDateDDMMYYYY(new Date()));
   const [valuationForDate, setValuationForDate] = useState(initialData?.valuationForDate || '');
   const [purpose, setPurpose] = useState(initialData?.purpose || '');
 
@@ -934,8 +1316,18 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <h3 className="glass-card-title">Reference Details</h3>
             <div className="grid-3">
               <FormInput label="Reference No." value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="e.g., 19/2025" required />
-              <FormInput label="Valuation Date" value={valuationDate} onChange={(e) => setValuationDate(e.target.value)} placeholder="e.g., 15-11-2025" required />
-              <FormInput label="Valuation For Date" value={valuationForDate} onChange={(e) => setValuationForDate(e.target.value)} placeholder="e.g., 1-4-2001" required />
+              <FormDatePicker
+                label="Valuation Date"
+                value={valuationDate}
+                onChange={setValuationDate}
+                required
+              />
+              <FormDatePicker
+                label="Valuation For Date"
+                value={valuationForDate}
+                onChange={setValuationForDate}
+                required
+              />
             </div>
             <div className="mt-4">
               <FormSelectWithCustom label="Purpose of Valuation" options={PURPOSE_OPTIONS} value={purpose} onChange={setPurpose} placeholder="Enter custom purpose" />
