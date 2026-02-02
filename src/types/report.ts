@@ -27,6 +27,10 @@ export interface ReportFormData {
   southBoundary: string;
   eastBoundary: string;
   westBoundary: string;
+  northEastBoundary: string;
+  northWestBoundary: string;
+  southEastBoundary: string;
+  southWestBoundary: string;
 
   // Owner Details
   originalOwner: string;
@@ -106,6 +110,10 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   southBoundary: '',
   eastBoundary: '',
   westBoundary: '',
+  northEastBoundary: '',
+  northWestBoundary: '',
+  southEastBoundary: '',
+  southWestBoundary: '',
   originalOwner: '',
   originalOwnerYear: '',
   currentOwners: [{ name: '', share: '' }],

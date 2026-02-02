@@ -18,6 +18,10 @@ export interface Boundaries {
   south: string;
   east: string;
   west: string;
+  northEast?: string;
+  northWest?: string;
+  southEast?: string;
+  southWest?: string;
 }
 
 export interface BuildingSpecifications {

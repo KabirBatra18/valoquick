@@ -438,6 +438,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [southBoundary, setSouthBoundary] = useState(initialData?.southBoundary || '');
   const [eastBoundary, setEastBoundary] = useState(initialData?.eastBoundary || '');
   const [westBoundary, setWestBoundary] = useState(initialData?.westBoundary || '');
+  const [northEastBoundary, setNorthEastBoundary] = useState(initialData?.northEastBoundary || '');
+  const [northWestBoundary, setNorthWestBoundary] = useState(initialData?.northWestBoundary || '');
+  const [southEastBoundary, setSouthEastBoundary] = useState(initialData?.southEastBoundary || '');
+  const [southWestBoundary, setSouthWestBoundary] = useState(initialData?.southWestBoundary || '');
 
   // Owner Details
   const [originalOwner, setOriginalOwner] = useState(initialData?.originalOwner || '');
@@ -520,6 +524,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         southBoundary,
         eastBoundary,
         westBoundary,
+        northEastBoundary,
+        northWestBoundary,
+        southEastBoundary,
+        southWestBoundary,
         originalOwner,
         originalOwnerYear,
         currentOwners,
@@ -574,6 +582,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   }, [
     propertyNo, block, area, city,
     northBoundary, southBoundary, eastBoundary, westBoundary,
+    northEastBoundary, northWestBoundary, southEastBoundary, southWestBoundary,
     originalOwner, originalOwnerYear, currentOwners,
     referenceNo, valuationDate, valuationForDate, purpose,
     plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
@@ -677,7 +686,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     const reportData: ValuationReport = {
       ...DEFAULT_COMPANY_DETAILS,
       propertyAddress: { propertyNo, block, area, city, fullAddress },
-      boundaries: { north: northBoundary, south: southBoundary, east: eastBoundary, west: westBoundary },
+      boundaries: {
+        north: northBoundary, south: southBoundary, east: eastBoundary, west: westBoundary,
+        northEast: northEastBoundary, northWest: northWestBoundary, southEast: southEastBoundary, southWest: southWestBoundary
+      },
       originalOwner, originalOwnerYear, currentOwners, valuationInputs,
       floors: [{
         floorName: 'Ground Floor', area: floorArea, height: floorHeight, yearOfConstruction,
@@ -728,6 +740,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <FormSelectWithCustom label="South" options={BOUNDARY_OPTIONS} value={southBoundary} onChange={setSouthBoundary} placeholder="e.g., Plot No 45" />
               <FormSelectWithCustom label="East" options={BOUNDARY_OPTIONS} value={eastBoundary} onChange={setEastBoundary} placeholder="e.g., Road" />
               <FormSelectWithCustom label="West" options={BOUNDARY_OPTIONS} value={westBoundary} onChange={setWestBoundary} placeholder="e.g., 36' Road" />
+              <FormSelectWithCustom label="North-East" options={BOUNDARY_OPTIONS} value={northEastBoundary} onChange={setNorthEastBoundary} placeholder="e.g., Corner Plot" />
+              <FormSelectWithCustom label="North-West" options={BOUNDARY_OPTIONS} value={northWestBoundary} onChange={setNorthWestBoundary} placeholder="e.g., Park" />
+              <FormSelectWithCustom label="South-East" options={BOUNDARY_OPTIONS} value={southEastBoundary} onChange={setSouthEastBoundary} placeholder="e.g., Lane" />
+              <FormSelectWithCustom label="South-West" options={BOUNDARY_OPTIONS} value={southWestBoundary} onChange={setSouthWestBoundary} placeholder="e.g., Open Land" />
             </div>
           </div>
 
