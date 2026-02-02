@@ -95,6 +95,7 @@ export interface ReportFormData {
   plotShape: string;
   isLeasehold: boolean;
   buildingOccupancy: string;
+  civicAmenities: string[];
 
   // Photos
   photos: string[];
@@ -162,6 +163,7 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   plotShape: '',
   isLeasehold: false,
   buildingOccupancy: '',
+  civicAmenities: [],
   photos: [],
 };
 

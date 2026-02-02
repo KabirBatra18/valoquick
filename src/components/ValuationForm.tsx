@@ -506,6 +506,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [plotShape, setPlotShape] = useState(initialData?.plotShape || '');
   const [isLeasehold, setIsLeasehold] = useState(initialData?.isLeasehold || false);
   const [buildingOccupancy, setBuildingOccupancy] = useState(initialData?.buildingOccupancy || '');
+  const [civicAmenities, setCivicAmenities] = useState<string[]>(initialData?.civicAmenities || []);
 
   // Photos
   const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
@@ -576,6 +577,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         plotShape,
         isLeasehold,
         buildingOccupancy,
+        civicAmenities,
         photos,
       });
     }
@@ -592,7 +594,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     floorHeight, constructionType, foundationType, partitions, roofingTerracing, architecturalFeatures,
     noOfWaterClosets, noOfSinks, sanitaryFittingsClass, compoundWallHeight, compoundWallType,
     overheadTank, noOfPumps, sewerDisposal,
-    propertyType, localityClass, plotShape, isLeasehold, buildingOccupancy,
+    propertyType, localityClass, plotShape, isLeasehold, buildingOccupancy, civicAmenities,
     photos, onDataChange
   ]);
 
@@ -706,7 +708,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         undergroundPump: 'None', overheadTank, noOfPumps, roadsPaving: 'N/A', sewerDisposal,
       },
       generalDetails: {
-        propertyType, localityClass, proximityToCivicAmenities: 'All available very nearby',
+        propertyType, localityClass,
+        proximityToCivicAmenities: civicAmenities.length > 0
+          ? `${civicAmenities.join(', ')} available nearby`
+          : 'All civic amenities available nearby',
         surfaceCommunication: 'By all sort of transport', plotShape, isLeasehold,
         restrictiveCovenants: 'No', easementAgreements: 'No', townPlanningArea: 'Within MC area.',
         developmentContribution: 'No', acquisitionNotification: 'No', buildingOccupancy,
@@ -810,6 +815,50 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 ]}
                 placeholder="e.g., Owner Occupied"
               />
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Nearby Civic Amenities</h3>
+            <p className="text-sm text-text-tertiary mb-4">Select all amenities available near the property</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {[
+                { id: 'School', label: 'School' },
+                { id: 'Hospital', label: 'Hospital' },
+                { id: 'Metro Station', label: 'Metro Station' },
+                { id: 'Bus Stand', label: 'Bus Stand' },
+                { id: 'Market', label: 'Market' },
+                { id: 'Bank', label: 'Bank' },
+                { id: 'ATM', label: 'ATM' },
+                { id: 'Park', label: 'Park' },
+                { id: 'Temple/Religious Place', label: 'Temple/Religious Place' },
+                { id: 'Police Station', label: 'Police Station' },
+                { id: 'Post Office', label: 'Post Office' },
+                { id: 'Petrol Pump', label: 'Petrol Pump' },
+              ].map((amenity) => (
+                <label
+                  key={amenity.id}
+                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    civicAmenities.includes(amenity.id)
+                      ? 'bg-brand/10 border-brand text-text-primary'
+                      : 'bg-surface-100 border-surface-200 text-text-secondary hover:border-surface-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={civicAmenities.includes(amenity.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCivicAmenities([...civicAmenities, amenity.id]);
+                      } else {
+                        setCivicAmenities(civicAmenities.filter(a => a !== amenity.id));
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-surface-300 text-brand focus:ring-brand"
+                  />
+                  <span className="text-sm">{amenity.label}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
