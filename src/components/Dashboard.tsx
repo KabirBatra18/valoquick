@@ -129,26 +129,10 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
           </div>
         </div>
 
-        {/* Search */}
-        <div className="mb-4">
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search reports..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-surface-100 border border-surface-200 rounded-xl text-text-primary placeholder-text-tertiary text-sm focus:outline-none focus:border-brand"
-            />
-          </div>
-        </div>
-
         {/* Tabs */}
         <div className="flex gap-2 mb-4">
           <button
-            onClick={() => setActiveTab('active')}
+            onClick={() => { setActiveTab('active'); setSearchQuery(''); }}
             className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all ${
               activeTab === 'active'
                 ? 'bg-brand text-white shadow-lg shadow-brand/25'
@@ -168,6 +152,24 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
             Completed ({concludedCount})
           </button>
         </div>
+
+        {/* Search - only in completed tab */}
+        {activeTab === 'concluded' && (
+          <div className="mb-4">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search completed reports..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-surface-100 border border-surface-200 rounded-xl text-text-primary placeholder-text-tertiary text-sm focus:outline-none focus:border-brand"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Reports List */}
         <div className="space-y-3">
