@@ -433,16 +433,91 @@
   }
 }
 
-/* Mobile form improvements */
-@media (max-width: 1023px) {
+/* Mobile form improvements - compact and refined */
+@media (max-width: 767px) {
   .form-input,
   .form-select {
-    @apply py-3.5 text-base;
+    @apply py-2.5 text-sm;
     font-size: 16px; /* Prevents iOS zoom on focus */
   }
 
   .form-label {
-    @apply text-xs mb-2;
+    @apply text-[10px] mb-1.5;
+  }
+
+  .form-group {
+    @apply mb-3;
+  }
+
+  .glass-card {
+    @apply p-3 rounded-lg;
+  }
+
+  .glass-card-title {
+    @apply text-[10px] mb-3;
+  }
+
+  .glass-card-title::before {
+    width: 3px;
+    height: 12px;
+  }
+
+  .owner-card {
+    @apply p-3 gap-2;
+  }
+
+  .dropzone {
+    @apply p-4;
+  }
+
+  .dropzone-icon {
+    @apply w-10 h-10 mb-3;
+  }
+
+  .nav-footer {
+    @apply pt-4 mt-4;
+  }
+
+  .btn {
+    @apply py-2 px-3 text-xs;
+  }
+
+  .calc-preview {
+    @apply p-3 mt-4;
+  }
+
+  .calc-label {
+    @apply text-[10px];
+  }
+
+  .calc-value {
+    @apply text-sm;
+  }
+
+  .calc-total {
+    @apply text-xl;
+  }
+
+  .photo-grid {
+    @apply grid-cols-2 gap-2;
+  }
+
+  .grid-2,
+  .grid-3 {
+    @apply gap-3;
+  }
+}
+
+/* Tablet styles - slightly more compact */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .form-input,
+  .form-select {
+    @apply py-3;
+    font-size: 16px;
+  }
+
+  .form-label {
+    @apply text-xs mb-1.5;
   }
 
   .glass-card {
@@ -458,15 +533,15 @@
   }
 
   .dropzone {
-    @apply p-6;
+    @apply p-5;
   }
 
   .nav-footer {
-    @apply pt-6 mt-6;
+    @apply pt-5 mt-5;
   }
 
   .btn {
-    @apply py-3 text-sm;
+    @apply py-2.5 text-sm;
   }
 
   .calc-preview {
@@ -482,6 +557,6 @@
   }
 
   .photo-grid {
-    @apply grid-cols-2 gap-3;
+    @apply grid-cols-3 gap-3;
   }
 }

@@ -283,62 +283,62 @@ export default function Home() {
         </header>
 
          {/* Mobile Header */}
-         <div className="lg:hidden p-4 border-b border-surface-200 bg-surface-100/95 backdrop-blur-xl sticky top-0 z-40">
+         <div className="lg:hidden px-3 py-2.5 border-b border-surface-200 bg-surface-100/95 backdrop-blur-xl sticky top-0 z-40">
            <div className="flex items-center justify-between">
              <button
                onClick={handleBackToDashboard}
-               className="flex items-center gap-2 text-text-secondary"
+               className="flex items-center gap-1.5 text-text-secondary p-1"
              >
-               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                </svg>
              </button>
              <div className="text-center">
-                <h1 className="text-base font-bold text-text-primary">{steps[activeStep].fullName}</h1>
-                <p className="text-xs text-text-tertiary">Step {activeStep + 1} of {steps.length}</p>
+                <h1 className="text-sm font-semibold text-text-primary">{steps[activeStep].fullName}</h1>
+                <p className="text-[10px] text-text-tertiary">Step {activeStep + 1}/{steps.length}</p>
              </div>
              {generatedFiles ? (
-               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
+                 <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
                  Ready
                </span>
              ) : (
-               <div className="w-10" /> // Spacer
+               <div className="w-8" />
              )}
            </div>
          </div>
 
          {/* Mobile Bottom Navigation */}
          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-100/95 backdrop-blur-xl border-t border-surface-200 safe-area-bottom">
-           <div className="grid grid-cols-6 h-16">
+           <div className="grid grid-cols-6 h-12">
              {steps.map((step) => (
                <button
                  key={step.id}
                  onClick={() => setActiveStep(step.id)}
-                 className={`flex flex-col items-center justify-center gap-1 transition-all ${
+                 className={`flex flex-col items-center justify-center gap-0.5 transition-all ${
                    activeStep === step.id
                      ? 'text-brand'
                      : 'text-text-tertiary'
                  }`}
                >
-                 <svg className={`w-5 h-5 ${activeStep === step.id ? 'scale-110' : ''} transition-transform`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeStep === step.id ? 2.5 : 1.5}>
+                 <svg className={`w-4 h-4 ${activeStep === step.id ? 'scale-110' : ''} transition-transform`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeStep === step.id ? 2.5 : 1.5}>
                    <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
                  </svg>
-                 <span className={`text-[10px] font-medium ${activeStep === step.id ? 'text-brand' : ''}`}>{step.name}</span>
+                 <span className={`text-[9px] font-medium ${activeStep === step.id ? 'text-brand' : ''}`}>{step.name}</span>
                </button>
              ))}
            </div>
          </nav>
 
          {/* Mobile Floating Action Button */}
-         <div className="lg:hidden fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3">
+         <div className="lg:hidden fixed bottom-16 right-3 z-50 flex flex-col items-end gap-2">
            {generatedFiles && (
              <div className="flex flex-col gap-2 animate-fade-in">
                <button
                  onClick={() => downloadFile(generatedFiles.pdf!, 'Valuation_Report.pdf', 'application/pdf')}
-                 className="w-12 h-12 rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 flex items-center justify-center"
+                 className="w-10 h-10 rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 flex items-center justify-center"
                >
-                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                  </svg>
                </button>
@@ -350,33 +350,33 @@ export default function Home() {
                if (form) form.requestSubmit();
              }}
              disabled={isGenerating}
-             className="w-14 h-14 rounded-full bg-brand text-white shadow-lg shadow-brand/30 flex items-center justify-center disabled:opacity-50"
+             className="w-11 h-11 rounded-full bg-brand text-white shadow-lg shadow-brand/30 flex items-center justify-center disabled:opacity-50"
            >
              {isGenerating ? (
-               <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
+               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                </svg>
              ) : (
-               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                </svg>
              )}
            </button>
          </div>
 
-        <div className="p-4 lg:p-8 pb-36 lg:pb-8 max-w-5xl mx-auto">
+        <div className="p-3 lg:p-8 pb-32 lg:pb-8 max-w-5xl mx-auto">
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-4">
-              <div className="p-2 rounded-lg bg-red-500/20 text-red-500">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="mb-4 lg:mb-6 p-3 lg:p-4 rounded-lg lg:rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3 lg:gap-4">
+              <div className="p-1.5 lg:p-2 rounded-lg bg-red-500/20 text-red-500">
+                <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-red-400">Error Generating Report</h3>
-                <p className="text-sm text-red-300/80 mt-1">{error}</p>
+                <h3 className="text-xs lg:text-sm font-bold text-red-400">Error Generating Report</h3>
+                <p className="text-xs lg:text-sm text-red-300/80 mt-0.5 lg:mt-1">{error}</p>
               </div>
             </div>
           )}
@@ -429,14 +429,14 @@ export default function Home() {
           </div>
 
           {/* Mobile Swipe Navigation */}
-          <div className="lg:hidden flex justify-center gap-4 py-4">
+          <div className="lg:hidden flex justify-center gap-3 py-3">
             <button
               type="button"
               onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
               disabled={activeStep === 0}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-200 text-text-secondary disabled:opacity-30 text-sm font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-200 text-text-secondary disabled:opacity-30 text-xs font-medium"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               Back
@@ -445,10 +445,10 @@ export default function Home() {
               type="button"
               onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
               disabled={activeStep === steps.length - 1}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-200 text-text-secondary disabled:opacity-30 text-sm font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-200 text-text-secondary disabled:opacity-30 text-xs font-medium"
             >
               Next
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>

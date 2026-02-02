@@ -1109,7 +1109,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Section 0: Property Details */}
       {activeSection === 0 && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Property Address</h3>
             <div className="grid-2">
@@ -1202,8 +1202,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
           <div className="glass-card">
             <h3 className="glass-card-title">Nearby Civic Amenities</h3>
-            <p className="text-sm text-text-tertiary mb-4">Select all amenities available near the property</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <p className="text-xs lg:text-sm text-text-tertiary mb-2 lg:mb-4">Select all amenities available near the property</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-3">
               {[
                 { id: 'School', label: 'School' },
                 { id: 'Hospital', label: 'Hospital' },
@@ -1220,7 +1220,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               ].map((amenity) => (
                 <label
                   key={amenity.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                  className={`flex items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg lg:rounded-xl border cursor-pointer transition-all ${
                     civicAmenities.includes(amenity.id)
                       ? 'bg-brand/10 border-brand text-text-primary'
                       : 'bg-surface-100 border-surface-200 text-text-secondary hover:border-surface-300'
@@ -1236,10 +1236,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                         setCivicAmenities(civicAmenities.filter(a => a !== amenity.id));
                       }
                     }}
-                    className="w-4 h-4 rounded border-surface-300 focus:ring-brand"
+                    className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded border-surface-300 focus:ring-brand"
                     style={{ accentColor: '#6366f1' }}
                   />
-                  <span className="text-sm">{amenity.label}</span>
+                  <span className="text-xs lg:text-sm">{amenity.label}</span>
                 </label>
               ))}
             </div>
@@ -1249,7 +1249,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
       {/* Section 1: Owner Information */}
       {activeSection === 1 && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Original Owner</h3>
             <div className="grid-2">
@@ -1311,7 +1311,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
       {/* Section 2: Valuation Parameters */}
       {activeSection === 2 && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Reference Details</h3>
             <div className="grid-3">
@@ -1406,7 +1406,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
       {/* Section 3: Building Specifications */}
       {activeSection === 3 && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Building Specifications</h3>
             <div className="grid-2">
@@ -1428,7 +1428,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
       {/* Section 4: Technical Details */}
       {activeSection === 4 && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Construction Details</h3>
             <div className="grid-2">
@@ -1477,14 +1477,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
       {/* Section 5: Photos */}
       {activeSection === 5 && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Property Photos</h3>
 
             {/* Upload options - using labels for better mobile compatibility */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-3 gap-2 lg:gap-3 mb-4 lg:mb-6">
               {/* Camera Button - Using label for reliable mobile camera access */}
-              <label className="flex flex-col items-center justify-center gap-2 p-5 bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-brand/40 rounded-2xl hover:border-brand hover:from-brand/30 hover:to-brand/10 active:scale-[0.98] transition-all duration-200 cursor-pointer">
+              <label className="flex flex-col items-center justify-center gap-1.5 lg:gap-2 p-3 lg:p-5 bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-brand/40 rounded-xl lg:rounded-2xl hover:border-brand hover:from-brand/30 hover:to-brand/10 active:scale-[0.98] transition-all duration-200 cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
@@ -1492,20 +1492,20 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                <div className="w-12 h-12 rounded-xl bg-brand/20 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl bg-brand/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 lg:w-7 lg:h-7 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-text-primary">Camera</p>
-                  <p className="text-xs text-text-tertiary">Take photo</p>
+                  <p className="text-xs lg:text-sm font-semibold text-text-primary">Camera</p>
+                  <p className="text-[10px] lg:text-xs text-text-tertiary hidden sm:block">Take photo</p>
                 </div>
               </label>
 
               {/* Gallery Button - Using label for reliable mobile gallery access */}
-              <label className="flex flex-col items-center justify-center gap-2 p-5 border-2 border-surface-300 rounded-2xl hover:border-text-tertiary hover:bg-surface-200/30 active:scale-[0.98] transition-all duration-200 cursor-pointer">
+              <label className="flex flex-col items-center justify-center gap-1.5 lg:gap-2 p-3 lg:p-5 border-2 border-surface-300 rounded-xl lg:rounded-2xl hover:border-text-tertiary hover:bg-surface-200/30 active:scale-[0.98] transition-all duration-200 cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
@@ -1513,62 +1513,62 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   className="hidden"
                   multiple
                 />
-                <div className="w-12 h-12 rounded-xl bg-surface-200 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl bg-surface-200 flex items-center justify-center">
+                  <svg className="w-5 h-5 lg:w-7 lg:h-7 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-text-primary">Gallery</p>
-                  <p className="text-xs text-text-tertiary">Choose photos</p>
+                  <p className="text-xs lg:text-sm font-semibold text-text-primary">Gallery</p>
+                  <p className="text-[10px] lg:text-xs text-text-tertiary hidden sm:block">Choose photos</p>
                 </div>
               </label>
 
               {/* Upload/Drop Button - For desktop drag & drop */}
               <div
                 {...getRootProps()}
-                className={`flex flex-col items-center justify-center gap-2 p-5 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center gap-1.5 lg:gap-2 p-3 lg:p-5 border-2 border-dashed rounded-xl lg:rounded-2xl cursor-pointer transition-all duration-200 ${
                   isDragActive
                     ? 'border-brand bg-brand/10'
                     : 'border-surface-300 hover:border-text-tertiary hover:bg-surface-200/30'
                 }`}
               >
                 <input {...getInputProps()} />
-                <div className="w-12 h-12 rounded-xl bg-surface-200 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl bg-surface-200 flex items-center justify-center">
+                  <svg className="w-5 h-5 lg:w-7 lg:h-7 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-text-primary">
+                  <p className="text-xs lg:text-sm font-semibold text-text-primary">
                     {isDragActive ? 'Drop here' : 'Files'}
                   </p>
-                  <p className="text-xs text-text-tertiary">Drag or browse</p>
+                  <p className="text-[10px] lg:text-xs text-text-tertiary hidden sm:block">Drag or browse</p>
                 </div>
               </div>
             </div>
 
             {/* Photo Grid - 2x3 layout */}
             {photos.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-text-secondary">
+              <div className="mt-4 lg:mt-6">
+                <div className="flex items-center justify-between mb-2 lg:mb-4">
+                  <p className="text-xs lg:text-sm text-text-secondary">
                     {photos.length} photo{photos.length !== 1 ? 's' : ''} added
                     {totalPhotoPages > 1 && (
-                      <span className="text-text-tertiary ml-2">
-                        (Page {photoPage + 1} of {totalPhotoPages})
+                      <span className="text-text-tertiary ml-1 lg:ml-2">
+                        ({photoPage + 1}/{totalPhotoPages})
                       </span>
                     )}
                   </p>
                   {totalPhotoPages > 1 && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 lg:gap-2">
                       <button
                         type="button"
                         onClick={() => setPhotoPage(Math.max(0, photoPage - 1))}
                         disabled={photoPage === 0}
-                        className="p-2 rounded-lg bg-surface-200 hover:bg-surface-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1.5 lg:p-2 rounded-lg bg-surface-200 hover:bg-surface-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-3.5 h-3.5 lg:w-4 lg:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
                       </button>
@@ -1576,9 +1576,9 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                         type="button"
                         onClick={() => setPhotoPage(Math.min(totalPhotoPages - 1, photoPage + 1))}
                         disabled={photoPage >= totalPhotoPages - 1}
-                        className="p-2 rounded-lg bg-surface-200 hover:bg-surface-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1.5 lg:p-2 rounded-lg bg-surface-200 hover:bg-surface-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-3.5 h-3.5 lg:w-4 lg:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
@@ -1587,29 +1587,29 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 </div>
 
                 {/* 2x3 Grid for square photos */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 lg:gap-4">
                   {currentPagePhotos.map((photo, index) => {
                     const actualIndex = photoPage * PHOTOS_PER_PAGE + index;
                     return (
                       <div
                         key={actualIndex}
-                        className="relative aspect-square rounded-xl overflow-hidden border-2 border-surface-200 hover:border-brand/50 transition-colors group"
+                        className="relative aspect-square rounded-lg lg:rounded-xl overflow-hidden border-2 border-surface-200 hover:border-brand/50 transition-colors group"
                       >
                         <img
                           src={photo}
                           alt={`Property ${actualIndex + 1}`}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute bottom-2 left-2 text-xs text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-1.5 left-1.5 lg:bottom-2 lg:left-2 text-[10px] lg:text-xs text-white font-medium opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                           Photo {actualIndex + 1}
                         </div>
                         <button
                           type="button"
                           onClick={() => removePhoto(actualIndex)}
-                          className="absolute top-2 right-2 p-2 rounded-lg bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all"
+                          className="absolute top-1.5 right-1.5 lg:top-2 lg:right-2 p-1.5 lg:p-2 rounded-md lg:rounded-lg bg-black/50 text-white opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-red-500 transition-all"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <svg className="w-3.5 h-3.5 lg:w-4 lg:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
@@ -1620,15 +1620,15 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
                 {/* Page indicator dots */}
                 {totalPhotoPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-4">
+                  <div className="flex justify-center gap-1.5 lg:gap-2 mt-3 lg:mt-4">
                     {Array.from({ length: totalPhotoPages }).map((_, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => setPhotoPage(i)}
-                        className={`w-2 h-2 rounded-full transition-all ${
+                        className={`w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full transition-all ${
                           i === photoPage
-                            ? 'w-6 bg-brand'
+                            ? 'w-4 lg:w-6 bg-brand'
                             : 'bg-surface-300 hover:bg-text-tertiary'
                         }`}
                       />
@@ -1637,8 +1637,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 )}
 
                 {/* Info text */}
-                <p className="text-xs text-text-tertiary text-center mt-4">
-                  Photos are automatically cropped to square. 6 photos per page in the report.
+                <p className="text-[10px] lg:text-xs text-text-tertiary text-center mt-3 lg:mt-4">
+                  Photos auto-cropped to square. 6 per page in report.
                 </p>
               </div>
             )}
