@@ -26,15 +26,11 @@ export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Apply saved theme and input design on mount
+  // Apply saved theme on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('valoquick_theme');
     if (savedTheme) {
       document.documentElement.setAttribute('data-theme', savedTheme);
-    }
-    const savedDesign = localStorage.getItem('valoquick_input_design');
-    if (savedDesign && savedDesign !== 'default') {
-      document.documentElement.setAttribute('data-input-design', savedDesign);
     }
   }, []);
 

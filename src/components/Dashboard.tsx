@@ -9,25 +9,12 @@ interface DashboardProps {
   onCreateReport: () => void;
 }
 
-const INPUT_DESIGNS = [
-  { id: 'default', name: 'Default', desc: 'Current rounded style' },
-  { id: 'minimal', name: 'Minimal', desc: 'Clean underline only' },
-  { id: 'pill', name: 'Pill', desc: 'Fully rounded, soft' },
-  { id: 'outlined', name: 'Outlined', desc: 'Bold borders, transparent' },
-  { id: 'neumorphic', name: 'Neumorphic', desc: 'Soft 3D pressed' },
-  { id: 'floating', name: 'Floating', desc: 'Elevated with shadow' },
-  { id: 'sharp', name: 'Sharp', desc: 'Square edges, bold' },
-  { id: 'gradient', name: 'Gradient', desc: 'Colorful border glow' },
-];
-
 export default function Dashboard({ onOpenReport, onCreateReport }: DashboardProps) {
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'concluded'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [inputDesign, setInputDesign] = useState('default');
-  const [showDesignPicker, setShowDesignPicker] = useState(false);
 
   // Load reports and theme on mount
   useEffect(() => {
@@ -38,12 +25,6 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
       setTheme(savedTheme);
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
-    // Load saved input design
-    const savedDesign = localStorage.getItem('valoquick_input_design');
-    if (savedDesign) {
-      setInputDesign(savedDesign);
-      document.documentElement.setAttribute('data-input-design', savedDesign);
-    }
   }, []);
 
   const toggleTheme = () => {
@@ -52,28 +33,6 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('valoquick_theme', newTheme);
   };
-
-  const changeInputDesign = (designId: string) => {
-    setInputDesign(designId);
-    if (designId === 'default') {
-      document.documentElement.removeAttribute('data-input-design');
-    } else {
-      document.documentElement.setAttribute('data-input-design', designId);
-    }
-    localStorage.setItem('valoquick_input_design', designId);
-  };
-
-  // Close design picker when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (showDesignPicker && !target.closest('[data-design-picker]')) {
-        setShowDesignPicker(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showDesignPicker]);
 
   const refreshReports = () => {
     setReports(getAllReports());
@@ -141,45 +100,6 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
               <p className="text-xs text-text-tertiary">Property Valuation Reports</p>
             </div>
             <div className="flex items-center gap-3">
-              {/* Input Design Picker */}
-              <div className="relative" data-design-picker>
-                <button
-                  onClick={() => setShowDesignPicker(!showDesignPicker)}
-                  className="p-2.5 rounded-xl bg-surface-100 border border-surface-200 hover:bg-surface-200 transition-all duration-300"
-                  title="Change input style"
-                >
-                  <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                  </svg>
-                </button>
-                {showDesignPicker && (
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-surface-100 border border-surface-200 rounded-xl shadow-2xl z-50 overflow-hidden">
-                    <div className="p-3 border-b border-surface-200">
-                      <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">Input Field Style</p>
-                    </div>
-                    <div className="p-2 max-h-80 overflow-y-auto">
-                      {INPUT_DESIGNS.map((design) => (
-                        <button
-                          key={design.id}
-                          onClick={() => {
-                            changeInputDesign(design.id);
-                            setShowDesignPicker(false);
-                          }}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${
-                            inputDesign === design.id
-                              ? 'bg-brand/20 text-brand'
-                              : 'hover:bg-surface-200 text-text-primary'
-                          }`}
-                        >
-                          <p className="font-medium text-sm">{design.name}</p>
-                          <p className="text-xs text-text-tertiary">{design.desc}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}

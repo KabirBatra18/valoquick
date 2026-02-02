@@ -165,9 +165,9 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
     <div className="form-group" ref={containerRef}>
       <label className="form-label">{label}</label>
       <div ref={inputWrapperRef}>
-        <div className="flex">
+        <div className="flex gap-2">
           <input
-            className="form-input flex-1 rounded-r-none border-r-0"
+            className="form-input flex-1"
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -177,16 +177,16 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className={`px-4 border-l-0 rounded-r-xl transition-all duration-200 flex items-center justify-center min-w-[48px] ${
+            className={`px-3 rounded-xl transition-all duration-200 flex items-center justify-center ${
               theme === 'light'
                 ? 'bg-neutral-100 border border-neutral-300 hover:bg-neutral-200'
-                : 'bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] hover:bg-[rgba(255,255,255,0.18)]'
+                : 'bg-surface-200 border border-surface-300 hover:bg-surface-300'
             }`}
             title="Show options"
           >
             <svg
               className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${
-                theme === 'light' ? 'text-neutral-600' : 'text-[rgba(255,255,255,0.9)]'
+                theme === 'light' ? 'text-neutral-600' : 'text-text-secondary'
               }`}
               fill="none"
               viewBox="0 0 24 24"
