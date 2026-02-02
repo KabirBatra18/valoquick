@@ -4,8 +4,8 @@ import puppeteer from 'puppeteer';
 import chromium from '@sparticuz/chromium';
 import { ValuationReport } from '@/types/valuation';
 
-// Configure for serverless
-export const maxDuration = 60;
+// Configure for serverless - allow up to 5 minutes for PDF generation
+export const maxDuration = 300;
 
 async function getBrowser() {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION) {
@@ -27,6 +27,16 @@ async function getBrowser() {
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--single-process',
+        '--no-zygote',
+        '--disable-extensions',
+        '--disable-background-networking',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--no-first-run',
+        '--safebrowsing-disable-auto-update',
       ],
     });
   }
@@ -43,7 +53,49 @@ export async function POST(request: NextRequest) {
     const browser = await getBrowser();
 
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+    // Set longer timeout for page operations
+    page.setDefaultTimeout(120000); // 2 minutes
+
+    // Use domcontentloaded for faster initial load, then wait for images
+    await page.setContent(htmlContent, {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    });
+
+    // Wait a bit for images to load (base64 images load instantly, external images may take time)
+    await page.evaluate(() => {
+      return new Promise<void>((resolve) => {
+        // Check if all images are loaded
+        const images = document.querySelectorAll('img');
+        let loadedCount = 0;
+        const totalImages = images.length;
+
+        if (totalImages === 0) {
+          resolve();
+          return;
+        }
+
+        const checkComplete = () => {
+          loadedCount++;
+          if (loadedCount >= totalImages) {
+            resolve();
+          }
+        };
+
+        images.forEach((img) => {
+          if (img.complete) {
+            checkComplete();
+          } else {
+            img.onload = checkComplete;
+            img.onerror = checkComplete; // Don't block on failed images
+          }
+        });
+
+        // Fallback timeout after 10 seconds
+        setTimeout(resolve, 10000);
+      });
+    });
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
