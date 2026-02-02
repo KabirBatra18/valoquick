@@ -529,6 +529,19 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
     setSearchQuery('');
   };
 
+  // Check if mobile device
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  const handleArrowClick = () => {
+    setIsOpen(!isOpen);
+    setIsSearching(false); // Show all options when clicking button
+    // On mobile, blur the input to hide keyboard when opening dropdown
+    if (isMobile && !isOpen) {
+      const input = containerRef.current?.querySelector('input');
+      input?.blur();
+    }
+  };
+
   return (
     <div className="form-group" ref={containerRef}>
       <label className="form-label">{label}</label>
@@ -539,18 +552,11 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
             type="text"
             value={value}
             onChange={handleInputChange}
-            onFocus={() => {
-              setIsOpen(true);
-              setIsSearching(false); // Don't filter on focus, show all options
-            }}
             placeholder={placeholder || `Enter ${label.toLowerCase()}`}
           />
           <button
             type="button"
-            onClick={() => {
-              setIsOpen(!isOpen);
-              setIsSearching(false); // Show all options when clicking button
-            }}
+            onClick={handleArrowClick}
             className={`px-3 rounded-xl transition-all duration-200 flex items-center justify-center ${
               theme === 'light'
                 ? 'bg-neutral-100 border border-neutral-300 hover:bg-neutral-200'
