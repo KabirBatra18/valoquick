@@ -454,12 +454,12 @@
   }
 
   .glass-card-title {
-    @apply text-[10px] mb-3;
+    @apply text-xs mb-3;
   }
 
   .glass-card-title::before {
     width: 3px;
-    height: 12px;
+    height: 14px;
   }
 
   .owner-card {
