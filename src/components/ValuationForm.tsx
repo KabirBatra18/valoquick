@@ -1718,7 +1718,12 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             )}
           </div>
 
-          {/* Location Capture */}
+        </div>
+      )}
+
+      {/* Section 6: Location */}
+      {activeSection === 6 && (
+        <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Property Location</h3>
             <p className="text-xs lg:text-sm text-text-tertiary mb-3 lg:mb-4">
@@ -1760,10 +1765,27 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <div className="space-y-4">
                 {/* Map Preview */}
                 <div className="relative rounded-xl overflow-hidden border-2 border-surface-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={locationMapUrl}
                     alt="Property Location Map"
-                    className="w-full h-48 lg:h-64 object-cover"
+                    className="w-full h-48 lg:h-64 object-cover bg-surface-200"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.parentElement!.innerHTML = `
+                        <div class="w-full h-48 lg:h-64 flex items-center justify-center bg-surface-200 text-text-tertiary">
+                          <div class="text-center">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                            </svg>
+                            <p class="text-sm">Map preview unavailable</p>
+                            <p class="text-xs mt-1">Location coordinates saved</p>
+                          </div>
+                        </div>
+                      `;
+                    }}
                   />
                   <button
                     type="button"
