@@ -76,6 +76,12 @@ export interface AuthResult {
 // Verify Firebase ID token from request
 export async function verifyAuth(req: NextRequest): Promise<AuthResult> {
   try {
+    // Check if Firebase Admin is configured
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      console.error('FIREBASE_SERVICE_ACCOUNT_KEY not configured');
+      return { authenticated: false, error: 'Server authentication not configured' };
+    }
+
     const authHeader = req.headers.get('authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -92,8 +98,12 @@ export async function verifyAuth(req: NextRequest): Promise<AuthResult> {
     const decodedToken = await auth.verifyIdToken(idToken);
 
     return { authenticated: true, user: decodedToken };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Auth verification error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('Firebase ID token has expired')) {
+      return { authenticated: false, error: 'Token expired. Please refresh the page.' };
+    }
     return { authenticated: false, error: 'Invalid or expired token' };
   }
 }

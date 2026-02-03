@@ -4,6 +4,7 @@ import { auth } from './firebase';
 
 /**
  * Get the current user's ID token for API authentication
+ * Forces refresh to ensure token is valid
  */
 export async function getAuthToken(): Promise<string | null> {
   const user = auth.currentUser;
@@ -12,7 +13,8 @@ export async function getAuthToken(): Promise<string | null> {
   }
 
   try {
-    return await user.getIdToken();
+    // Force refresh to ensure we have a valid token
+    return await user.getIdToken(true);
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;
