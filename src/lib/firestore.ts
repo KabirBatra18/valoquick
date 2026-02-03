@@ -17,7 +17,9 @@ import {
 import { db } from './firebase';
 import { Firm, FirmMember, FirmInvite, FirestoreReportMetadata } from '@/types/firebase';
 import { SavedReport, ReportFormData } from '@/types/report';
+import { TrialRecord, Subscription, TRIAL_LIMIT, MAX_DEVICES_PER_ACCOUNT } from '@/types/subscription';
 import { updateUserFirmId } from './auth';
+import { arrayUnion, increment } from 'firebase/firestore';
 
 // ============ FIRM FUNCTIONS ============
 
@@ -80,6 +82,19 @@ export async function createInvite(
   role: 'admin' | 'member',
   invitedBy: string
 ): Promise<string> {
+  // Check seat limit before creating invite
+  const seatCheck = await checkSeatAvailability(firmId);
+
+  if (!seatCheck.canAddMembers) {
+    const error = new Error('SEAT_LIMIT_REACHED') as Error & {
+      code: string;
+      seatInfo: typeof seatCheck;
+    };
+    error.code = 'SEAT_LIMIT_REACHED';
+    error.seatInfo = seatCheck;
+    throw error;
+  }
+
   const inviteRef = doc(collection(db, 'firms', firmId, 'invites'));
 
   // Expire in 7 days
@@ -142,6 +157,26 @@ export async function acceptInvite(
 
   if (!inviteSnap.exists()) {
     throw new Error('Invite not found');
+  }
+
+  // Check seat limit before accepting (don't count pending invites, just members)
+  // This is a double-check in case seats were reduced after invite was sent
+  const membersSnap = await getDocs(collection(db, 'firms', firmId, 'members'));
+  const memberCount = membersSnap.size;
+
+  const subscription = await getSubscription(firmId);
+  const seatLimit = subscription?.seats?.total || 1;
+
+  if (memberCount >= seatLimit) {
+    const error = new Error('SEAT_LIMIT_REACHED') as Error & {
+      code: string;
+      memberCount: number;
+      seatLimit: number;
+    };
+    error.code = 'SEAT_LIMIT_REACHED';
+    error.memberCount = memberCount;
+    error.seatLimit = seatLimit;
+    throw error;
   }
 
   const inviteData = inviteSnap.data();
@@ -474,4 +509,211 @@ export function subscribeToReports(
     });
     callback(reports);
   });
+}
+
+// ============ TRIAL FUNCTIONS ============
+
+export async function getTrialByDevice(deviceId: string): Promise<TrialRecord | null> {
+  const trialRef = doc(db, 'trials', deviceId);
+  const trialSnap = await getDoc(trialRef);
+
+  if (trialSnap.exists()) {
+    return trialSnap.data() as TrialRecord;
+  }
+  return null;
+}
+
+export async function createOrUpdateTrialRecord(
+  deviceId: string,
+  userId: string
+): Promise<void> {
+  const trialRef = doc(db, 'trials', deviceId);
+  const trialSnap = await getDoc(trialRef);
+
+  if (trialSnap.exists()) {
+    // Update existing record
+    await updateDoc(trialRef, {
+      linkedGoogleIds: arrayUnion(userId),
+      lastUsedAt: serverTimestamp(),
+    });
+  } else {
+    // Create new record
+    await setDoc(trialRef, {
+      deviceFingerprint: deviceId,
+      reportsGenerated: 0,
+      linkedGoogleIds: [userId],
+      createdAt: serverTimestamp(),
+      lastUsedAt: serverTimestamp(),
+    });
+  }
+}
+
+export async function incrementTrialUsage(
+  deviceId: string,
+  userId: string
+): Promise<void> {
+  const trialRef = doc(db, 'trials', deviceId);
+  const userRef = doc(db, 'users', userId);
+
+  // Increment device trial count
+  await updateDoc(trialRef, {
+    reportsGenerated: increment(1),
+    lastUsedAt: serverTimestamp(),
+  });
+
+  // Increment user trial count
+  await updateDoc(userRef, {
+    trialReportsUsed: increment(1),
+    linkedDevices: arrayUnion(deviceId),
+  });
+}
+
+export async function getUserTrialCount(userId: string): Promise<number> {
+  const userRef = doc(db, 'users', userId);
+  const userSnap = await getDoc(userRef);
+
+  if (userSnap.exists()) {
+    return userSnap.data().trialReportsUsed || 0;
+  }
+  return 0;
+}
+
+export async function linkDeviceToUser(
+  userId: string,
+  deviceId: string
+): Promise<void> {
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    linkedDevices: arrayUnion(deviceId),
+  });
+}
+
+// ============ SUBSCRIPTION FUNCTIONS ============
+
+export async function getSubscription(firmId: string): Promise<Subscription | null> {
+  const subRef = doc(db, 'subscriptions', firmId);
+  const subSnap = await getDoc(subRef);
+
+  if (subSnap.exists()) {
+    return { firmId, ...subSnap.data() } as Subscription;
+  }
+  return null;
+}
+
+export async function createSubscription(
+  firmId: string,
+  data: Omit<Subscription, 'firmId' | 'createdAt'>
+): Promise<void> {
+  const subRef = doc(db, 'subscriptions', firmId);
+  await setDoc(subRef, {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function updateSubscription(
+  firmId: string,
+  data: Partial<Subscription>
+): Promise<void> {
+  const subRef = doc(db, 'subscriptions', firmId);
+  await updateDoc(subRef, data);
+}
+
+export async function cancelSubscription(firmId: string): Promise<void> {
+  const subRef = doc(db, 'subscriptions', firmId);
+  await updateDoc(subRef, {
+    status: 'cancelled',
+  });
+}
+
+export function subscribeToSubscription(
+  firmId: string,
+  callback: (subscription: Subscription | null) => void
+): () => void {
+  const subRef = doc(db, 'subscriptions', firmId);
+
+  return onSnapshot(subRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback({ firmId, ...snapshot.data() } as Subscription);
+    } else {
+      callback(null);
+    }
+  });
+}
+
+// ============ SEAT MANAGEMENT FUNCTIONS ============
+
+export interface SeatAvailability {
+  memberCount: number;
+  pendingInviteCount: number;
+  used: number;
+  total: number;
+  available: number;
+  canAddMembers: boolean;
+  isTrialPeriod: boolean;
+}
+
+export async function checkSeatAvailability(firmId: string): Promise<SeatAvailability> {
+  // Get member count
+  const membersSnap = await getDocs(collection(db, 'firms', firmId, 'members'));
+  const memberCount = membersSnap.size;
+
+  // Get pending invite count
+  const invitesRef = collection(db, 'firms', firmId, 'invites');
+  const pendingInvitesQuery = query(invitesRef, where('status', '==', 'pending'));
+  const pendingInvitesSnap = await getDocs(pendingInvitesQuery);
+  // Filter out expired invites
+  const now = new Date();
+  const pendingInviteCount = pendingInvitesSnap.docs.filter((doc) => {
+    const data = doc.data();
+    return data.expiresAt?.toDate() > now;
+  }).length;
+
+  // Get subscription seat limit
+  const subscription = await getSubscription(firmId);
+
+  // During trial (no subscription), allow unlimited members
+  // Each member gets their own 5 trial reports
+  if (!subscription || subscription.status !== 'active') {
+    return {
+      memberCount,
+      pendingInviteCount,
+      used: memberCount + pendingInviteCount,
+      total: Infinity,
+      available: Infinity,
+      canAddMembers: true,
+      isTrialPeriod: true,
+    };
+  }
+
+  const seatLimit = subscription.seats?.total || 1;
+  const used = memberCount + pendingInviteCount;
+  const available = Math.max(0, seatLimit - used);
+
+  return {
+    memberCount,
+    pendingInviteCount,
+    used,
+    total: seatLimit,
+    available,
+    canAddMembers: available > 0,
+    isTrialPeriod: false,
+  };
+}
+
+export async function getMemberCount(firmId: string): Promise<number> {
+  const membersSnap = await getDocs(collection(db, 'firms', firmId, 'members'));
+  return membersSnap.size;
+}
+
+export async function getPendingInviteCount(firmId: string): Promise<number> {
+  const invitesRef = collection(db, 'firms', firmId, 'invites');
+  const pendingInvitesQuery = query(invitesRef, where('status', '==', 'pending'));
+  const pendingInvitesSnap = await getDocs(pendingInvitesQuery);
+  // Filter out expired invites
+  const now = new Date();
+  return pendingInvitesSnap.docs.filter((doc) => {
+    const data = doc.data();
+    return data.expiresAt?.toDate() > now;
+  }).length;
 }

@@ -3,14 +3,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Dashboard from '@/components/Dashboard';
 import ValuationForm from '@/components/ValuationForm';
-import SignInPage from '@/components/SignInPage';
+import LandingPage from '@/components/LandingPage';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import { ValuationReport } from '@/types/valuation';
 import { ReportFormData, DEFAULT_FORM_DATA } from '@/types/report';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useReports } from '@/hooks/useReports';
 import { updateReportStatus as updateReportStatusFirestore } from '@/lib/firestore';
+import { authenticatedFetch } from '@/lib/api-client';
+import { recordTrialUsage } from '@/lib/trial';
 
 const steps = [
   { id: 0, name: 'Property', fullName: 'Property Details', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -118,6 +121,7 @@ function debounce<T extends (...args: Parameters<T>) => void>(
 export default function Home() {
   const { user, userDoc, loading: authLoading } = useAuth();
   const { firm, loading: firmLoading } = useFirm();
+  const { isSubscribed, refreshSubscription } = useSubscription();
 
   const firmId = userDoc?.firmId || null;
   const userId = user?.uid || null;
@@ -303,9 +307,8 @@ export default function Home() {
         });
       }, 500);
 
-      const response = await fetch('/api/generate', {
+      const response = await authenticatedFetch('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(optimizedData),
       });
 
@@ -332,6 +335,16 @@ export default function Home() {
           await updateReportStatusFirestore(firmId, currentReportId, 'concluded');
         } catch (err) {
           console.error('Error updating report status:', err);
+        }
+      }
+
+      // Record trial usage after successful PDF generation (if not subscribed)
+      if (!isSubscribed && userId) {
+        try {
+          await recordTrialUsage(userId);
+          await refreshSubscription();
+        } catch (err) {
+          console.error('Error recording trial usage:', err);
         }
       }
     } catch (err) {
@@ -371,9 +384,9 @@ export default function Home() {
     );
   }
 
-  // Not signed in - show sign in page
+  // Not signed in - show landing page
   if (!user) {
-    return <SignInPage />;
+    return <LandingPage />;
   }
 
   // Signed in but no firm - show onboarding

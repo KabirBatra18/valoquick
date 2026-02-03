@@ -3,12 +3,15 @@
 import { ReactNode } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { FirmProvider } from '@/contexts/FirmContext';
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <FirmProvider>
-        {children}
+        <SubscriptionProvider>
+          {children}
+        </SubscriptionProvider>
       </FirmProvider>
     </AuthProvider>
   );

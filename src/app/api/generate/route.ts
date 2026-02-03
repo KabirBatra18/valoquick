@@ -3,6 +3,8 @@ import puppeteerCore from 'puppeteer-core';
 import puppeteer from 'puppeteer';
 import chromium from '@sparticuz/chromium';
 import { ValuationReport } from '@/types/valuation';
+import { verifyAuth, adminDb } from '@/lib/firebase-admin';
+import { TRIAL_LIMIT } from '@/types/subscription';
 
 // Configure for serverless - allow up to 5 minutes for PDF generation
 export const maxDuration = 300;
@@ -44,6 +46,62 @@ async function getBrowser() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication - only authenticated users can generate reports
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated || !authResult.user) {
+      return NextResponse.json(
+        { error: authResult.error || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const userId = authResult.user.uid;
+
+    // Server-side subscription/trial validation
+    const userDoc = await adminDb.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const userData = userDoc.data();
+    const firmId = userData?.firmId;
+    let canGenerate = false;
+
+    // Check subscription status if user has a firm
+    if (firmId) {
+      const subscriptionDoc = await adminDb.collection('subscriptions').doc(firmId).get();
+      if (subscriptionDoc.exists) {
+        const subscription = subscriptionDoc.data();
+        if (subscription?.status === 'active' && subscription?.currentPeriodEnd) {
+          const periodEnd = subscription.currentPeriodEnd.toDate();
+          const now = new Date();
+          // Add 1 day grace period for webhook delays
+          const gracePeriodEnd = new Date(periodEnd.getTime() + 24 * 60 * 60 * 1000);
+          if (now <= gracePeriodEnd) {
+            canGenerate = true;
+          }
+        }
+      }
+    }
+
+    // If not subscribed, check trial status
+    if (!canGenerate) {
+      const userTrialCount = userData?.trialReportsUsed || 0;
+      if (userTrialCount < TRIAL_LIMIT) {
+        canGenerate = true;
+      }
+    }
+
+    if (!canGenerate) {
+      return NextResponse.json(
+        { error: 'Trial limit reached. Please subscribe to continue generating reports.' },
+        { status: 403 }
+      );
+    }
+
     const data: ValuationReport = await request.json();
 
     // Generate HTML content for PDF

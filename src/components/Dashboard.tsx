@@ -5,6 +5,9 @@ import { SavedReport } from '@/types/report';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
 import { useReports } from '@/hooks/useReports';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import TrialBanner from './TrialBanner';
+import PricingSection from './PricingSection';
 
 interface DashboardProps {
   onOpenReport: (reportId: string) => void;
@@ -25,11 +28,14 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
     copyReport,
   } = useReports(firmId, userId);
 
+  const { canGenerateReport, trialStatus, isSubscribed, refreshSubscription } = useSubscription();
+
   const [activeTab, setActiveTab] = useState<'active' | 'concluded'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isCreating, setIsCreating] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -49,9 +55,16 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
   };
 
   const handleCreateNew = async () => {
+    // Check if user can generate reports (either subscribed or has trial remaining)
+    if (!canGenerateReport) {
+      setShowPricing(true);
+      return;
+    }
+
     setIsCreating(true);
     try {
       const reportId = await createNewReport();
+      // Trial usage is now recorded after successful PDF generation in page.tsx
       onOpenReport(reportId);
     } catch (err) {
       console.error('Error creating report:', err);
@@ -118,6 +131,23 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
 
   return (
     <div className="min-h-screen bg-surface-50">
+      {/* Pricing Modal */}
+      {showPricing && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative bg-surface-100 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowPricing(false)}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-surface-200 text-text-tertiary hover:text-text-primary transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <PricingSection showHeader={true} />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -192,6 +222,9 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* Trial Banner */}
+        <TrialBanner onUpgrade={() => setShowPricing(true)} />
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="glass-card p-4">

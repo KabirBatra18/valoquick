@@ -25,8 +25,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUserDoc = async () => {
     if (user) {
-      const doc = await getUserDocument(user.uid);
-      setUserDoc(doc);
+      try {
+        const doc = await getUserDocument(user.uid);
+        setUserDoc(doc);
+      } catch (err) {
+        console.error('Error refreshing user document:', err);
+        setError('Failed to refresh user data');
+      }
     }
   };
 
@@ -59,7 +64,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInWithGoogle();
     } catch (err) {
       console.error('Sign in error:', err);
-      setError('Failed to sign in. Please try again.');
+
+      // Parse error message for user-friendly display
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+      if (errorMessage.includes('POPUP_BLOCKED')) {
+        setError('Popup was blocked. Please allow popups for this site and try again.');
+      } else if (errorMessage.includes('POPUP_CLOSED')) {
+        setError(null); // User cancelled, no need to show error
+      } else if (errorMessage.includes('NETWORK_ERROR')) {
+        setError('Network error. Please check your internet connection.');
+      } else {
+        setError('Failed to sign in. Please try again.');
+      }
+
       setLoading(false);
     }
   };

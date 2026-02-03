@@ -29,6 +29,25 @@ service cloud.firestore {
       allow update: if isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Trials collection - device fingerprint tracking for trial abuse prevention
+    match /trials/{deviceId} {
+      // Any authenticated user can read trial data (to check limits)
+      allow read: if isAuthenticated();
+      // Any authenticated user can create/update trial data
+      allow create, update: if isAuthenticated();
+      // No deletes allowed
+      allow delete: if false;
+    }
+
+    // Subscriptions collection - payment tracking
+    match /subscriptions/{firmId} {
+      // Firm members can read their subscription
+      allow read: if isFirmMember(firmId);
+      // Only server (admin SDK) should write - webhooks handle this
+      // For now, allow admins to write in case of manual updates
+      allow write: if isFirmAdmin(firmId);
+    }
+
     // Firms collection
     match /firms/{firmId} {
       // Any authenticated user can create a firm (becoming its owner)

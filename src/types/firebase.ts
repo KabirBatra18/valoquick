@@ -7,12 +7,18 @@ export interface FirebaseUser {
   photoURL: string | null;
 }
 
+export type SubscriptionStatusType = 'trial' | 'active' | 'expired';
+
 export interface UserDocument {
   email: string;
   displayName: string;
   firmId: string | null;
   createdAt: Timestamp;
   lastLoginAt: Timestamp;
+  // Trial tracking
+  trialReportsUsed?: number;
+  linkedDevices?: string[];
+  subscriptionStatus?: SubscriptionStatusType;
 }
 
 export interface Firm {

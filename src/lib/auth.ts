@@ -12,28 +12,46 @@ import { UserDocument } from '@/types/firebase';
 const googleProvider = new GoogleAuthProvider();
 
 export async function signInWithGoogle(): Promise<User> {
-  const result = await signInWithPopup(auth, googleProvider);
-  const user = result.user;
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const user = result.user;
 
-  // Create or update user document
-  const userRef = doc(db, 'users', user.uid);
-  const userSnap = await getDoc(userRef);
+    // Create or update user document
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
 
-  if (!userSnap.exists()) {
-    // New user - create document with no firm
-    await setDoc(userRef, {
-      email: user.email,
-      displayName: user.displayName,
-      firmId: null,
-      createdAt: serverTimestamp(),
-      lastLoginAt: serverTimestamp(),
-    });
-  } else {
-    // Existing user - update last login
-    await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+    if (!userSnap.exists()) {
+      // New user - create document with no firm
+      await setDoc(userRef, {
+        email: user.email || '', // Handle null email edge case
+        displayName: user.displayName || 'User',
+        firmId: null,
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
+      });
+    } else {
+      // Existing user - update last login
+      await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+    }
+
+    return user;
+  } catch (error: unknown) {
+    // Handle specific error types
+    const firebaseError = error as { code?: string; message?: string };
+
+    if (firebaseError.code === 'auth/popup-blocked') {
+      throw new Error('POPUP_BLOCKED: Please allow popups for this site and try again.');
+    }
+    if (firebaseError.code === 'auth/popup-closed-by-user') {
+      throw new Error('POPUP_CLOSED: Sign-in was cancelled.');
+    }
+    if (firebaseError.code === 'auth/network-request-failed') {
+      throw new Error('NETWORK_ERROR: Please check your internet connection.');
+    }
+
+    // Re-throw with more context
+    throw new Error(`SIGN_IN_FAILED: ${firebaseError.message || 'Unknown error occurred'}`);
   }
-
-  return user;
 }
 
 export async function signOut(): Promise<void> {
