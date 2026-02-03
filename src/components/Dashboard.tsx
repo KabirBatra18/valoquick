@@ -1,29 +1,43 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SavedReport, ReportMetadata } from '@/types/report';
-import { getAllReports, createNewReport, deleteReport, updateReportStatus, duplicateReport } from '@/utils/storage';
+import { SavedReport } from '@/types/report';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFirm } from '@/contexts/FirmContext';
+import { useReports } from '@/hooks/useReports';
 
 interface DashboardProps {
   onOpenReport: (reportId: string) => void;
-  onCreateReport: () => void;
 }
 
-export default function Dashboard({ onOpenReport, onCreateReport }: DashboardProps) {
-  const [reports, setReports] = useState<SavedReport[]>([]);
+export default function Dashboard({ onOpenReport }: DashboardProps) {
+  const { user, logout } = useAuth();
+  const { firm } = useFirm();
+  const firmId = firm?.id || null;
+  const userId = user?.uid || null;
+
+  const {
+    reports,
+    loading,
+    createNewReport,
+    removeReport,
+    changeReportStatus,
+    copyReport,
+  } = useReports(firmId, userId);
+
   const [activeTab, setActiveTab] = useState<'active' | 'concluded'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Load reports and theme on mount
   useEffect(() => {
-    setReports(getAllReports());
-    // Load saved theme
-    const savedTheme = localStorage.getItem('valoquick_theme') as 'dark' | 'light' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.setAttribute('data-theme', savedTheme);
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('valoquick_theme') as 'dark' | 'light' | null;
+      if (savedTheme) {
+        setTheme(savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
     }
   }, []);
 
@@ -34,30 +48,40 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
     localStorage.setItem('valoquick_theme', newTheme);
   };
 
-  const refreshReports = () => {
-    setReports(getAllReports());
+  const handleCreateNew = async () => {
+    setIsCreating(true);
+    try {
+      const reportId = await createNewReport();
+      onOpenReport(reportId);
+    } catch (err) {
+      console.error('Error creating report:', err);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const handleCreateNew = () => {
-    const newReport = createNewReport();
-    onOpenReport(newReport.metadata.id);
+  const handleDelete = async (id: string) => {
+    try {
+      await removeReport(id);
+      setDeleteConfirm(null);
+    } catch (err) {
+      console.error('Error deleting report:', err);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    deleteReport(id);
-    refreshReports();
-    setDeleteConfirm(null);
+  const handleStatusChange = async (id: string, status: 'active' | 'concluded') => {
+    try {
+      await changeReportStatus(id, status);
+    } catch (err) {
+      console.error('Error updating status:', err);
+    }
   };
 
-  const handleStatusChange = (id: string, status: 'active' | 'concluded') => {
-    updateReportStatus(id, status);
-    refreshReports();
-  };
-
-  const handleDuplicate = (id: string) => {
-    const newReport = duplicateReport(id);
-    if (newReport) {
-      refreshReports();
+  const handleDuplicate = async (id: string) => {
+    try {
+      await copyReport(id);
+    } catch (err) {
+      console.error('Error duplicating report:', err);
     }
   };
 
@@ -81,13 +105,16 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
     });
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-text-tertiary">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-50">
@@ -97,9 +124,36 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-text-primary">ValuQuick</h1>
-              <p className="text-xs text-text-tertiary">Property Valuation Reports</p>
+              <p className="text-xs text-text-tertiary">{firm?.name || 'Property Valuation Reports'}</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* User Menu */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-100 rounded-xl border border-surface-200">
+                {user?.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || 'User'}
+                    className="w-6 h-6 rounded-full"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white text-xs font-medium">
+                    {user?.displayName?.[0] || user?.email?.[0] || '?'}
+                  </div>
+                )}
+                <span className="text-sm text-text-secondary hidden sm:inline">
+                  {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0]}
+                </span>
+                <button
+                  onClick={logout}
+                  className="p-1 hover:bg-surface-200 rounded-lg transition-colors"
+                  title="Sign out"
+                >
+                  <svg className="w-4 h-4 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
+
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -120,11 +174,16 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
               {/* New Report Button */}
               <button
                 onClick={handleCreateNew}
-                className="flex items-center gap-2 px-4 py-2.5 bg-brand text-white rounded-xl font-medium text-sm hover:bg-brand-dark transition-colors shadow-lg shadow-brand/25"
+                disabled={isCreating}
+                className="flex items-center gap-2 px-4 py-2.5 bg-brand text-white rounded-xl font-medium text-sm hover:bg-brand-dark transition-colors shadow-lg shadow-brand/25 disabled:opacity-50"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+                {isCreating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
                 New Report
               </button>
             </div>
@@ -223,11 +282,16 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
               {activeTab === 'active' && (
                 <button
                   onClick={handleCreateNew}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg font-medium text-sm hover:bg-brand-dark transition-colors"
+                  disabled={isCreating}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg font-medium text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
+                  {isCreating ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
                   Create Report
                 </button>
               )}
@@ -243,7 +307,7 @@ export default function Dashboard({ onOpenReport, onCreateReport }: DashboardPro
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-text-primary truncate">
-                        {report.metadata.propertyAddress}
+                        {report.metadata.propertyAddress || 'New Report'}
                       </h3>
                       {report.metadata.status === 'concluded' && (
                         <span className="shrink-0 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">

@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isFirmMember(firmId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/firms/$(firmId)/members/$(request.auth.uid));
+    }
+
+    function isFirmAdmin(firmId) {
+      let member = get(/databases/$(database)/documents/firms/$(firmId)/members/$(request.auth.uid)).data;
+      return member.role in ['owner', 'admin'];
+    }
+
+    function isFirmOwner(firmId) {
+      let member = get(/databases/$(database)/documents/firms/$(firmId)/members/$(request.auth.uid)).data;
+      return member.role == 'owner';
+    }
+
+    // Users collection - each user can only access their own document
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Firms collection
+    match /firms/{firmId} {
+      // Any authenticated user can create a firm (becoming its owner)
+      allow create: if isAuthenticated();
+      // Only firm members can read firm data
+      allow read: if isFirmMember(firmId);
+      // Only admins/owners can update firm settings
+      allow update: if isFirmAdmin(firmId);
+      // Only owners can delete the firm
+      allow delete: if isFirmOwner(firmId);
+
+      // Members subcollection
+      match /members/{memberId} {
+        // All firm members can view the member list
+        allow read: if isFirmMember(firmId);
+        // Admins can add members, or user can add themselves (via invite acceptance)
+        allow create: if isFirmAdmin(firmId) ||
+          (isAuthenticated() && request.auth.uid == memberId);
+        // Owners can update any member, admins can update non-owners
+        allow update: if isFirmOwner(firmId) ||
+          (isFirmAdmin(firmId) && resource.data.role != 'owner');
+        // Only owners can remove members (except themselves)
+        allow delete: if isFirmOwner(firmId) && memberId != request.auth.uid;
+      }
+
+      // Invites subcollection
+      match /invites/{inviteId} {
+        // Firm members can view invites, or invited user can see their own invite
+        allow read: if isFirmMember(firmId) ||
+          (isAuthenticated() && resource.data.email == request.auth.token.email);
+        // Only admins can create invites
+        allow create: if isFirmAdmin(firmId);
+        // Admins can update, or the invited user can accept
+        allow update: if isFirmAdmin(firmId) ||
+          (isAuthenticated() && resource.data.email == request.auth.token.email);
+        // Only admins can delete invites
+        allow delete: if isFirmAdmin(firmId);
+      }
+
+      // Reports subcollection - the core business data
+      match /reports/{reportId} {
+        // All firm members can read all reports
+        allow read: if isFirmMember(firmId);
+        // All firm members can create reports
+        allow create: if isFirmMember(firmId);
+        // All firm members can update reports
+        allow update: if isFirmMember(firmId);
+        // Admins can delete any report, members can only delete their own
+        allow delete: if isFirmAdmin(firmId) ||
+          (isFirmMember(firmId) && resource.data.metadata.createdBy == request.auth.uid);
+      }
+    }
+  }
+}

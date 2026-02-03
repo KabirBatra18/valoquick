@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Dashboard from '@/components/Dashboard';
 import ValuationForm from '@/components/ValuationForm';
+import SignInPage from '@/components/SignInPage';
+import OnboardingFlow from '@/components/OnboardingFlow';
 import { ValuationReport } from '@/types/valuation';
 import { ReportFormData, DEFAULT_FORM_DATA } from '@/types/report';
-import { getReport, saveReport, createNewReport, updateReportStatus } from '@/utils/storage';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFirm } from '@/contexts/FirmContext';
+import { useReports } from '@/hooks/useReports';
+import { updateReportStatus as updateReportStatusFirestore } from '@/lib/firestore';
 
 const steps = [
   { id: 0, name: 'Property', fullName: 'Property Details', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -17,7 +22,6 @@ const steps = [
   { id: 6, name: 'Location', fullName: 'Property Location', icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
 ];
 
-// Generation progress steps
 const generationSteps = [
   { id: 0, label: 'Preparing data', description: 'Validating and organizing report data...' },
   { id: 1, label: 'Processing images', description: 'Optimizing photos for the report...' },
@@ -25,11 +29,9 @@ const generationSteps = [
   { id: 3, label: 'Finalizing', description: 'Almost done...' },
 ];
 
-// Loading Overlay Component
 const GeneratingOverlay = ({ currentStep, progress }: { currentStep: number; progress: number }) => (
   <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div className="bg-surface-100 rounded-2xl p-6 lg:p-8 max-w-md w-full shadow-2xl border border-surface-200">
-      {/* Header */}
       <div className="text-center mb-6">
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand to-brand-dark flex items-center justify-center">
           <svg className="w-8 h-8 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -40,7 +42,6 @@ const GeneratingOverlay = ({ currentStep, progress }: { currentStep: number; pro
         <p className="text-sm text-text-tertiary mt-1">Please wait while we create your PDF</p>
       </div>
 
-      {/* Progress Bar */}
       <div className="mb-6">
         <div className="h-2 bg-surface-200 rounded-full overflow-hidden">
           <div
@@ -51,7 +52,6 @@ const GeneratingOverlay = ({ currentStep, progress }: { currentStep: number; pro
         <p className="text-xs text-text-tertiary text-center mt-2">{Math.round(progress)}%</p>
       </div>
 
-      {/* Steps */}
       <div className="space-y-3">
         {generationSteps.map((step, idx) => (
           <div
@@ -96,7 +96,6 @@ const GeneratingOverlay = ({ currentStep, progress }: { currentStep: number; pro
         ))}
       </div>
 
-      {/* Tip */}
       <p className="text-[10px] text-text-tertiary text-center mt-6">
         This may take 15-30 seconds depending on the number of photos
       </p>
@@ -104,7 +103,27 @@ const GeneratingOverlay = ({ currentStep, progress }: { currentStep: number; pro
   </div>
 );
 
+// Debounce helper
+function debounce<T extends (...args: Parameters<T>) => void>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 export default function Home() {
+  const { user, userDoc, loading: authLoading } = useAuth();
+  const { firm, loading: firmLoading } = useFirm();
+
+  const firmId = userDoc?.firmId || null;
+  const userId = user?.uid || null;
+
+  const { fetchReport, saveCurrentReport } = useReports(firmId, userId);
+
   const [view, setView] = useState<'dashboard' | 'editor'>('dashboard');
   const [currentReportId, setCurrentReportId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ReportFormData>(DEFAULT_FORM_DATA);
@@ -115,38 +134,71 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(0);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Apply saved theme on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('valoquick_theme');
-    if (savedTheme) {
-      document.documentElement.setAttribute('data-theme', savedTheme);
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('valoquick_theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
     }
   }, []);
 
-  // Auto-save every 5 seconds when in editor
+  // Debounced save function
+  const debouncedSave = useMemo(
+    () =>
+      debounce(async (reportId: string, data: ReportFormData) => {
+        if (!firmId || !userId) return;
+
+        setIsSaving(true);
+        try {
+          await saveCurrentReport({
+            metadata: {
+              id: reportId,
+              title: 'Valuation Report',
+              propertyAddress: '',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              completionPercentage: 0,
+            },
+            formData: data,
+          });
+          setLastSaved(new Date());
+        } catch (err) {
+          console.error('Auto-save failed:', err);
+        } finally {
+          setIsSaving(false);
+        }
+      }, 2000),
+    [firmId, userId, saveCurrentReport]
+  );
+
+  // Auto-save when form data changes
   useEffect(() => {
-    if (view !== 'editor' || !currentReportId) return;
+    if (view === 'editor' && currentReportId && firmId) {
+      debouncedSave(currentReportId, formData);
+    }
+  }, [formData, currentReportId, view, firmId, debouncedSave]);
 
-    const saveInterval = setInterval(() => {
-      const report = getReport(currentReportId);
-      if (report) {
-        report.formData = formData;
-        saveReport(report);
-        setLastSaved(new Date());
-      }
-    }, 5000);
-
-    return () => clearInterval(saveInterval);
-  }, [view, currentReportId, formData]);
-
-  // Save when leaving editor
-  const handleBackToDashboard = useCallback(() => {
-    if (currentReportId) {
-      const report = getReport(currentReportId);
-      if (report) {
-        report.formData = formData;
-        saveReport(report);
+  const handleBackToDashboard = useCallback(async () => {
+    if (currentReportId && firmId && userId) {
+      try {
+        await saveCurrentReport({
+          metadata: {
+            id: currentReportId,
+            title: 'Valuation Report',
+            propertyAddress: '',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            completionPercentage: 0,
+          },
+          formData,
+        });
+      } catch (err) {
+        console.error('Error saving before exit:', err);
       }
     }
     setView('dashboard');
@@ -155,36 +207,24 @@ export default function Home() {
     setActiveStep(0);
     setGeneratedFiles(null);
     setError(null);
-  }, [currentReportId, formData]);
+  }, [currentReportId, formData, firmId, userId, saveCurrentReport]);
 
-  const handleOpenReport = (reportId: string) => {
-    let report = getReport(reportId);
+  const handleOpenReport = useCallback(async (reportId: string) => {
+    if (!firmId) return;
 
-    // If report doesn't exist (new report), create it
-    if (!report) {
-      report = createNewReport();
-      report.metadata.id = reportId;
-      saveReport(report);
+    const report = await fetchReport(reportId);
+    if (report) {
+      setCurrentReportId(reportId);
+      setFormData(report.formData);
+      setView('editor');
+      setActiveStep(0);
     }
+  }, [firmId, fetchReport]);
 
-    setCurrentReportId(reportId);
-    setFormData(report.formData);
-    setView('editor');
-    setActiveStep(0);
-  };
-
-  const handleCreateReport = () => {
-    const newReport = createNewReport();
-    saveReport(newReport);
-    handleOpenReport(newReport.metadata.id);
-  };
-
-  // Update form data handler - passed to ValuationForm
   const handleFormDataChange = useCallback((newData: Partial<ReportFormData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
   }, []);
 
-  // Compress image to reduce size
   const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -192,7 +232,6 @@ export default function Home() {
         const canvas = document.createElement('canvas');
         let { width, height } = img;
 
-        // Scale down if too large
         if (width > maxWidth) {
           height = (height * maxWidth) / width;
           width = maxWidth;
@@ -204,7 +243,7 @@ export default function Home() {
         ctx?.drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
-      img.onerror = () => resolve(base64); // Return original if error
+      img.onerror = () => resolve(base64);
       img.src = base64;
     });
   };
@@ -217,41 +256,46 @@ export default function Home() {
     setGeneratedFiles(null);
 
     // Save before generating
-    if (currentReportId) {
-      const report = getReport(currentReportId);
-      if (report) {
-        report.formData = formData;
-        saveReport(report);
+    if (currentReportId && firmId && userId) {
+      try {
+        await saveCurrentReport({
+          metadata: {
+            id: currentReportId,
+            title: 'Valuation Report',
+            propertyAddress: '',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            completionPercentage: 0,
+          },
+          formData,
+        });
+      } catch (err) {
+        console.error('Error saving before generate:', err);
       }
     }
 
     try {
-      // Step 0: Preparing data
       setGenerationStep(0);
       setGenerationProgress(10);
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Step 1: Processing images
       setGenerationStep(1);
       setGenerationProgress(20);
 
-      // Compress photos to reduce payload size
       const compressedPhotos: string[] = [];
       for (let i = 0; i < data.photos.length; i++) {
         const compressed = await compressImage(data.photos[i]);
         compressedPhotos.push(compressed);
-        // Update progress during image compression
         const imageProgress = 20 + ((i + 1) / data.photos.length) * 30;
         setGenerationProgress(imageProgress);
       }
 
       const optimizedData = { ...data, photos: compressedPhotos };
 
-      // Step 2: Generating PDF
       setGenerationStep(2);
       setGenerationProgress(55);
 
-      // Start progress animation while waiting for response
       const progressInterval = setInterval(() => {
         setGenerationProgress(prev => {
           if (prev < 90) return prev + 2;
@@ -272,7 +316,6 @@ export default function Home() {
         throw new Error(errorData.error || 'Failed to generate report');
       }
 
-      // Step 3: Finalizing
       setGenerationStep(3);
       setGenerationProgress(95);
 
@@ -283,9 +326,13 @@ export default function Home() {
 
       setGeneratedFiles(result);
 
-      // Mark report as concluded after successful generation
-      if (currentReportId) {
-        updateReportStatus(currentReportId, 'concluded');
+      // Mark report as concluded
+      if (currentReportId && firmId) {
+        try {
+          await updateReportStatusFirestore(firmId, currentReportId, 'concluded');
+        } catch (err) {
+          console.error('Error updating report status:', err);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -312,12 +359,33 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
+  // Loading state
+  if (authLoading || firmLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not signed in - show sign in page
+  if (!user) {
+    return <SignInPage />;
+  }
+
+  // Signed in but no firm - show onboarding
+  if (!userDoc?.firmId || !firm) {
+    return <OnboardingFlow />;
+  }
+
   // Show Dashboard
   if (view === 'dashboard') {
     return (
       <Dashboard
         onOpenReport={handleOpenReport}
-        onCreateReport={handleCreateReport}
       />
     );
   }
@@ -325,11 +393,10 @@ export default function Home() {
   // Show Editor
   return (
     <div className="flex min-h-screen bg-surface-50 text-text-primary">
-      {/* Generation Loading Overlay */}
       {isGenerating && (
         <GeneratingOverlay currentStep={generationStep} progress={generationProgress} />
       )}
-      {/* Sidebar */}
+
       <aside className="w-80 border-r border-surface-200 bg-surface-100 flex flex-col fixed inset-y-0 z-50 h-screen hidden lg:flex">
         <div className="p-6 border-b border-surface-200">
           <button
@@ -350,7 +417,7 @@ export default function Home() {
             <div>
               <h1 className="text-lg font-bold text-text-primary tracking-tight">Valuation Report</h1>
               <p className="text-xs text-text-tertiary">
-                {lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Auto-saving...'}
+                {isSaving ? 'Saving...' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Auto-saving...'}
               </p>
             </div>
           </div>
@@ -429,9 +496,7 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 lg:ml-80 relative">
-        {/* Header - Desktop Only */}
         <header className="hidden lg:block sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">
           <div className="px-8 py-5 flex items-center justify-between">
             <div>
@@ -448,7 +513,6 @@ export default function Home() {
           </div>
         </header>
 
-         {/* Mobile Header */}
          <div className="lg:hidden px-3 py-2.5 border-b border-surface-200 bg-surface-100/95 backdrop-blur-xl sticky top-0 z-40">
            <div className="flex items-center justify-between">
              <button
@@ -474,7 +538,6 @@ export default function Home() {
            </div>
          </div>
 
-         {/* Mobile Bottom Navigation */}
          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-100/95 backdrop-blur-xl border-t border-surface-200 safe-area-bottom">
            <div className="grid grid-cols-7 h-12">
              {steps.map((step) => (
@@ -496,7 +559,6 @@ export default function Home() {
            </div>
          </nav>
 
-         {/* Mobile Floating Action Button */}
          <div className="lg:hidden fixed bottom-16 right-3 z-50 flex flex-col items-end gap-2">
            {generatedFiles && (
              <div className="flex flex-col gap-2 animate-fade-in">
@@ -532,7 +594,6 @@ export default function Home() {
          </div>
 
         <div className="p-3 lg:p-8 pb-32 lg:pb-8 max-w-5xl mx-auto">
-          {/* Error Message */}
           {error && (
             <div className="mb-4 lg:mb-6 p-3 lg:p-4 rounded-lg lg:rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3 lg:gap-4">
               <div className="p-1.5 lg:p-2 rounded-lg bg-red-500/20 text-red-500">
@@ -556,7 +617,6 @@ export default function Home() {
             onDataChange={handleFormDataChange}
           />
 
-          {/* Desktop Navigation Footer */}
           <div className="nav-footer hidden lg:flex">
             <button
               type="button"
@@ -594,7 +654,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Mobile Swipe Navigation */}
           <div className="lg:hidden flex justify-center gap-3 py-3">
             <button
               type="button"
