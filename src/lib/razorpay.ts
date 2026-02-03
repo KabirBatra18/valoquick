@@ -78,12 +78,14 @@ export async function createRazorpaySubscription(
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('Create subscription error:', response.status, error);
       return { success: false, error: error.error || 'Failed to create subscription' };
     }
 
     const data = await response.json();
     return { success: true, subscriptionId: data.subscriptionId };
   } catch (error) {
+    console.error('Create subscription network error:', error);
     return { success: false, error: 'Network error' };
   }
 }

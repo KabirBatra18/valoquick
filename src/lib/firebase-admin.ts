@@ -19,10 +19,17 @@ function getFirebaseAdmin(): { app: App | null; db: Firestore | null; auth: Auth
   if (!getApps().length) {
     try {
       const serviceAccount = JSON.parse(serviceAccountKey);
+
+      // Fix private key newlines - Railway may escape them as literal \n
+      if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+
       app = initializeApp({
         credential: cert(serviceAccount),
         projectId,
       });
+      console.log('Firebase Admin initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Firebase Admin:', error);
       return { app: null, db: null, auth: null };

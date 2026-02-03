@@ -9,12 +9,15 @@ import { auth } from './firebase';
 export async function getAuthToken(): Promise<string | null> {
   const user = auth.currentUser;
   if (!user) {
+    console.warn('getAuthToken: No current user');
     return null;
   }
 
   try {
     // Force refresh to ensure we have a valid token
-    return await user.getIdToken(true);
+    const token = await user.getIdToken(true);
+    console.log('getAuthToken: Got token for user', user.uid);
+    return token;
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;

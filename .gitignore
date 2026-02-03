@@ -39,3 +39,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+valoquick-firebase-adminsdk-fbsvc-22cb9f8e3e.json
