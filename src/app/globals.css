@@ -12,8 +12,8 @@
   --color-surface-200: #27272a;
   --color-surface-300: #3f3f46;
   --color-text-primary: #ffffff;
-  --color-text-secondary: #d4d4d8;
-  --color-text-tertiary: #a1a1aa;
+  --color-text-secondary: #e4e4e7;
+  --color-text-tertiary: #b4b4bb;
 }
 
 /* Light theme overrides */
@@ -33,6 +33,41 @@
 :root {
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --theme-transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth theme transition for all elements */
+*,
+*::before,
+*::after {
+  transition: background-color var(--theme-transition),
+              border-color var(--theme-transition),
+              box-shadow var(--theme-transition),
+              color var(--theme-transition);
+}
+
+/* Disable transition on elements that shouldn't animate */
+input,
+textarea,
+select,
+button:active,
+.no-theme-transition,
+.no-theme-transition * {
+  transition: none;
+}
+
+/* Re-enable transitions for interactive states */
+button,
+a,
+input:focus,
+textarea:focus,
+select:focus {
+  transition: background-color 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s ease,
+              color 0.2s ease,
+              transform 0.15s ease,
+              opacity 0.2s ease;
 }
 
 @layer base {
@@ -41,7 +76,7 @@
     background-image:
       radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
       radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.05), transparent 25%);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color var(--theme-transition), background-image 0.5s ease;
   }
 
   [data-theme="light"] body,
@@ -91,7 +126,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-surface-100/80 backdrop-blur-xl border border-surface-200 rounded-2xl p-6 transition-all duration-300;
+    @apply bg-surface-100/80 backdrop-blur-xl border border-surface-200 rounded-2xl p-6;
   }
 
   .glass-card:hover {
