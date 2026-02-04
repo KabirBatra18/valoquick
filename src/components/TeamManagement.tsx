@@ -138,81 +138,95 @@ export default function TeamManagement({ onClose }: TeamManagementProps) {
           )}
 
           {/* Seat Usage */}
-          {isSubscribed && subscription && (
-            <div className="p-4 bg-surface-200/50 rounded-xl">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-text-primary">Seat Usage</span>
+          <div className="p-4 bg-surface-200/50 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-text-primary">Team Seats</span>
+              {isSubscribed ? (
                 <span className="text-sm text-text-tertiary">
                   {usedSeats} / {totalSeats} seats used
                 </span>
-              </div>
-              <div className="h-2 bg-surface-300 rounded-full overflow-hidden mb-3">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    usagePercent >= 90 ? 'bg-red-500' : usagePercent >= 70 ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}
-                  style={{ width: `${usagePercent}%` }}
-                />
-              </div>
-              {isOwner && (
-                <button
-                  onClick={() => setShowAddSeats(true)}
-                  className="text-sm text-brand hover:text-brand-light transition-colors"
-                >
-                  + Add more seats
-                </button>
+              ) : (
+                <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full">
+                  Trial
+                </span>
               )}
             </div>
-          )}
+            {isSubscribed ? (
+              <>
+                <div className="h-2 bg-surface-300 rounded-full overflow-hidden mb-3">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      usagePercent >= 90 ? 'bg-red-500' : usagePercent >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+                {isOwner && (
+                  <button
+                    onClick={() => setShowAddSeats(true)}
+                    className="text-sm text-brand hover:text-brand-light transition-colors"
+                  >
+                    + Add more seats
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-text-tertiary">
+                Subscribe to add team members. Each plan includes 1 seat, with option to add more.
+              </p>
+            )}
+          </div>
 
-          {/* Invite Form - Only for owners */}
-          {isOwner && isSubscribed && (
+          {/* Invite Form - For owners */}
+          {isOwner && (
             <div className="p-4 bg-surface-200/50 rounded-xl">
               <h3 className="text-sm font-semibold text-text-primary mb-4">Invite Team Member</h3>
-              <form onSubmit={handleInvite} className="space-y-4">
-                <div className="flex gap-3">
-                  <input
-                    type="email"
-                    placeholder="Email address"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="flex-1 px-4 py-2.5 bg-surface-100 border border-surface-300 rounded-xl text-text-primary text-sm outline-none focus:border-brand"
-                    required
-                  />
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member')}
-                    className="px-4 py-2.5 bg-surface-100 border border-surface-300 rounded-xl text-text-primary text-sm outline-none focus:border-brand"
-                  >
-                    <option value="member">Member</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-text-tertiary">
-                    {availableSeats > 0
-                      ? `${availableSeats} seat${availableSeats !== 1 ? 's' : ''} available`
-                      : 'No seats available - purchase more to invite'
-                    }
+              {isSubscribed ? (
+                <form onSubmit={handleInvite} className="space-y-4">
+                  <div className="flex gap-3">
+                    <input
+                      type="email"
+                      placeholder="Email address"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="flex-1 px-4 py-2.5 bg-surface-100 border border-surface-300 rounded-xl text-text-primary text-sm outline-none focus:border-brand"
+                      required
+                    />
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member')}
+                      className="px-4 py-2.5 bg-surface-100 border border-surface-300 rounded-xl text-text-primary text-sm outline-none focus:border-brand"
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-text-tertiary">
+                      {availableSeats > 0
+                        ? `${availableSeats} seat${availableSeats !== 1 ? 's' : ''} available`
+                        : 'No seats available - purchase more to invite'
+                      }
+                    </p>
+                    <button
+                      type="submit"
+                      disabled={isInviting || availableSeats <= 0}
+                      className="btn btn-primary text-sm disabled:opacity-50"
+                    >
+                      {isInviting ? 'Sending...' : 'Send Invite'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-text-secondary mb-3">
+                    Subscribe to a plan to invite team members
                   </p>
-                  <button
-                    type="submit"
-                    disabled={isInviting || availableSeats <= 0}
-                    className="btn btn-primary text-sm disabled:opacity-50"
-                  >
-                    {isInviting ? 'Sending...' : 'Send Invite'}
-                  </button>
+                  <p className="text-xs text-text-tertiary">
+                    Each plan includes 1 seat. You can purchase additional seats after subscribing.
+                  </p>
                 </div>
-              </form>
-            </div>
-          )}
-
-          {/* Trial Notice */}
-          {!isSubscribed && isOwner && (
-            <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-              <p className="text-sm text-yellow-400">
-                Subscribe to a plan to invite team members and manage seats.
-              </p>
+              )}
             </div>
           )}
 
