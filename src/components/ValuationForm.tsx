@@ -10,6 +10,9 @@ import {
   calculateValues,
 } from '@/types/valuation';
 import { ReportFormData } from '@/types/report';
+import SwipeableField from './SwipeableField';
+import SwipeHint from './SwipeHint';
+import HiddenFieldsModal from './HiddenFieldsModal';
 
 interface ValuationFormProps {
   onGenerate: (data: ValuationReport) => void;
@@ -1007,6 +1010,24 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
+  // Hidden fields state (for swipe-to-hide feature)
+  const [hiddenFields, setHiddenFields] = useState<string[]>(initialData?.hiddenFields || []);
+  const [showHiddenFieldsModal, setShowHiddenFieldsModal] = useState(false);
+
+  // Hidden field handlers
+  const handleHideField = useCallback((fieldName: string) => {
+    setHiddenFields(prev => [...prev, fieldName]);
+  }, []);
+
+  const handleRestoreField = useCallback((fieldName: string) => {
+    setHiddenFields(prev => prev.filter(f => f !== fieldName));
+  }, []);
+
+  const handleRestoreAllFields = useCallback(() => {
+    setHiddenFields([]);
+    setShowHiddenFieldsModal(false);
+  }, []);
+
   const GOOGLE_MAPS_API_KEY = 'AIzaSyA8HFiUeXIbsStOMmjDYKyWc8EyNww5G_s';
 
   const captureLocation = () => {
@@ -1220,6 +1241,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         locationLng,
         locationCapturedAt,
         locationMapUrl,
+        // Hidden fields
+        hiddenFields,
       });
     }
   }, [
@@ -1251,7 +1274,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     locationAttributes, scarcityValue, demandSupplyComment, comparableSalePrices, lastTwoTransactions,
     guidelineValueLand, guidelineValueBuilding, marketRateTrend, forcedSaleValue, insuranceValue,
     valuationMethodology, variationJustification,
-    photos, locationLat, locationLng, locationCapturedAt, locationMapUrl, onDataChange
+    photos, locationLat, locationLng, locationCapturedAt, locationMapUrl,
+    hiddenFields, onDataChange
   ]);
 
   // Crop image to square
@@ -1386,6 +1410,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Section 0: Property Details */}
       {activeSection === 0 && (
@@ -1393,70 +1418,114 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Property Address</h3>
             <div className="grid-2">
-              <FormInput label="Property No." value={propertyNo} onChange={(e) => setPropertyNo(e.target.value)} placeholder="e.g., D-44" required />
-              <FormInput label="Block" value={block} onChange={(e) => setBlock(e.target.value)} placeholder="e.g., F" required />
-              <FormInput label="Area / Colony" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g., TAGORE GARDEN" required />
-              <FormSelectWithCustom label="City" options={CITY_OPTIONS} value={city} onChange={setCity} placeholder="Enter city name" />
-              <FormInput label="Ward / Village / Taluka" value={wardVillageTaluka} onChange={(e) => setWardVillageTaluka(e.target.value)} placeholder="e.g., Ward 45" />
-              <FormInput label="Sub-Registry / Block" value={subRegistryBlock} onChange={(e) => setSubRegistryBlock(e.target.value)} placeholder="e.g., Block-A" />
-              <FormInput label="District" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g., West Delhi" />
-              <FormInput label="Nearby Landmark" value={nearbyLandmark} onChange={(e) => setNearbyLandmark(e.target.value)} placeholder="e.g., Near Metro Station" />
+              <SwipeableField fieldName="propertyNo" isHidden={hiddenFields.includes('propertyNo')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Property No." value={propertyNo} onChange={(e) => setPropertyNo(e.target.value)} placeholder="e.g., D-44" required />
+              </SwipeableField>
+              <SwipeableField fieldName="block" isHidden={hiddenFields.includes('block')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Block" value={block} onChange={(e) => setBlock(e.target.value)} placeholder="e.g., F" required />
+              </SwipeableField>
+              <SwipeableField fieldName="area" isHidden={hiddenFields.includes('area')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Area / Colony" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g., TAGORE GARDEN" required />
+              </SwipeableField>
+              <SwipeableField fieldName="city" isHidden={hiddenFields.includes('city')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="City" options={CITY_OPTIONS} value={city} onChange={setCity} placeholder="Enter city name" />
+              </SwipeableField>
+              <SwipeableField fieldName="wardVillageTaluka" isHidden={hiddenFields.includes('wardVillageTaluka')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Ward / Village / Taluka" value={wardVillageTaluka} onChange={(e) => setWardVillageTaluka(e.target.value)} placeholder="e.g., Ward 45" />
+              </SwipeableField>
+              <SwipeableField fieldName="subRegistryBlock" isHidden={hiddenFields.includes('subRegistryBlock')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Sub-Registry / Block" value={subRegistryBlock} onChange={(e) => setSubRegistryBlock(e.target.value)} placeholder="e.g., Block-A" />
+              </SwipeableField>
+              <SwipeableField fieldName="district" isHidden={hiddenFields.includes('district')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="District" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g., West Delhi" />
+              </SwipeableField>
+              <SwipeableField fieldName="nearbyLandmark" isHidden={hiddenFields.includes('nearbyLandmark')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Nearby Landmark" value={nearbyLandmark} onChange={(e) => setNearbyLandmark(e.target.value)} placeholder="e.g., Near Metro Station" />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Physical Characteristics</h3>
             <div className="grid-2">
-              <FormSelectWithCustom
-                label="Land Type"
-                value={landType}
-                onChange={setLandType}
-                options={[
-                  { value: 'Solid/Firm', label: 'Solid/Firm' },
-                  { value: 'Rocky', label: 'Rocky' },
-                  { value: 'Sandy', label: 'Sandy' },
-                  { value: 'Clay/Black Cotton', label: 'Clay/Black Cotton Soil' },
-                  { value: 'Alluvial', label: 'Alluvial' },
-                  { value: 'Marsh Land', label: 'Marsh Land' },
-                  { value: 'Reclaimed Land', label: 'Reclaimed Land' },
-                  { value: 'Water-logged', label: 'Water-logged' },
-                  { value: 'Land-locked', label: 'Land-locked' },
-                  { value: 'Hilly/Sloping', label: 'Hilly/Sloping' },
-                  { value: 'Gullied/Ravenous', label: 'Gullied/Ravenous' },
-                  { value: 'Barren/Stony', label: 'Barren/Stony' },
-                ]}
-                placeholder="Type of land"
-              />
-              <FormInput label="Access / Approach" value={accessApproach} onChange={(e) => setAccessApproach(e.target.value)} placeholder="e.g., Direct road access" />
-              <FormInput label="Abutting Roads" value={abutingRoads} onChange={(e) => setAbutingRoads(e.target.value)} placeholder="e.g., 30ft road on East" />
+              <SwipeableField fieldName="landType" isHidden={hiddenFields.includes('landType')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Land Type"
+                  value={landType}
+                  onChange={setLandType}
+                  options={[
+                    { value: 'Solid/Firm', label: 'Solid/Firm' },
+                    { value: 'Rocky', label: 'Rocky' },
+                    { value: 'Sandy', label: 'Sandy' },
+                    { value: 'Clay/Black Cotton', label: 'Clay/Black Cotton Soil' },
+                    { value: 'Alluvial', label: 'Alluvial' },
+                    { value: 'Marsh Land', label: 'Marsh Land' },
+                    { value: 'Reclaimed Land', label: 'Reclaimed Land' },
+                    { value: 'Water-logged', label: 'Water-logged' },
+                    { value: 'Land-locked', label: 'Land-locked' },
+                    { value: 'Hilly/Sloping', label: 'Hilly/Sloping' },
+                    { value: 'Gullied/Ravenous', label: 'Gullied/Ravenous' },
+                    { value: 'Barren/Stony', label: 'Barren/Stony' },
+                  ]}
+                  placeholder="Type of land"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="accessApproach" isHidden={hiddenFields.includes('accessApproach')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Access / Approach" value={accessApproach} onChange={(e) => setAccessApproach(e.target.value)} placeholder="e.g., Direct road access" />
+              </SwipeableField>
+              <SwipeableField fieldName="abutingRoads" isHidden={hiddenFields.includes('abutingRoads')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Abutting Roads" value={abutingRoads} onChange={(e) => setAbutingRoads(e.target.value)} placeholder="e.g., 30ft road on East" />
+              </SwipeableField>
             </div>
             <div className="grid-3 mt-4">
-              <div className="form-group">
-                <label className="form-label">Plinth Area (sq.m.)</label>
-                <input type="number" className="form-input" value={plinthArea || ''} onChange={(e) => setPlinthArea(Number(e.target.value))} placeholder="0" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Carpet Area (sq.m.)</label>
-                <input type="number" className="form-input" value={carpetArea || ''} onChange={(e) => setCarpetArea(Number(e.target.value))} placeholder="0" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Saleable Area (sq.m.)</label>
-                <input type="number" className="form-input" value={saleableArea || ''} onChange={(e) => setSaleableArea(Number(e.target.value))} placeholder="0" />
-              </div>
+              <SwipeableField fieldName="plinthArea" isHidden={hiddenFields.includes('plinthArea')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Plinth Area (sq.m.)</label>
+                  <input type="number" className="form-input" value={plinthArea || ''} onChange={(e) => setPlinthArea(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
+              <SwipeableField fieldName="carpetArea" isHidden={hiddenFields.includes('carpetArea')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Carpet Area (sq.m.)</label>
+                  <input type="number" className="form-input" value={carpetArea || ''} onChange={(e) => setCarpetArea(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
+              <SwipeableField fieldName="saleableArea" isHidden={hiddenFields.includes('saleableArea')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Saleable Area (sq.m.)</label>
+                  <input type="number" className="form-input" value={saleableArea || ''} onChange={(e) => setSaleableArea(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Property Boundaries</h3>
             <div className="grid-2">
-              <FormSelectWithCustom label="North" options={BOUNDARY_OPTIONS} value={northBoundary} onChange={setNorthBoundary} placeholder="e.g., Plot No 43" />
-              <FormSelectWithCustom label="South" options={BOUNDARY_OPTIONS} value={southBoundary} onChange={setSouthBoundary} placeholder="e.g., Plot No 45" />
-              <FormSelectWithCustom label="East" options={BOUNDARY_OPTIONS} value={eastBoundary} onChange={setEastBoundary} placeholder="e.g., Road" />
-              <FormSelectWithCustom label="West" options={BOUNDARY_OPTIONS} value={westBoundary} onChange={setWestBoundary} placeholder="e.g., 36' Road" />
-              <FormSelectWithCustom label="North-East" options={BOUNDARY_OPTIONS} value={northEastBoundary} onChange={setNorthEastBoundary} placeholder="e.g., Corner Plot" />
-              <FormSelectWithCustom label="North-West" options={BOUNDARY_OPTIONS} value={northWestBoundary} onChange={setNorthWestBoundary} placeholder="e.g., Park" />
-              <FormSelectWithCustom label="South-East" options={BOUNDARY_OPTIONS} value={southEastBoundary} onChange={setSouthEastBoundary} placeholder="e.g., Lane" />
-              <FormSelectWithCustom label="South-West" options={BOUNDARY_OPTIONS} value={southWestBoundary} onChange={setSouthWestBoundary} placeholder="e.g., Open Land" />
+              <SwipeableField fieldName="northBoundary" isHidden={hiddenFields.includes('northBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="North" options={BOUNDARY_OPTIONS} value={northBoundary} onChange={setNorthBoundary} placeholder="e.g., Plot No 43" />
+              </SwipeableField>
+              <SwipeableField fieldName="southBoundary" isHidden={hiddenFields.includes('southBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="South" options={BOUNDARY_OPTIONS} value={southBoundary} onChange={setSouthBoundary} placeholder="e.g., Plot No 45" />
+              </SwipeableField>
+              <SwipeableField fieldName="eastBoundary" isHidden={hiddenFields.includes('eastBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="East" options={BOUNDARY_OPTIONS} value={eastBoundary} onChange={setEastBoundary} placeholder="e.g., Road" />
+              </SwipeableField>
+              <SwipeableField fieldName="westBoundary" isHidden={hiddenFields.includes('westBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="West" options={BOUNDARY_OPTIONS} value={westBoundary} onChange={setWestBoundary} placeholder="e.g., 36' Road" />
+              </SwipeableField>
+              <SwipeableField fieldName="northEastBoundary" isHidden={hiddenFields.includes('northEastBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="North-East" options={BOUNDARY_OPTIONS} value={northEastBoundary} onChange={setNorthEastBoundary} placeholder="e.g., Corner Plot" />
+              </SwipeableField>
+              <SwipeableField fieldName="northWestBoundary" isHidden={hiddenFields.includes('northWestBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="North-West" options={BOUNDARY_OPTIONS} value={northWestBoundary} onChange={setNorthWestBoundary} placeholder="e.g., Park" />
+              </SwipeableField>
+              <SwipeableField fieldName="southEastBoundary" isHidden={hiddenFields.includes('southEastBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="South-East" options={BOUNDARY_OPTIONS} value={southEastBoundary} onChange={setSouthEastBoundary} placeholder="e.g., Lane" />
+              </SwipeableField>
+              <SwipeableField fieldName="southWestBoundary" isHidden={hiddenFields.includes('southWestBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="South-West" options={BOUNDARY_OPTIONS} value={southWestBoundary} onChange={setSouthWestBoundary} placeholder="e.g., Open Land" />
+              </SwipeableField>
             </div>
           </div>
 
@@ -2641,5 +2710,34 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         </div>
       )}
     </form>
+
+      {/* Swipe Hint for first-time users */}
+      <SwipeHint />
+
+      {/* Floating Action Button for Hidden Fields */}
+      {hiddenFields.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowHiddenFieldsModal(true)}
+          className="hidden-fields-fab"
+          title={`${hiddenFields.length} hidden field${hiddenFields.length !== 1 ? 's' : ''}`}
+        >
+          <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+          </svg>
+          <span className="badge">{hiddenFields.length}</span>
+        </button>
+      )}
+
+      {/* Hidden Fields Modal */}
+      {showHiddenFieldsModal && (
+        <HiddenFieldsModal
+          hiddenFields={hiddenFields}
+          onRestore={handleRestoreField}
+          onRestoreAll={handleRestoreAllFields}
+          onClose={() => setShowHiddenFieldsModal(false)}
+        />
+      )}
+    </>
   );
 }

@@ -201,6 +201,9 @@ export interface ReportFormData {
   locationLng: number | null;
   locationCapturedAt: string;
   locationMapUrl: string;
+
+  // Hidden fields tracking (for swipe-to-hide feature)
+  hiddenFields: string[];
 }
 
 // Default empty form data
@@ -358,6 +361,7 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   locationLng: null,
   locationCapturedAt: '',
   locationMapUrl: '',
+  hiddenFields: [],
 };
 
 // Calculate completion percentage

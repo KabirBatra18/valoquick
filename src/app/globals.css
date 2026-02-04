@@ -595,3 +595,128 @@ select:focus {
     @apply grid-cols-3 gap-3;
   }
 }
+
+/* ===== Swipeable Field Styles ===== */
+
+.swipeable-field {
+  position: relative;
+  touch-action: pan-y; /* Allow vertical scroll, capture horizontal for swipe */
+  overflow: visible;
+}
+
+/* Hidden field state */
+.swipeable-field.field-hidden .form-group {
+  position: relative;
+}
+
+.swipeable-field.field-hidden .form-label {
+  text-decoration: line-through;
+  text-decoration-color: var(--color-text-tertiary);
+  text-decoration-thickness: 1.5px;
+}
+
+.swipeable-field.field-hidden .form-input,
+.swipeable-field.field-hidden .form-select {
+  background-color: var(--color-surface-200);
+  border-style: dashed;
+}
+
+/* Desktop hover button to hide field */
+.field-hide-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: var(--color-surface-200);
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-surface-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  z-index: 30;
+}
+
+.field-hide-btn-visible {
+  opacity: 1;
+}
+
+.field-hide-btn:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Restore cursor for hidden fields on desktop */
+.swipeable-field.field-hidden .field-content-hidden {
+  cursor: pointer;
+}
+
+/* Hidden fields floating action button */
+.hidden-fields-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--color-surface-100);
+  border: 1px solid var(--color-surface-300);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 40;
+  transition: all 0.2s ease;
+}
+
+.hidden-fields-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+}
+
+.hidden-fields-fab .badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Swipe hint tooltip */
+.swipe-hint {
+  position: fixed;
+  bottom: 5rem;
+  left: 1rem;
+  right: 1rem;
+  background: var(--color-surface-100);
+  border: 1px solid var(--color-brand);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+}
+
+.swipe-hint-arrow {
+  animation: swipeArrow 1.5s ease-in-out infinite;
+}
+
+@keyframes swipeArrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-10px); }
+}
