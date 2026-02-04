@@ -57,11 +57,11 @@ export default function TrialBanner({ onUpgrade }: TrialBannerProps) {
   if (remaining <= 2) {
     // Low on reports - warning state
     return (
-      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
+      <div className="bg-amber-100 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/20 rounded-xl p-4 mb-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-lg font-semibold text-amber-400">
+              <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-400">
                 {remaining} Free Report{remaining !== 1 ? 's' : ''} Left
               </h3>
             </div>
