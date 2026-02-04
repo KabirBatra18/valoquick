@@ -624,20 +624,20 @@ select:focus {
 /* Desktop hover button to hide field */
 .field-hide-btn {
   position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1.5rem;
-  height: 1.5rem;
+  left: -0.5rem;
+  top: 0.25rem;
+  transform: translateX(-100%);
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: 50%;
-  background-color: var(--color-surface-200);
+  background-color: var(--color-surface-100);
   color: var(--color-text-tertiary);
   border: 1px solid var(--color-surface-300);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   cursor: pointer;
   z-index: 30;
 }
