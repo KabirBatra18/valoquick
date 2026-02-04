@@ -42,8 +42,8 @@ export default function SwipeableField({
   }, []);
 
   // Transform x motion to opacity for visual feedback
-  const hideIndicatorOpacity = useTransform(x, [-100, -30, 0], [0.5, 0.15, 0]);
-  const restoreIndicatorOpacity = useTransform(x, [0, 30, 100], [0, 0.15, 0.5]);
+  const hideIndicatorOpacity = useTransform(x, [-100, -30, 0], [0.35, 0.12, 0]);
+  const restoreIndicatorOpacity = useTransform(x, [0, 30, 100], [0, 0.12, 0.35]);
 
   // Manual touch handlers for mobile - works over inputs
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -172,13 +172,13 @@ export default function SwipeableField({
         <>
           {/* Hide indicator (red) - shows when swiping left */}
           <motion.div
-            className="absolute inset-0 bg-red-500/20 rounded-xl pointer-events-none z-0"
+            className="absolute inset-0 bg-red-500 rounded-xl pointer-events-none z-0"
             style={{ opacity: hideIndicatorOpacity }}
           />
           {/* Restore indicator (green) - shows when swiping right on hidden field */}
           {isHidden && (
             <motion.div
-              className="absolute inset-0 bg-green-500/20 rounded-xl pointer-events-none z-0"
+              className="absolute inset-0 bg-emerald-500 rounded-xl pointer-events-none z-0"
               style={{ opacity: restoreIndicatorOpacity }}
             />
           )}
