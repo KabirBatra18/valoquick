@@ -1532,66 +1532,76 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Property Classification</h3>
             <div className="grid-3">
-              <FormSelectWithCustom
-                label="Property Type"
-                value={propertyType}
-                onChange={setPropertyType}
-                options={[
-                  { value: 'Residential', label: 'Residential' },
-                  { value: 'Commercial', label: 'Commercial' },
-                  { value: 'Industrial', label: 'Industrial' },
-                  { value: 'Mixed', label: 'Mixed Use' },
-                  { value: 'Agricultural', label: 'Agricultural' },
-                ]}
-                placeholder="e.g., Residential"
-              />
-              <FormSelectWithCustom
-                label="Locality Class"
-                value={localityClass}
-                onChange={setLocalityClass}
-                options={[
-                  { value: 'High Class', label: 'High Class' },
-                  { value: 'Middle Class', label: 'Middle Class' },
-                  { value: 'Poor Class', label: 'Poor Class' },
-                  { value: 'Premium', label: 'Premium' },
-                ]}
-                placeholder="e.g., Middle Class"
-              />
-              <FormSelectWithCustom
-                label="Plot Shape"
-                value={plotShape}
-                onChange={setPlotShape}
-                options={[
-                  { value: 'Rectangular Plot', label: 'Rectangular' },
-                  { value: 'Square Plot', label: 'Square' },
-                  { value: 'Irregular Plot', label: 'Irregular' },
-                  { value: 'L-Shaped Plot', label: 'L-Shaped' },
-                  { value: 'Triangular Plot', label: 'Triangular' },
-                ]}
-                placeholder="e.g., Rectangular"
-              />
-              <FormSelectWithCustom
-                label="Land Type"
-                value={isLeasehold ? 'Leasehold' : 'Freehold'}
-                onChange={(val) => setIsLeasehold(val === 'Leasehold')}
-                options={[
-                  { value: 'Freehold', label: 'Freehold' },
-                  { value: 'Leasehold', label: 'Leasehold' },
-                ]}
-                placeholder="e.g., Freehold"
-              />
-              <FormSelectWithCustom
-                label="Building Occupancy"
-                value={buildingOccupancy}
-                onChange={setBuildingOccupancy}
-                options={[
-                  { value: 'Owner occupied', label: 'Owner Occupied' },
-                  { value: 'Tenanted', label: 'Tenanted' },
-                  { value: 'Vacant', label: 'Vacant' },
-                  { value: 'Both', label: 'Both (Owner + Tenant)' },
-                ]}
-                placeholder="e.g., Owner Occupied"
-              />
+              <SwipeableField fieldName="propertyType" isHidden={hiddenFields.includes('propertyType')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Property Type"
+                  value={propertyType}
+                  onChange={setPropertyType}
+                  options={[
+                    { value: 'Residential', label: 'Residential' },
+                    { value: 'Commercial', label: 'Commercial' },
+                    { value: 'Industrial', label: 'Industrial' },
+                    { value: 'Mixed', label: 'Mixed Use' },
+                    { value: 'Agricultural', label: 'Agricultural' },
+                  ]}
+                  placeholder="e.g., Residential"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="localityClass" isHidden={hiddenFields.includes('localityClass')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Locality Class"
+                  value={localityClass}
+                  onChange={setLocalityClass}
+                  options={[
+                    { value: 'High Class', label: 'High Class' },
+                    { value: 'Middle Class', label: 'Middle Class' },
+                    { value: 'Poor Class', label: 'Poor Class' },
+                    { value: 'Premium', label: 'Premium' },
+                  ]}
+                  placeholder="e.g., Middle Class"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="plotShape" isHidden={hiddenFields.includes('plotShape')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Plot Shape"
+                  value={plotShape}
+                  onChange={setPlotShape}
+                  options={[
+                    { value: 'Rectangular Plot', label: 'Rectangular' },
+                    { value: 'Square Plot', label: 'Square' },
+                    { value: 'Irregular Plot', label: 'Irregular' },
+                    { value: 'L-Shaped Plot', label: 'L-Shaped' },
+                    { value: 'Triangular Plot', label: 'Triangular' },
+                  ]}
+                  placeholder="e.g., Rectangular"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="isLeasehold" isHidden={hiddenFields.includes('isLeasehold')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Land Type"
+                  value={isLeasehold ? 'Leasehold' : 'Freehold'}
+                  onChange={(val) => setIsLeasehold(val === 'Leasehold')}
+                  options={[
+                    { value: 'Freehold', label: 'Freehold' },
+                    { value: 'Leasehold', label: 'Leasehold' },
+                  ]}
+                  placeholder="e.g., Freehold"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="buildingOccupancy" isHidden={hiddenFields.includes('buildingOccupancy')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Building Occupancy"
+                  value={buildingOccupancy}
+                  onChange={setBuildingOccupancy}
+                  options={[
+                    { value: 'Owner occupied', label: 'Owner Occupied' },
+                    { value: 'Tenanted', label: 'Tenanted' },
+                    { value: 'Vacant', label: 'Vacant' },
+                    { value: 'Both', label: 'Both (Owner + Tenant)' },
+                  ]}
+                  placeholder="e.g., Owner Occupied"
+                />
+              </SwipeableField>
             </div>
           </div>
 
@@ -1648,10 +1658,18 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Original Owner</h3>
             <div className="grid-2">
-              <FormInput label="Owner Name" value={originalOwner} onChange={(e) => setOriginalOwner(e.target.value)} placeholder="e.g., SMT RAJ KHURANA" required />
-              <FormInput label="Year of Ownership" value={originalOwnerYear} onChange={(e) => setOriginalOwnerYear(e.target.value)} placeholder="e.g., 2001" required />
-              <FormInput label="Phone Number" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} placeholder="e.g., 9811741187" />
-              <FormInput label="Developer Name (if applicable)" value={developerName} onChange={(e) => setDeveloperName(e.target.value)} placeholder="e.g., DLF Ltd." />
+              <SwipeableField fieldName="originalOwner" isHidden={hiddenFields.includes('originalOwner')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Owner Name" value={originalOwner} onChange={(e) => setOriginalOwner(e.target.value)} placeholder="e.g., SMT RAJ KHURANA" required />
+              </SwipeableField>
+              <SwipeableField fieldName="originalOwnerYear" isHidden={hiddenFields.includes('originalOwnerYear')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Year of Ownership" value={originalOwnerYear} onChange={(e) => setOriginalOwnerYear(e.target.value)} placeholder="e.g., 2001" required />
+              </SwipeableField>
+              <SwipeableField fieldName="ownerPhone" isHidden={hiddenFields.includes('ownerPhone')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Phone Number" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} placeholder="e.g., 9811741187" />
+              </SwipeableField>
+              <SwipeableField fieldName="developerName" isHidden={hiddenFields.includes('developerName')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Developer Name (if applicable)" value={developerName} onChange={(e) => setDeveloperName(e.target.value)} placeholder="e.g., DLF Ltd." />
+              </SwipeableField>
             </div>
           </div>
 
@@ -1712,58 +1730,94 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Reference Details</h3>
             <div className="grid-2">
-              <FormInput label="Reference No." value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="e.g., 19/2025" required />
-              <FormDatePicker
-                label="Date of Inspection"
-                value={inspectionDate}
-                onChange={setInspectionDate}
-              />
-              <FormDatePicker
-                label="Date of Valuation Report"
-                value={valuationDate}
-                onChange={setValuationDate}
-                required
-              />
-              <FormDatePicker
-                label="Valuation For Date"
-                value={valuationForDate}
-                onChange={setValuationForDate}
-                required
-              />
+              <SwipeableField fieldName="referenceNo" isHidden={hiddenFields.includes('referenceNo')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Reference No." value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="e.g., 19/2025" required />
+              </SwipeableField>
+              <SwipeableField fieldName="inspectionDate" isHidden={hiddenFields.includes('inspectionDate')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormDatePicker
+                  label="Date of Inspection"
+                  value={inspectionDate}
+                  onChange={setInspectionDate}
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="valuationDate" isHidden={hiddenFields.includes('valuationDate')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormDatePicker
+                  label="Date of Valuation Report"
+                  value={valuationDate}
+                  onChange={setValuationDate}
+                  required
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="valuationForDate" isHidden={hiddenFields.includes('valuationForDate')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormDatePicker
+                  label="Valuation For Date"
+                  value={valuationForDate}
+                  onChange={setValuationForDate}
+                  required
+                />
+              </SwipeableField>
             </div>
             <div className="mt-4">
-              <FormSelectWithCustom label="Purpose of Valuation" options={PURPOSE_OPTIONS} value={purpose} onChange={setPurpose} placeholder="Enter custom purpose" />
+              <SwipeableField fieldName="purpose" isHidden={hiddenFields.includes('purpose')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Purpose of Valuation" options={PURPOSE_OPTIONS} value={purpose} onChange={setPurpose} placeholder="Enter custom purpose" />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Land Details</h3>
             <div className="grid-2">
-              <FormInput label="Plot Area (Sqm)" type="number" step="0.0001" value={plotArea || ''} onChange={(e) => setPlotArea(parseFloat(e.target.value) || 0)} required />
-              <FormInput label="Land Rate (Rs/Sqm)" type="number" value={landRatePerSqm || ''} onChange={(e) => setLandRatePerSqm(parseFloat(e.target.value) || 0)} required />
-              <FormSelectWithCustom label="Land Rate Source" options={LAND_RATE_SOURCE_OPTIONS} value={landRateSource} onChange={setLandRateSource} placeholder="e.g., L&DO rates from 1-4-1998" />
-              <FormInput label="Location Increase (%)" type="number" value={locationIncreasePercent} onChange={(e) => setLocationIncreasePercent(parseFloat(e.target.value) || 0)} />
-              <FormInput label="Land Share Fraction" value={landShareFraction} onChange={(e) => setLandShareFraction(e.target.value)} placeholder="e.g., 1/3" />
-              <FormInput label="Land Share Decimal" type="number" step="0.001" value={landShareDecimal} onChange={(e) => setLandShareDecimal(parseFloat(e.target.value) || 0)} />
+              <SwipeableField fieldName="plotArea" isHidden={hiddenFields.includes('plotArea')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Plot Area (Sqm)" type="number" step="0.0001" value={plotArea || ''} onChange={(e) => setPlotArea(parseFloat(e.target.value) || 0)} required />
+              </SwipeableField>
+              <SwipeableField fieldName="landRatePerSqm" isHidden={hiddenFields.includes('landRatePerSqm')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Land Rate (Rs/Sqm)" type="number" value={landRatePerSqm || ''} onChange={(e) => setLandRatePerSqm(parseFloat(e.target.value) || 0)} required />
+              </SwipeableField>
+              <SwipeableField fieldName="landRateSource" isHidden={hiddenFields.includes('landRateSource')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Land Rate Source" options={LAND_RATE_SOURCE_OPTIONS} value={landRateSource} onChange={setLandRateSource} placeholder="e.g., L&DO rates from 1-4-1998" />
+              </SwipeableField>
+              <SwipeableField fieldName="locationIncreasePercent" isHidden={hiddenFields.includes('locationIncreasePercent')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Location Increase (%)" type="number" value={locationIncreasePercent} onChange={(e) => setLocationIncreasePercent(parseFloat(e.target.value) || 0)} />
+              </SwipeableField>
+              <SwipeableField fieldName="landShareFraction" isHidden={hiddenFields.includes('landShareFraction')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Land Share Fraction" value={landShareFraction} onChange={(e) => setLandShareFraction(e.target.value)} placeholder="e.g., 1/3" />
+              </SwipeableField>
+              <SwipeableField fieldName="landShareDecimal" isHidden={hiddenFields.includes('landShareDecimal')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Land Share Decimal" type="number" step="0.001" value={landShareDecimal} onChange={(e) => setLandShareDecimal(parseFloat(e.target.value) || 0)} />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Construction Details</h3>
             <div className="grid-2">
-              <FormInput label="Floor Area (Sqm)" type="number" step="0.001" value={floorArea || ''} onChange={(e) => setFloorArea(parseFloat(e.target.value) || 0)} required />
-              <FormInput label="Plinth Area Rate (as on 1.1.92)" type="number" value={plinthAreaRate} onChange={(e) => setPlinthAreaRate(parseFloat(e.target.value) || 0)} />
-              <FormInput label="Cost Index" type="number" value={costIndex} onChange={(e) => setCostIndex(parseFloat(e.target.value) || 0)} />
-              <FormInput label="Specification Increase (%)" type="number" value={specificationIncreasePercent} onChange={(e) => setSpecificationIncreasePercent(parseFloat(e.target.value) || 0)} />
+              <SwipeableField fieldName="floorArea" isHidden={hiddenFields.includes('floorArea')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Floor Area (Sqm)" type="number" step="0.001" value={floorArea || ''} onChange={(e) => setFloorArea(parseFloat(e.target.value) || 0)} required />
+              </SwipeableField>
+              <SwipeableField fieldName="plinthAreaRate" isHidden={hiddenFields.includes('plinthAreaRate')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Plinth Area Rate (as on 1.1.92)" type="number" value={plinthAreaRate} onChange={(e) => setPlinthAreaRate(parseFloat(e.target.value) || 0)} />
+              </SwipeableField>
+              <SwipeableField fieldName="costIndex" isHidden={hiddenFields.includes('costIndex')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Cost Index" type="number" value={costIndex} onChange={(e) => setCostIndex(parseFloat(e.target.value) || 0)} />
+              </SwipeableField>
+              <SwipeableField fieldName="specificationIncreasePercent" isHidden={hiddenFields.includes('specificationIncreasePercent')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Specification Increase (%)" type="number" value={specificationIncreasePercent} onChange={(e) => setSpecificationIncreasePercent(parseFloat(e.target.value) || 0)} />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Depreciation</h3>
             <div className="grid-3">
-              <FormInput label="Year of Construction" value={yearOfConstruction} onChange={(e) => setYearOfConstruction(e.target.value)} placeholder="e.g., 1968-69" required />
-              <FormInput label="Estimated Life (Years)" type="number" value={estimatedLifeYears} onChange={(e) => setEstimatedLifeYears(parseInt(e.target.value) || 0)} />
-              <FormInput label="Age at Valuation (Years)" type="number" value={ageAtValuation} onChange={(e) => setAgeAtValuation(parseInt(e.target.value) || 0)} />
+              <SwipeableField fieldName="yearOfConstruction" isHidden={hiddenFields.includes('yearOfConstruction')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Year of Construction" value={yearOfConstruction} onChange={(e) => setYearOfConstruction(e.target.value)} placeholder="e.g., 1968-69" required />
+              </SwipeableField>
+              <SwipeableField fieldName="estimatedLifeYears" isHidden={hiddenFields.includes('estimatedLifeYears')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Estimated Life (Years)" type="number" value={estimatedLifeYears} onChange={(e) => setEstimatedLifeYears(parseInt(e.target.value) || 0)} />
+              </SwipeableField>
+              <SwipeableField fieldName="ageAtValuation" isHidden={hiddenFields.includes('ageAtValuation')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Age at Valuation (Years)" type="number" value={ageAtValuation} onChange={(e) => setAgeAtValuation(parseInt(e.target.value) || 0)} />
+              </SwipeableField>
             </div>
           </div>
 
@@ -1807,122 +1861,150 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Marketability Assessment</h3>
             <div className="grid-2">
-              <FormSelectWithCustom
-                label="Location Attributes"
-                value={locationAttributes}
-                onChange={setLocationAttributes}
-                options={[
-                  { value: 'Prime Location', label: 'Prime Location' },
-                  { value: 'Well Connected', label: 'Well Connected' },
-                  { value: 'Developing Area', label: 'Developing Area' },
-                  { value: 'Established Locality', label: 'Established Locality' },
-                  { value: 'Remote/Outskirts', label: 'Remote/Outskirts' },
-                  { value: 'Near Commercial Hub', label: 'Near Commercial Hub' },
-                  { value: 'Near IT Park', label: 'Near IT Park' },
-                  { value: 'Near Industrial Area', label: 'Near Industrial Area' },
-                ]}
-                placeholder="Location quality"
-              />
-              <FormSelectWithCustom
-                label="Scarcity Value"
-                value={scarcityValue}
-                onChange={setScarcityValue}
-                options={[
-                  { value: 'Very High', label: 'Very High (Limited Land)' },
-                  { value: 'High', label: 'High Demand' },
-                  { value: 'Moderate', label: 'Moderate' },
-                  { value: 'Low', label: 'Low (Ample Supply)' },
-                  { value: 'None', label: 'None' },
-                ]}
-                placeholder="Scarcity value"
-              />
-              <FormSelectWithCustom
-                label="Demand & Supply"
-                value={demandSupplyComment}
-                onChange={setDemandSupplyComment}
-                options={[
-                  { value: 'High Demand, Low Supply', label: 'High Demand, Low Supply' },
-                  { value: 'High Demand, Moderate Supply', label: 'High Demand, Moderate Supply' },
-                  { value: 'Moderate Demand & Supply', label: 'Moderate Demand & Supply' },
-                  { value: 'Low Demand, High Supply', label: 'Low Demand, High Supply' },
-                  { value: 'Stagnant Market', label: 'Stagnant Market' },
-                  { value: 'Emerging Market', label: 'Emerging Market' },
-                ]}
-                placeholder="Market status"
-              />
-              <FormInput label="Comparable Sale Prices" value={comparableSalePrices} onChange={(e) => setComparableSalePrices(e.target.value)} placeholder="e.g., Rs 15-18 Cr nearby" />
+              <SwipeableField fieldName="locationAttributes" isHidden={hiddenFields.includes('locationAttributes')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Location Attributes"
+                  value={locationAttributes}
+                  onChange={setLocationAttributes}
+                  options={[
+                    { value: 'Prime Location', label: 'Prime Location' },
+                    { value: 'Well Connected', label: 'Well Connected' },
+                    { value: 'Developing Area', label: 'Developing Area' },
+                    { value: 'Established Locality', label: 'Established Locality' },
+                    { value: 'Remote/Outskirts', label: 'Remote/Outskirts' },
+                    { value: 'Near Commercial Hub', label: 'Near Commercial Hub' },
+                    { value: 'Near IT Park', label: 'Near IT Park' },
+                    { value: 'Near Industrial Area', label: 'Near Industrial Area' },
+                  ]}
+                  placeholder="Location quality"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="scarcityValue" isHidden={hiddenFields.includes('scarcityValue')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Scarcity Value"
+                  value={scarcityValue}
+                  onChange={setScarcityValue}
+                  options={[
+                    { value: 'Very High', label: 'Very High (Limited Land)' },
+                    { value: 'High', label: 'High Demand' },
+                    { value: 'Moderate', label: 'Moderate' },
+                    { value: 'Low', label: 'Low (Ample Supply)' },
+                    { value: 'None', label: 'None' },
+                  ]}
+                  placeholder="Scarcity value"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="demandSupplyComment" isHidden={hiddenFields.includes('demandSupplyComment')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Demand & Supply"
+                  value={demandSupplyComment}
+                  onChange={setDemandSupplyComment}
+                  options={[
+                    { value: 'High Demand, Low Supply', label: 'High Demand, Low Supply' },
+                    { value: 'High Demand, Moderate Supply', label: 'High Demand, Moderate Supply' },
+                    { value: 'Moderate Demand & Supply', label: 'Moderate Demand & Supply' },
+                    { value: 'Low Demand, High Supply', label: 'Low Demand, High Supply' },
+                    { value: 'Stagnant Market', label: 'Stagnant Market' },
+                    { value: 'Emerging Market', label: 'Emerging Market' },
+                  ]}
+                  placeholder="Market status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="comparableSalePrices" isHidden={hiddenFields.includes('comparableSalePrices')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Comparable Sale Prices" value={comparableSalePrices} onChange={(e) => setComparableSalePrices(e.target.value)} placeholder="e.g., Rs 15-18 Cr nearby" />
+              </SwipeableField>
             </div>
             <div className="mt-4">
-              <label className="form-label">Last Two Transactions in Locality</label>
-              <textarea
-                className="form-input min-h-[80px]"
-                value={lastTwoTransactions}
-                onChange={(e) => setLastTwoTransactions(e.target.value)}
-                placeholder="e.g., 1. Plot D-42 sold at Rs 16 Cr in Jan 2024&#10;2. Plot D-46 sold at Rs 14.5 Cr in Nov 2023"
-              />
+              <SwipeableField fieldName="lastTwoTransactions" isHidden={hiddenFields.includes('lastTwoTransactions')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Last Two Transactions in Locality</label>
+                  <textarea
+                    className="form-input min-h-[80px]"
+                    value={lastTwoTransactions}
+                    onChange={(e) => setLastTwoTransactions(e.target.value)}
+                    placeholder="e.g., 1. Plot D-42 sold at Rs 16 Cr in Jan 2024&#10;2. Plot D-46 sold at Rs 14.5 Cr in Nov 2023"
+                  />
+                </div>
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Valuation Summary</h3>
             <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Guideline Value - Land (Rs)</label>
-                <input type="number" className="form-input" value={guidelineValueLand || ''} onChange={(e) => setGuidelineValueLand(Number(e.target.value))} placeholder="0" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Guideline Value - Building (Rs)</label>
-                <input type="number" className="form-input" value={guidelineValueBuilding || ''} onChange={(e) => setGuidelineValueBuilding(Number(e.target.value))} placeholder="0" />
-              </div>
-              <FormSelectWithCustom
-                label="Market Rate Trend"
-                value={marketRateTrend}
-                onChange={setMarketRateTrend}
-                options={[
-                  { value: 'Increasing (>10% YoY)', label: 'Increasing (>10% YoY)' },
-                  { value: 'Moderately Increasing (5-10%)', label: 'Moderately Increasing (5-10%)' },
-                  { value: 'Stable', label: 'Stable' },
-                  { value: 'Moderately Declining', label: 'Moderately Declining' },
-                  { value: 'Declining', label: 'Declining' },
-                  { value: 'Volatile', label: 'Volatile' },
-                ]}
-                placeholder="Market trend"
-              />
-              <div className="form-group">
-                <label className="form-label">Forced/Distress Sale Value (Rs)</label>
-                <input type="number" className="form-input" value={forcedSaleValue || ''} onChange={(e) => setForcedSaleValue(Number(e.target.value))} placeholder="75% of market value" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Insurance Value (Rs)</label>
-                <input type="number" className="form-input" value={insuranceValue || ''} onChange={(e) => setInsuranceValue(Number(e.target.value))} placeholder="Construction cost" />
-              </div>
+              <SwipeableField fieldName="guidelineValueLand" isHidden={hiddenFields.includes('guidelineValueLand')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Guideline Value - Land (Rs)</label>
+                  <input type="number" className="form-input" value={guidelineValueLand || ''} onChange={(e) => setGuidelineValueLand(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
+              <SwipeableField fieldName="guidelineValueBuilding" isHidden={hiddenFields.includes('guidelineValueBuilding')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Guideline Value - Building (Rs)</label>
+                  <input type="number" className="form-input" value={guidelineValueBuilding || ''} onChange={(e) => setGuidelineValueBuilding(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
+              <SwipeableField fieldName="marketRateTrend" isHidden={hiddenFields.includes('marketRateTrend')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Market Rate Trend"
+                  value={marketRateTrend}
+                  onChange={setMarketRateTrend}
+                  options={[
+                    { value: 'Increasing (>10% YoY)', label: 'Increasing (>10% YoY)' },
+                    { value: 'Moderately Increasing (5-10%)', label: 'Moderately Increasing (5-10%)' },
+                    { value: 'Stable', label: 'Stable' },
+                    { value: 'Moderately Declining', label: 'Moderately Declining' },
+                    { value: 'Declining', label: 'Declining' },
+                    { value: 'Volatile', label: 'Volatile' },
+                  ]}
+                  placeholder="Market trend"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="forcedSaleValue" isHidden={hiddenFields.includes('forcedSaleValue')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Forced/Distress Sale Value (Rs)</label>
+                  <input type="number" className="form-input" value={forcedSaleValue || ''} onChange={(e) => setForcedSaleValue(Number(e.target.value))} placeholder="75% of market value" />
+                </div>
+              </SwipeableField>
+              <SwipeableField fieldName="insuranceValue" isHidden={hiddenFields.includes('insuranceValue')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Insurance Value (Rs)</label>
+                  <input type="number" className="form-input" value={insuranceValue || ''} onChange={(e) => setInsuranceValue(Number(e.target.value))} placeholder="Construction cost" />
+                </div>
+              </SwipeableField>
             </div>
             <div className="mt-4">
-              <FormSelectWithCustom
-                label="Valuation Methodology"
-                value={valuationMethodology}
-                onChange={setValuationMethodology}
-                options={[
-                  { value: 'Land & Building Method', label: 'Land & Building Method' },
-                  { value: 'Comparable Sales Method', label: 'Comparable Sales Method' },
-                  { value: 'Income Capitalization Method', label: 'Income Capitalization Method' },
-                  { value: 'Residual Method', label: 'Residual Method' },
-                  { value: 'Cost Approach (Depreciated Replacement Cost)', label: 'Cost Approach (DRC)' },
-                  { value: 'Discounted Cash Flow Method', label: 'Discounted Cash Flow (DCF)' },
-                  { value: 'Rental Capitalization Method', label: 'Rental Capitalization Method' },
-                  { value: 'Combination of Methods', label: 'Combination of Methods' },
-                ]}
-                placeholder="Select or enter methodology"
-              />
+              <SwipeableField fieldName="valuationMethodology" isHidden={hiddenFields.includes('valuationMethodology')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Valuation Methodology"
+                  value={valuationMethodology}
+                  onChange={setValuationMethodology}
+                  options={[
+                    { value: 'Land & Building Method', label: 'Land & Building Method' },
+                    { value: 'Comparable Sales Method', label: 'Comparable Sales Method' },
+                    { value: 'Income Capitalization Method', label: 'Income Capitalization Method' },
+                    { value: 'Residual Method', label: 'Residual Method' },
+                    { value: 'Cost Approach (Depreciated Replacement Cost)', label: 'Cost Approach (DRC)' },
+                    { value: 'Discounted Cash Flow Method', label: 'Discounted Cash Flow (DCF)' },
+                    { value: 'Rental Capitalization Method', label: 'Rental Capitalization Method' },
+                    { value: 'Combination of Methods', label: 'Combination of Methods' },
+                  ]}
+                  placeholder="Select or enter methodology"
+                />
+              </SwipeableField>
             </div>
             <div className="mt-4">
-              <label className="form-label">Variation Justification (if &gt;20% from Guideline)</label>
-              <textarea
-                className="form-input min-h-[60px]"
-                value={variationJustification}
-                onChange={(e) => setVariationJustification(e.target.value)}
-                placeholder="If variation is 20% or more from guideline value, provide justification..."
-              />
+              <SwipeableField fieldName="variationJustification" isHidden={hiddenFields.includes('variationJustification')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Variation Justification (if &gt;20% from Guideline)</label>
+                  <textarea
+                    className="form-input min-h-[60px]"
+                    value={variationJustification}
+                    onChange={(e) => setVariationJustification(e.target.value)}
+                    placeholder="If variation is 20% or more from guideline value, provide justification..."
+                  />
+                </div>
+              </SwipeableField>
             </div>
           </div>
         </div>
@@ -1934,17 +2016,35 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Building Specifications</h3>
             <div className="grid-2">
-              <FormSelectWithCustom label="Roof" options={ROOF_OPTIONS} value={roof} onChange={setRoof} placeholder="Enter roof type" />
-              <FormSelectWithCustom label="Brickwork" options={BRICKWORK_OPTIONS} value={brickwork} onChange={setBrickwork} placeholder="Enter brickwork type" />
-              <FormSelectWithCustom label="Flooring" options={FLOORING_OPTIONS} value={flooring} onChange={setFlooring} placeholder="Enter flooring type" />
-              <FormSelectWithCustom label="Tiles" options={TILES_OPTIONS} value={tiles} onChange={setTiles} placeholder="Enter tiles details" />
-              <FormSelectWithCustom label="Electrical" options={ELECTRICAL_OPTIONS} value={electrical} onChange={setElectrical} placeholder="Enter electrical type" />
-              <FormSelectWithCustom label="Electrical Switches" options={ELECTRICAL_SWITCHES_OPTIONS} value={electricalSwitches} onChange={setElectricalSwitches} placeholder="Enter switches quality" />
-              <FormSelectWithCustom label="Sanitary Fixtures" options={SANITARY_FIXTURES_OPTIONS} value={sanitaryFixtures} onChange={setSanitaryFixtures} placeholder="Enter fixtures type" />
-              <FormSelectWithCustom label="Woodwork" options={WOODWORK_OPTIONS} value={woodwork} onChange={setWoodwork} placeholder="Enter woodwork details" />
+              <SwipeableField fieldName="roof" isHidden={hiddenFields.includes('roof')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Roof" options={ROOF_OPTIONS} value={roof} onChange={setRoof} placeholder="Enter roof type" />
+              </SwipeableField>
+              <SwipeableField fieldName="brickwork" isHidden={hiddenFields.includes('brickwork')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Brickwork" options={BRICKWORK_OPTIONS} value={brickwork} onChange={setBrickwork} placeholder="Enter brickwork type" />
+              </SwipeableField>
+              <SwipeableField fieldName="flooring" isHidden={hiddenFields.includes('flooring')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Flooring" options={FLOORING_OPTIONS} value={flooring} onChange={setFlooring} placeholder="Enter flooring type" />
+              </SwipeableField>
+              <SwipeableField fieldName="tiles" isHidden={hiddenFields.includes('tiles')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Tiles" options={TILES_OPTIONS} value={tiles} onChange={setTiles} placeholder="Enter tiles details" />
+              </SwipeableField>
+              <SwipeableField fieldName="electrical" isHidden={hiddenFields.includes('electrical')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Electrical" options={ELECTRICAL_OPTIONS} value={electrical} onChange={setElectrical} placeholder="Enter electrical type" />
+              </SwipeableField>
+              <SwipeableField fieldName="electricalSwitches" isHidden={hiddenFields.includes('electricalSwitches')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Electrical Switches" options={ELECTRICAL_SWITCHES_OPTIONS} value={electricalSwitches} onChange={setElectricalSwitches} placeholder="Enter switches quality" />
+              </SwipeableField>
+              <SwipeableField fieldName="sanitaryFixtures" isHidden={hiddenFields.includes('sanitaryFixtures')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Sanitary Fixtures" options={SANITARY_FIXTURES_OPTIONS} value={sanitaryFixtures} onChange={setSanitaryFixtures} placeholder="Enter fixtures type" />
+              </SwipeableField>
+              <SwipeableField fieldName="woodwork" isHidden={hiddenFields.includes('woodwork')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Woodwork" options={WOODWORK_OPTIONS} value={woodwork} onChange={setWoodwork} placeholder="Enter woodwork details" />
+              </SwipeableField>
             </div>
             <div className="mt-4">
-              <FormSelectWithCustom label="Exterior Finish" options={EXTERIOR_OPTIONS} value={exterior} onChange={setExterior} placeholder="e.g., Exterior is of stone with stone railings" />
+              <SwipeableField fieldName="exterior" isHidden={hiddenFields.includes('exterior')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Exterior Finish" options={EXTERIOR_OPTIONS} value={exterior} onChange={setExterior} placeholder="e.g., Exterior is of stone with stone railings" />
+              </SwipeableField>
             </div>
           </div>
         </div>
@@ -1956,471 +2056,575 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Construction Details</h3>
             <div className="grid-2">
-              <FormSelectWithCustom label="Floor Height" options={FLOOR_HEIGHT_OPTIONS} value={floorHeight} onChange={setFloorHeight} placeholder="e.g., 10 feet 6 inches" />
-              <FormSelect label="Construction Type" value={constructionType} onChange={(e) => setConstructionType(e.target.value)} options={[
-                { value: '', label: 'Select...' },
-                { value: 'Load Bearing', label: 'Load Bearing' },
-                { value: 'RCC Frame', label: 'RCC Frame Structure' },
-                { value: 'RCC Frame with Shear Walls', label: 'RCC Frame with Shear Walls' },
-                { value: 'Steel Frame', label: 'Steel Frame Structure' },
-                { value: 'Load Bearing + RCC framed', label: 'Load Bearing + RCC Framed' },
-                { value: 'Prefabricated/LGSF', label: 'Prefabricated/LGSF' },
-                { value: 'Composite', label: 'Composite (Steel + Concrete)' },
-                { value: 'Mud/Kaccha', label: 'Mud/Kaccha Construction' },
-                { value: 'Timber Frame', label: 'Timber Frame' },
-              ]} />
-              <FormSelectWithCustom label="Foundation Type" options={FOUNDATION_OPTIONS} value={foundationType} onChange={setFoundationType} placeholder="Enter foundation type" />
-              <FormSelectWithCustom label="Partitions" options={PARTITIONS_OPTIONS} value={partitions} onChange={setPartitions} placeholder="Enter partition type" />
-              <FormSelectWithCustom label="Roofing & Terracing" options={ROOFING_TERRACING_OPTIONS} value={roofingTerracing} onChange={setRoofingTerracing} placeholder="Enter roofing details" />
-              <FormInput label="Architectural Features" value={architecturalFeatures} onChange={(e) => setArchitecturalFeatures(e.target.value)} placeholder="e.g., Stone exterior with railing" />
+              <SwipeableField fieldName="floorHeight" isHidden={hiddenFields.includes('floorHeight')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Floor Height" options={FLOOR_HEIGHT_OPTIONS} value={floorHeight} onChange={setFloorHeight} placeholder="e.g., 10 feet 6 inches" />
+              </SwipeableField>
+              <SwipeableField fieldName="constructionType" isHidden={hiddenFields.includes('constructionType')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelect label="Construction Type" value={constructionType} onChange={(e) => setConstructionType(e.target.value)} options={[
+                  { value: '', label: 'Select...' },
+                  { value: 'Load Bearing', label: 'Load Bearing' },
+                  { value: 'RCC Frame', label: 'RCC Frame Structure' },
+                  { value: 'RCC Frame with Shear Walls', label: 'RCC Frame with Shear Walls' },
+                  { value: 'Steel Frame', label: 'Steel Frame Structure' },
+                  { value: 'Load Bearing + RCC framed', label: 'Load Bearing + RCC Framed' },
+                  { value: 'Prefabricated/LGSF', label: 'Prefabricated/LGSF' },
+                  { value: 'Composite', label: 'Composite (Steel + Concrete)' },
+                  { value: 'Mud/Kaccha', label: 'Mud/Kaccha Construction' },
+                  { value: 'Timber Frame', label: 'Timber Frame' },
+                ]} />
+              </SwipeableField>
+              <SwipeableField fieldName="foundationType" isHidden={hiddenFields.includes('foundationType')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Foundation Type" options={FOUNDATION_OPTIONS} value={foundationType} onChange={setFoundationType} placeholder="Enter foundation type" />
+              </SwipeableField>
+              <SwipeableField fieldName="partitions" isHidden={hiddenFields.includes('partitions')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Partitions" options={PARTITIONS_OPTIONS} value={partitions} onChange={setPartitions} placeholder="Enter partition type" />
+              </SwipeableField>
+              <SwipeableField fieldName="roofingTerracing" isHidden={hiddenFields.includes('roofingTerracing')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Roofing & Terracing" options={ROOFING_TERRACING_OPTIONS} value={roofingTerracing} onChange={setRoofingTerracing} placeholder="Enter roofing details" />
+              </SwipeableField>
+              <SwipeableField fieldName="architecturalFeatures" isHidden={hiddenFields.includes('architecturalFeatures')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Architectural Features" value={architecturalFeatures} onChange={(e) => setArchitecturalFeatures(e.target.value)} placeholder="e.g., Stone exterior with railing" />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Sanitary & Utilities</h3>
             <div className="grid-2">
-              <FormInput label="No. of Water Closets" type="number" value={noOfWaterClosets} onChange={(e) => setNoOfWaterClosets(parseInt(e.target.value) || 0)} />
-              <FormInput label="No. of Sinks" type="number" value={noOfSinks} onChange={(e) => setNoOfSinks(parseInt(e.target.value) || 0)} />
-              <FormSelect label="Sanitary Fittings Class" value={sanitaryFittingsClass} onChange={(e) => setSanitaryFittingsClass(e.target.value)} options={[
-                { value: '', label: 'Select...' },
-                { value: 'Superior coloured', label: 'Superior Coloured' },
-                { value: 'Superior white', label: 'Superior White' },
-                { value: 'Superior', label: 'Superior' },
-                { value: 'Ordinary', label: 'Ordinary' },
-              ]} />
-              <FormInput label="Overhead Tank" value={overheadTank} onChange={(e) => setOverheadTank(e.target.value)} placeholder="e.g., 2 tanks of 500L each" />
-              <FormInput label="No. of Pumps" value={noOfPumps} onChange={(e) => setNoOfPumps(e.target.value)} placeholder="e.g., 1, 1HP" />
-              <FormSelectWithCustom label="Sewer Disposal" options={SEWER_DISPOSAL_OPTIONS} value={sewerDisposal} onChange={setSewerDisposal} placeholder="Enter sewer disposal type" />
+              <SwipeableField fieldName="noOfWaterClosets" isHidden={hiddenFields.includes('noOfWaterClosets')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="No. of Water Closets" type="number" value={noOfWaterClosets} onChange={(e) => setNoOfWaterClosets(parseInt(e.target.value) || 0)} />
+              </SwipeableField>
+              <SwipeableField fieldName="noOfSinks" isHidden={hiddenFields.includes('noOfSinks')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="No. of Sinks" type="number" value={noOfSinks} onChange={(e) => setNoOfSinks(parseInt(e.target.value) || 0)} />
+              </SwipeableField>
+              <SwipeableField fieldName="sanitaryFittingsClass" isHidden={hiddenFields.includes('sanitaryFittingsClass')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelect label="Sanitary Fittings Class" value={sanitaryFittingsClass} onChange={(e) => setSanitaryFittingsClass(e.target.value)} options={[
+                  { value: '', label: 'Select...' },
+                  { value: 'Superior coloured', label: 'Superior Coloured' },
+                  { value: 'Superior white', label: 'Superior White' },
+                  { value: 'Superior', label: 'Superior' },
+                  { value: 'Ordinary', label: 'Ordinary' },
+                ]} />
+              </SwipeableField>
+              <SwipeableField fieldName="overheadTank" isHidden={hiddenFields.includes('overheadTank')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Overhead Tank" value={overheadTank} onChange={(e) => setOverheadTank(e.target.value)} placeholder="e.g., 2 tanks of 500L each" />
+              </SwipeableField>
+              <SwipeableField fieldName="noOfPumps" isHidden={hiddenFields.includes('noOfPumps')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="No. of Pumps" value={noOfPumps} onChange={(e) => setNoOfPumps(e.target.value)} placeholder="e.g., 1, 1HP" />
+              </SwipeableField>
+              <SwipeableField fieldName="sewerDisposal" isHidden={hiddenFields.includes('sewerDisposal')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Sewer Disposal" options={SEWER_DISPOSAL_OPTIONS} value={sewerDisposal} onChange={setSewerDisposal} placeholder="Enter sewer disposal type" />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Compound Wall</h3>
             <div className="grid-2">
-              <FormSelectWithCustom label="Height" options={COMPOUND_WALL_HEIGHT_OPTIONS} value={compoundWallHeight} onChange={setCompoundWallHeight} placeholder="e.g., 5 ft" />
-              <FormSelectWithCustom label="Type" options={COMPOUND_WALL_TYPE_OPTIONS} value={compoundWallType} onChange={setCompoundWallType} placeholder="Enter wall type" />
+              <SwipeableField fieldName="compoundWallHeight" isHidden={hiddenFields.includes('compoundWallHeight')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Height" options={COMPOUND_WALL_HEIGHT_OPTIONS} value={compoundWallHeight} onChange={setCompoundWallHeight} placeholder="e.g., 5 ft" />
+              </SwipeableField>
+              <SwipeableField fieldName="compoundWallType" isHidden={hiddenFields.includes('compoundWallType')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Type" options={COMPOUND_WALL_TYPE_OPTIONS} value={compoundWallType} onChange={setCompoundWallType} placeholder="Enter wall type" />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Legal & Regulatory</h3>
             <div className="grid-2">
-              <FormSelectWithCustom
-                label="Ownership Document Type"
-                value={ownershipDocType}
-                onChange={setOwnershipDocType}
-                options={[
-                  { value: 'Sale Deed', label: 'Sale Deed' },
-                  { value: 'Conveyance Deed', label: 'Conveyance Deed' },
-                  { value: 'Gift Deed', label: 'Gift Deed' },
-                  { value: 'Lease Deed', label: 'Lease Deed' },
-                  { value: 'Perpetual Lease Deed', label: 'Perpetual Lease Deed' },
-                  { value: 'Will', label: 'Will' },
-                  { value: 'Succession Certificate', label: 'Succession Certificate' },
-                  { value: 'Partition Deed', label: 'Partition Deed' },
-                  { value: 'Relinquishment Deed', label: 'Relinquishment Deed' },
-                  { value: 'Exchange Deed', label: 'Exchange Deed' },
-                  { value: 'Settlement Deed', label: 'Settlement Deed' },
-                  { value: 'Agreement to Sell', label: 'Agreement to Sell' },
-                  { value: 'Power of Attorney', label: 'Power of Attorney (GPA/SPA)' },
-                  { value: 'Allotment Letter', label: 'Allotment Letter' },
-                  { value: 'Patta/Khata', label: 'Patta/Khata' },
-                ]}
-                placeholder="Select document type"
-              />
-              <FormSelectWithCustom
-                label="Occupancy Certificate Status"
-                value={occupancyCertificateStatus}
-                onChange={setOccupancyCertificateStatus}
-                options={[
-                  { value: 'Issued', label: 'Issued' },
-                  { value: 'Not Issued', label: 'Not Issued' },
-                  { value: 'Applied', label: 'Applied' },
-                  { value: 'Not Applicable', label: 'Not Applicable' },
-                ]}
-                placeholder="OC Status"
-              />
-              <FormInput label="Building Plan Sanction" value={buildingPlanSanction} onChange={(e) => setBuildingPlanSanction(e.target.value)} placeholder="e.g., Sanctioned by MCD" />
-              <FormInput label="Approval Authority" value={approvalAuthority} onChange={(e) => setApprovalAuthority(e.target.value)} placeholder="e.g., MCD / DDA" />
-              <FormInput label="Plan Violations (if any)" value={planViolations} onChange={(e) => setPlanViolations(e.target.value)} placeholder="e.g., None observed" />
-              <FormInput label="Unauthorized Constructions" value={unauthorizedConstructions} onChange={(e) => setUnauthorizedConstructions(e.target.value)} placeholder="e.g., Nil / Covered balcony" />
-              <FormInput label="FAR/FSI Permitted" value={farFsiPermitted} onChange={(e) => setFarFsiPermitted(e.target.value)} placeholder="e.g., 3.5" />
-              <FormInput label="FAR/FSI Consumed" value={farFsiConsumed} onChange={(e) => setFarFsiConsumed(e.target.value)} placeholder="e.g., 2.8" />
-              <FormInput label="Ground Coverage (%)" value={groundCoverage} onChange={(e) => setGroundCoverage(e.target.value)} placeholder="e.g., 80%" />
-              <FormSelectWithCustom
-                label="SARFAESI Compliant"
-                value={sarfaesiCompliant}
-                onChange={setSarfaesiCompliant}
-                options={[
-                  { value: 'Yes - Fully Compliant', label: 'Yes - Fully Compliant' },
-                  { value: 'Yes - Subject to Clear Title', label: 'Yes - Subject to Clear Title' },
-                  { value: 'Yes - Agricultural Land Converted', label: 'Yes - Agricultural Land Converted' },
-                  { value: 'No - Agricultural Land', label: 'No - Agricultural Land' },
-                  { value: 'No - Below Threshold', label: 'No - Below ₹1 Lakh Threshold' },
-                  { value: 'No - Disputed Property', label: 'No - Disputed Property' },
-                  { value: 'No - Encumbered', label: 'No - Encumbered' },
-                  { value: 'Not Applicable', label: 'Not Applicable' },
-                ]}
-                placeholder="SARFAESI status"
-              />
-              <FormInput label="Encumbrances (if any)" value={encumbrances} onChange={(e) => setEncumbrances(e.target.value)} placeholder="e.g., None / Mortgage with bank" />
-              <FormInput label="Heritage Restriction" value={heritageRestriction} onChange={(e) => setHeritageRestriction(e.target.value)} placeholder="e.g., None" />
+              <SwipeableField fieldName="ownershipDocType" isHidden={hiddenFields.includes('ownershipDocType')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Ownership Document Type"
+                  value={ownershipDocType}
+                  onChange={setOwnershipDocType}
+                  options={[
+                    { value: 'Sale Deed', label: 'Sale Deed' },
+                    { value: 'Conveyance Deed', label: 'Conveyance Deed' },
+                    { value: 'Gift Deed', label: 'Gift Deed' },
+                    { value: 'Lease Deed', label: 'Lease Deed' },
+                    { value: 'Perpetual Lease Deed', label: 'Perpetual Lease Deed' },
+                    { value: 'Will', label: 'Will' },
+                    { value: 'Succession Certificate', label: 'Succession Certificate' },
+                    { value: 'Partition Deed', label: 'Partition Deed' },
+                    { value: 'Relinquishment Deed', label: 'Relinquishment Deed' },
+                    { value: 'Exchange Deed', label: 'Exchange Deed' },
+                    { value: 'Settlement Deed', label: 'Settlement Deed' },
+                    { value: 'Agreement to Sell', label: 'Agreement to Sell' },
+                    { value: 'Power of Attorney', label: 'Power of Attorney (GPA/SPA)' },
+                    { value: 'Allotment Letter', label: 'Allotment Letter' },
+                    { value: 'Patta/Khata', label: 'Patta/Khata' },
+                  ]}
+                  placeholder="Select document type"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="occupancyCertificateStatus" isHidden={hiddenFields.includes('occupancyCertificateStatus')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Occupancy Certificate Status"
+                  value={occupancyCertificateStatus}
+                  onChange={setOccupancyCertificateStatus}
+                  options={[
+                    { value: 'Issued', label: 'Issued' },
+                    { value: 'Not Issued', label: 'Not Issued' },
+                    { value: 'Applied', label: 'Applied' },
+                    { value: 'Not Applicable', label: 'Not Applicable' },
+                  ]}
+                  placeholder="OC Status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="buildingPlanSanction" isHidden={hiddenFields.includes('buildingPlanSanction')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Building Plan Sanction" value={buildingPlanSanction} onChange={(e) => setBuildingPlanSanction(e.target.value)} placeholder="e.g., Sanctioned by MCD" />
+              </SwipeableField>
+              <SwipeableField fieldName="approvalAuthority" isHidden={hiddenFields.includes('approvalAuthority')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Approval Authority" value={approvalAuthority} onChange={(e) => setApprovalAuthority(e.target.value)} placeholder="e.g., MCD / DDA" />
+              </SwipeableField>
+              <SwipeableField fieldName="planViolations" isHidden={hiddenFields.includes('planViolations')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Plan Violations (if any)" value={planViolations} onChange={(e) => setPlanViolations(e.target.value)} placeholder="e.g., None observed" />
+              </SwipeableField>
+              <SwipeableField fieldName="unauthorizedConstructions" isHidden={hiddenFields.includes('unauthorizedConstructions')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Unauthorized Constructions" value={unauthorizedConstructions} onChange={(e) => setUnauthorizedConstructions(e.target.value)} placeholder="e.g., Nil / Covered balcony" />
+              </SwipeableField>
+              <SwipeableField fieldName="farFsiPermitted" isHidden={hiddenFields.includes('farFsiPermitted')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="FAR/FSI Permitted" value={farFsiPermitted} onChange={(e) => setFarFsiPermitted(e.target.value)} placeholder="e.g., 3.5" />
+              </SwipeableField>
+              <SwipeableField fieldName="farFsiConsumed" isHidden={hiddenFields.includes('farFsiConsumed')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="FAR/FSI Consumed" value={farFsiConsumed} onChange={(e) => setFarFsiConsumed(e.target.value)} placeholder="e.g., 2.8" />
+              </SwipeableField>
+              <SwipeableField fieldName="groundCoverage" isHidden={hiddenFields.includes('groundCoverage')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Ground Coverage (%)" value={groundCoverage} onChange={(e) => setGroundCoverage(e.target.value)} placeholder="e.g., 80%" />
+              </SwipeableField>
+              <SwipeableField fieldName="sarfaesiCompliant" isHidden={hiddenFields.includes('sarfaesiCompliant')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="SARFAESI Compliant"
+                  value={sarfaesiCompliant}
+                  onChange={setSarfaesiCompliant}
+                  options={[
+                    { value: 'Yes - Fully Compliant', label: 'Yes - Fully Compliant' },
+                    { value: 'Yes - Subject to Clear Title', label: 'Yes - Subject to Clear Title' },
+                    { value: 'Yes - Agricultural Land Converted', label: 'Yes - Agricultural Land Converted' },
+                    { value: 'No - Agricultural Land', label: 'No - Agricultural Land' },
+                    { value: 'No - Below Threshold', label: 'No - Below ₹1 Lakh Threshold' },
+                    { value: 'No - Disputed Property', label: 'No - Disputed Property' },
+                    { value: 'No - Encumbered', label: 'No - Encumbered' },
+                    { value: 'Not Applicable', label: 'Not Applicable' },
+                  ]}
+                  placeholder="SARFAESI status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="encumbrances" isHidden={hiddenFields.includes('encumbrances')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Encumbrances (if any)" value={encumbrances} onChange={(e) => setEncumbrances(e.target.value)} placeholder="e.g., None / Mortgage with bank" />
+              </SwipeableField>
+              <SwipeableField fieldName="heritageRestriction" isHidden={hiddenFields.includes('heritageRestriction')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormInput label="Heritage Restriction" value={heritageRestriction} onChange={(e) => setHeritageRestriction(e.target.value)} placeholder="e.g., None" />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Infrastructure & Utilities</h3>
             <div className="grid-2">
-              <FormSelectWithCustom
-                label="Water Supply"
-                value={waterSupply}
-                onChange={setWaterSupply}
-                options={[
-                  { value: 'Municipal (Piped)', label: 'Municipal (Piped)' },
-                  { value: 'Borewell/Tubewell', label: 'Borewell/Tubewell' },
-                  { value: 'Municipal + Borewell', label: 'Municipal + Borewell' },
-                  { value: 'Tanker Supply', label: 'Tanker Supply' },
-                  { value: 'Open Well', label: 'Open Well' },
-                  { value: 'Hand Pump', label: 'Hand Pump' },
-                  { value: 'Water Treatment Plant', label: 'Water Treatment Plant' },
-                  { value: 'River/Canal', label: 'River/Canal' },
-                  { value: 'Rainwater Only', label: 'Rainwater Only' },
-                  { value: 'Not Available', label: 'Not Available' },
-                ]}
-                placeholder="Water source"
-              />
-              <FormSelectWithCustom
-                label="Sewerage System"
-                value={sewerageSystem}
-                onChange={setSewerageSystem}
-                options={[
-                  { value: 'Underground Municipal', label: 'Underground Municipal' },
-                  { value: 'Septic Tank', label: 'Septic Tank' },
-                  { value: 'Septic Tank + Soak Pit', label: 'Septic Tank + Soak Pit' },
-                  { value: 'STP (Sewage Treatment Plant)', label: 'STP (Sewage Treatment Plant)' },
-                  { value: 'Open Drain', label: 'Open Drain' },
-                  { value: 'Bio-digester', label: 'Bio-digester' },
-                  { value: 'Not Available', label: 'Not Available' },
-                ]}
-                placeholder="Sewerage type"
-              />
-              <FormSelectWithCustom
-                label="Storm Drainage"
-                value={stormDrainage}
-                onChange={setStormDrainage}
-                options={[
-                  { value: 'Underground (Municipal)', label: 'Underground (Municipal)' },
-                  { value: 'Surface Drainage', label: 'Surface Drainage' },
-                  { value: 'Open Nullah', label: 'Open Nullah' },
-                  { value: 'Natural Slope', label: 'Natural Slope Drainage' },
-                  { value: 'Not Available', label: 'Not Available' },
-                ]}
-                placeholder="Drainage type"
-              />
-              <FormSelectWithCustom
-                label="Solid Waste Management"
-                value={solidWasteManagement}
-                onChange={setSolidWasteManagement}
-                options={[
-                  { value: 'Municipal Collection', label: 'Municipal Collection' },
-                  { value: 'Private Agency', label: 'Private Agency' },
-                  { value: 'Society/RWA Managed', label: 'Society/RWA Managed' },
-                  { value: 'Self Disposal', label: 'Self Disposal' },
-                  { value: 'Composting', label: 'Composting (In-house)' },
-                  { value: 'Not Available', label: 'Not Available' },
-                ]}
-                placeholder="Waste management"
-              />
-              <FormSelectWithCustom
-                label="Electricity Status"
-                value={electricityStatus}
-                onChange={setElectricityStatus}
-                options={[
-                  { value: 'Metered Connection Available', label: 'Metered Connection Available' },
-                  { value: 'DISCOM Connected (BSES/Tata/MSEDCL)', label: 'DISCOM Connected (BSES/Tata/MSEDCL)' },
-                  { value: '3-Phase Connection', label: '3-Phase Connection' },
-                  { value: 'Single Phase Connection', label: 'Single Phase Connection' },
-                  { value: 'DG Backup Available', label: 'DG Backup Available' },
-                  { value: 'Solar + Grid', label: 'Solar + Grid Connected' },
-                  { value: 'Temporary Connection', label: 'Temporary Connection' },
-                  { value: 'Not Available', label: 'Not Available' },
-                ]}
-                placeholder="Electricity status"
-              />
-              <FormSelectWithCustom
-                label="Public Transport Access"
-                value={publicTransportAccess}
-                onChange={setPublicTransportAccess}
-                options={[
-                  { value: 'Excellent (Metro + Bus within 500m)', label: 'Excellent (Metro + Bus within 500m)' },
-                  { value: 'Good (Bus/Metro within 1km)', label: 'Good (Bus/Metro within 1km)' },
-                  { value: 'Moderate (1-2km)', label: 'Moderate (1-2km)' },
-                  { value: 'Poor (>2km)', label: 'Poor (>2km)' },
-                  { value: 'Railway Station Nearby', label: 'Railway Station Nearby' },
-                  { value: 'Auto/Rickshaw Only', label: 'Auto/Rickshaw Only' },
-                ]}
-                placeholder="Transport access"
-              />
+              <SwipeableField fieldName="waterSupply" isHidden={hiddenFields.includes('waterSupply')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Water Supply"
+                  value={waterSupply}
+                  onChange={setWaterSupply}
+                  options={[
+                    { value: 'Municipal (Piped)', label: 'Municipal (Piped)' },
+                    { value: 'Borewell/Tubewell', label: 'Borewell/Tubewell' },
+                    { value: 'Municipal + Borewell', label: 'Municipal + Borewell' },
+                    { value: 'Tanker Supply', label: 'Tanker Supply' },
+                    { value: 'Open Well', label: 'Open Well' },
+                    { value: 'Hand Pump', label: 'Hand Pump' },
+                    { value: 'Water Treatment Plant', label: 'Water Treatment Plant' },
+                    { value: 'River/Canal', label: 'River/Canal' },
+                    { value: 'Rainwater Only', label: 'Rainwater Only' },
+                    { value: 'Not Available', label: 'Not Available' },
+                  ]}
+                  placeholder="Water source"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="sewerageSystem" isHidden={hiddenFields.includes('sewerageSystem')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Sewerage System"
+                  value={sewerageSystem}
+                  onChange={setSewerageSystem}
+                  options={[
+                    { value: 'Underground Municipal', label: 'Underground Municipal' },
+                    { value: 'Septic Tank', label: 'Septic Tank' },
+                    { value: 'Septic Tank + Soak Pit', label: 'Septic Tank + Soak Pit' },
+                    { value: 'STP (Sewage Treatment Plant)', label: 'STP (Sewage Treatment Plant)' },
+                    { value: 'Open Drain', label: 'Open Drain' },
+                    { value: 'Bio-digester', label: 'Bio-digester' },
+                    { value: 'Not Available', label: 'Not Available' },
+                  ]}
+                  placeholder="Sewerage type"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="stormDrainage" isHidden={hiddenFields.includes('stormDrainage')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Storm Drainage"
+                  value={stormDrainage}
+                  onChange={setStormDrainage}
+                  options={[
+                    { value: 'Underground (Municipal)', label: 'Underground (Municipal)' },
+                    { value: 'Surface Drainage', label: 'Surface Drainage' },
+                    { value: 'Open Nullah', label: 'Open Nullah' },
+                    { value: 'Natural Slope', label: 'Natural Slope Drainage' },
+                    { value: 'Not Available', label: 'Not Available' },
+                  ]}
+                  placeholder="Drainage type"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="solidWasteManagement" isHidden={hiddenFields.includes('solidWasteManagement')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Solid Waste Management"
+                  value={solidWasteManagement}
+                  onChange={setSolidWasteManagement}
+                  options={[
+                    { value: 'Municipal Collection', label: 'Municipal Collection' },
+                    { value: 'Private Agency', label: 'Private Agency' },
+                    { value: 'Society/RWA Managed', label: 'Society/RWA Managed' },
+                    { value: 'Self Disposal', label: 'Self Disposal' },
+                    { value: 'Composting', label: 'Composting (In-house)' },
+                    { value: 'Not Available', label: 'Not Available' },
+                  ]}
+                  placeholder="Waste management"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="electricityStatus" isHidden={hiddenFields.includes('electricityStatus')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Electricity Status"
+                  value={electricityStatus}
+                  onChange={setElectricityStatus}
+                  options={[
+                    { value: 'Metered Connection Available', label: 'Metered Connection Available' },
+                    { value: 'DISCOM Connected (BSES/Tata/MSEDCL)', label: 'DISCOM Connected (BSES/Tata/MSEDCL)' },
+                    { value: '3-Phase Connection', label: '3-Phase Connection' },
+                    { value: 'Single Phase Connection', label: 'Single Phase Connection' },
+                    { value: 'DG Backup Available', label: 'DG Backup Available' },
+                    { value: 'Solar + Grid', label: 'Solar + Grid Connected' },
+                    { value: 'Temporary Connection', label: 'Temporary Connection' },
+                    { value: 'Not Available', label: 'Not Available' },
+                  ]}
+                  placeholder="Electricity status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="publicTransportAccess" isHidden={hiddenFields.includes('publicTransportAccess')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Public Transport Access"
+                  value={publicTransportAccess}
+                  onChange={setPublicTransportAccess}
+                  options={[
+                    { value: 'Excellent (Metro + Bus within 500m)', label: 'Excellent (Metro + Bus within 500m)' },
+                    { value: 'Good (Bus/Metro within 1km)', label: 'Good (Bus/Metro within 1km)' },
+                    { value: 'Moderate (1-2km)', label: 'Moderate (1-2km)' },
+                    { value: 'Poor (>2km)', label: 'Poor (>2km)' },
+                    { value: 'Railway Station Nearby', label: 'Railway Station Nearby' },
+                    { value: 'Auto/Rickshaw Only', label: 'Auto/Rickshaw Only' },
+                  ]}
+                  placeholder="Transport access"
+                />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Environmental & Safety</h3>
             <div className="grid-2">
-              <FormSelectWithCustom
-                label="Rain Water Harvesting"
-                value={rainWaterHarvesting}
-                onChange={setRainWaterHarvesting}
-                options={[
-                  { value: 'Installed - Rooftop Collection', label: 'Installed - Rooftop Collection' },
-                  { value: 'Installed - Recharge Pit', label: 'Installed - Recharge Pit' },
-                  { value: 'Installed - Storage Tank', label: 'Installed - Storage Tank' },
-                  { value: 'Installed - Complete System', label: 'Installed - Complete System' },
-                  { value: 'Not Installed', label: 'Not Installed' },
-                  { value: 'Mandatory (Plot >100sqm)', label: 'Mandatory (Plot >100sqm)' },
-                  { value: 'Not Applicable', label: 'Not Applicable' },
-                ]}
-                placeholder="RWH status"
-              />
-              <FormSelectWithCustom
-                label="Solar Provision"
-                value={solarProvision}
-                onChange={setSolarProvision}
-                options={[
-                  { value: 'Solar Water Heater Installed', label: 'Solar Water Heater Installed' },
-                  { value: 'Solar PV Panels (On-grid)', label: 'Solar PV Panels (On-grid)' },
-                  { value: 'Solar PV Panels (Off-grid)', label: 'Solar PV Panels (Off-grid)' },
-                  { value: 'Solar Street Lights', label: 'Solar Street Lights' },
-                  { value: 'Provision Available', label: 'Provision Available' },
-                  { value: 'Not Installed', label: 'Not Installed' },
-                  { value: 'Not Applicable', label: 'Not Applicable' },
-                ]}
-                placeholder="Solar status"
-              />
-              <FormSelectWithCustom
-                label="Green Building Features"
-                value={greenBuildingFeatures}
-                onChange={setGreenBuildingFeatures}
-                options={[
-                  { value: 'None', label: 'None' },
-                  { value: 'GRIHA Certified', label: 'GRIHA Certified' },
-                  { value: 'IGBC Certified', label: 'IGBC Certified' },
-                  { value: 'LEED Certified', label: 'LEED Certified' },
-                  { value: 'Energy Efficient Design', label: 'Energy Efficient Design' },
-                  { value: 'Partial Green Features', label: 'Partial Green Features' },
-                ]}
-                placeholder="Green certification"
-              />
-              <FormSelectWithCustom
-                label="Environmental Pollution"
-                value={environmentalPollution}
-                onChange={setEnvironmentalPollution}
-                options={[
-                  { value: 'None/Negligible', label: 'None/Negligible' },
-                  { value: 'Low (Residential Area)', label: 'Low (Residential Area)' },
-                  { value: 'Moderate (Commercial Area)', label: 'Moderate (Commercial Area)' },
-                  { value: 'High (Industrial Area Nearby)', label: 'High (Industrial Area Nearby)' },
-                  { value: 'Noise Pollution', label: 'Noise Pollution' },
-                  { value: 'Air Pollution', label: 'Air Pollution' },
-                  { value: 'Water Pollution', label: 'Water Pollution' },
-                ]}
-                placeholder="Pollution level"
-              />
-              <FormSelectWithCustom
-                label="Structural Safety"
-                value={structuralSafety}
-                onChange={setStructuralSafety}
-                options={[
-                  { value: 'Structurally Safe', label: 'Structurally Safe' },
-                  { value: 'Good Condition', label: 'Good Condition' },
-                  { value: 'Fair Condition', label: 'Fair Condition' },
-                  { value: 'Needs Minor Repair', label: 'Needs Minor Repair' },
-                  { value: 'Needs Major Repair', label: 'Needs Major Repair' },
-                  { value: 'Dilapidated', label: 'Dilapidated' },
-                  { value: 'Structurally Unsafe', label: 'Structurally Unsafe' },
-                  { value: 'Under Construction', label: 'Under Construction' },
-                ]}
-                placeholder="Safety status"
-              />
-              <FormSelectWithCustom
-                label="Earthquake Zone/Resistance"
-                value={earthquakeResistance}
-                onChange={setEarthquakeResistance}
-                options={[
-                  { value: 'Zone II (Low Risk)', label: 'Zone II (Low Risk)' },
-                  { value: 'Zone III (Moderate Risk)', label: 'Zone III (Moderate Risk)' },
-                  { value: 'Zone IV (High Risk)', label: 'Zone IV (High Risk)' },
-                  { value: 'Zone V (Very High Risk)', label: 'Zone V (Very High Risk)' },
-                  { value: 'Zone VI (Severe Risk)', label: 'Zone VI (Severe Risk - J&K/Himachal)' },
-                  { value: 'Earthquake Resistant Design', label: 'Earthquake Resistant Design' },
-                  { value: 'Not Compliant', label: 'Not Earthquake Compliant' },
-                  { value: 'Not Applicable', label: 'Not Applicable' },
-                ]}
-                placeholder="Seismic zone"
-              />
-              <FormSelectWithCustom
-                label="Visible Damage"
-                value={visibleDamage}
-                onChange={setVisibleDamage}
-                options={[
-                  { value: 'None', label: 'None' },
-                  { value: 'Hairline Cracks', label: 'Hairline Cracks' },
-                  { value: 'Minor Cracks', label: 'Minor Cracks' },
-                  { value: 'Major Cracks', label: 'Major Cracks' },
-                  { value: 'Seepage/Dampness', label: 'Seepage/Dampness' },
-                  { value: 'Spalling of Concrete', label: 'Spalling of Concrete' },
-                  { value: 'Corrosion of Reinforcement', label: 'Corrosion of Reinforcement' },
-                  { value: 'Settlement Cracks', label: 'Settlement Cracks' },
-                  { value: 'Multiple Issues', label: 'Multiple Issues' },
-                ]}
-                placeholder="Damage observed"
-              />
-              <FormSelectWithCustom
-                label="Firefighting Provision"
-                value={firefightingProvision}
-                onChange={setFirefightingProvision}
-                options={[
-                  { value: 'Fire Extinguishers', label: 'Fire Extinguishers' },
-                  { value: 'Fire Hydrants', label: 'Fire Hydrants' },
-                  { value: 'Sprinkler System', label: 'Sprinkler System' },
-                  { value: 'Fire Alarm System', label: 'Fire Alarm System' },
-                  { value: 'Complete Fire Safety System', label: 'Complete Fire Safety System' },
-                  { value: 'Smoke Detectors Only', label: 'Smoke Detectors Only' },
-                  { value: 'Fire NOC Obtained', label: 'Fire NOC Obtained' },
-                  { value: 'Not Provided', label: 'Not Provided' },
-                  { value: 'Not Applicable', label: 'Not Applicable' },
-                ]}
-                placeholder="Fire safety"
-              />
-              <FormSelectWithCustom
-                label="Maintenance Issues"
-                value={maintenanceIssues}
-                onChange={setMaintenanceIssues}
-                options={[
-                  { value: 'None', label: 'None' },
-                  { value: 'Minor Repairs Required', label: 'Minor Repairs Required' },
-                  { value: 'Paint/Whitewash Required', label: 'Paint/Whitewash Required' },
-                  { value: 'Plumbing Issues', label: 'Plumbing Issues' },
-                  { value: 'Electrical Issues', label: 'Electrical Issues' },
-                  { value: 'Waterproofing Required', label: 'Waterproofing Required' },
-                  { value: 'Seepage in Walls/Ceiling', label: 'Seepage in Walls/Ceiling' },
-                  { value: 'Flooring Repair Required', label: 'Flooring Repair Required' },
-                  { value: 'Multiple Issues', label: 'Multiple Issues' },
-                ]}
-                placeholder="Maintenance status"
-              />
-              <FormSelectWithCustom
-                label="Extent of Deterioration"
-                value={extentOfDeterioration}
-                onChange={setExtentOfDeterioration}
-                options={[
-                  { value: 'Nil', label: 'Nil (0%)' },
-                  { value: '0-5%', label: 'Negligible (0-5%)' },
-                  { value: '5-10%', label: 'Minor (5-10%)' },
-                  { value: '10-20%', label: 'Moderate (10-20%)' },
-                  { value: '20-30%', label: 'Significant (20-30%)' },
-                  { value: '30-50%', label: 'Major (30-50%)' },
-                  { value: '>50%', label: 'Severe (>50%)' },
-                ]}
-                placeholder="Deterioration %"
-              />
+              <SwipeableField fieldName="rainWaterHarvesting" isHidden={hiddenFields.includes('rainWaterHarvesting')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Rain Water Harvesting"
+                  value={rainWaterHarvesting}
+                  onChange={setRainWaterHarvesting}
+                  options={[
+                    { value: 'Installed - Rooftop Collection', label: 'Installed - Rooftop Collection' },
+                    { value: 'Installed - Recharge Pit', label: 'Installed - Recharge Pit' },
+                    { value: 'Installed - Storage Tank', label: 'Installed - Storage Tank' },
+                    { value: 'Installed - Complete System', label: 'Installed - Complete System' },
+                    { value: 'Not Installed', label: 'Not Installed' },
+                    { value: 'Mandatory (Plot >100sqm)', label: 'Mandatory (Plot >100sqm)' },
+                    { value: 'Not Applicable', label: 'Not Applicable' },
+                  ]}
+                  placeholder="RWH status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="solarProvision" isHidden={hiddenFields.includes('solarProvision')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Solar Provision"
+                  value={solarProvision}
+                  onChange={setSolarProvision}
+                  options={[
+                    { value: 'Solar Water Heater Installed', label: 'Solar Water Heater Installed' },
+                    { value: 'Solar PV Panels (On-grid)', label: 'Solar PV Panels (On-grid)' },
+                    { value: 'Solar PV Panels (Off-grid)', label: 'Solar PV Panels (Off-grid)' },
+                    { value: 'Solar Street Lights', label: 'Solar Street Lights' },
+                    { value: 'Provision Available', label: 'Provision Available' },
+                    { value: 'Not Installed', label: 'Not Installed' },
+                    { value: 'Not Applicable', label: 'Not Applicable' },
+                  ]}
+                  placeholder="Solar status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="greenBuildingFeatures" isHidden={hiddenFields.includes('greenBuildingFeatures')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Green Building Features"
+                  value={greenBuildingFeatures}
+                  onChange={setGreenBuildingFeatures}
+                  options={[
+                    { value: 'None', label: 'None' },
+                    { value: 'GRIHA Certified', label: 'GRIHA Certified' },
+                    { value: 'IGBC Certified', label: 'IGBC Certified' },
+                    { value: 'LEED Certified', label: 'LEED Certified' },
+                    { value: 'Energy Efficient Design', label: 'Energy Efficient Design' },
+                    { value: 'Partial Green Features', label: 'Partial Green Features' },
+                  ]}
+                  placeholder="Green certification"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="environmentalPollution" isHidden={hiddenFields.includes('environmentalPollution')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Environmental Pollution"
+                  value={environmentalPollution}
+                  onChange={setEnvironmentalPollution}
+                  options={[
+                    { value: 'None/Negligible', label: 'None/Negligible' },
+                    { value: 'Low (Residential Area)', label: 'Low (Residential Area)' },
+                    { value: 'Moderate (Commercial Area)', label: 'Moderate (Commercial Area)' },
+                    { value: 'High (Industrial Area Nearby)', label: 'High (Industrial Area Nearby)' },
+                    { value: 'Noise Pollution', label: 'Noise Pollution' },
+                    { value: 'Air Pollution', label: 'Air Pollution' },
+                    { value: 'Water Pollution', label: 'Water Pollution' },
+                  ]}
+                  placeholder="Pollution level"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="structuralSafety" isHidden={hiddenFields.includes('structuralSafety')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Structural Safety"
+                  value={structuralSafety}
+                  onChange={setStructuralSafety}
+                  options={[
+                    { value: 'Structurally Safe', label: 'Structurally Safe' },
+                    { value: 'Good Condition', label: 'Good Condition' },
+                    { value: 'Fair Condition', label: 'Fair Condition' },
+                    { value: 'Needs Minor Repair', label: 'Needs Minor Repair' },
+                    { value: 'Needs Major Repair', label: 'Needs Major Repair' },
+                    { value: 'Dilapidated', label: 'Dilapidated' },
+                    { value: 'Structurally Unsafe', label: 'Structurally Unsafe' },
+                    { value: 'Under Construction', label: 'Under Construction' },
+                  ]}
+                  placeholder="Safety status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="earthquakeResistance" isHidden={hiddenFields.includes('earthquakeResistance')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Earthquake Zone/Resistance"
+                  value={earthquakeResistance}
+                  onChange={setEarthquakeResistance}
+                  options={[
+                    { value: 'Zone II (Low Risk)', label: 'Zone II (Low Risk)' },
+                    { value: 'Zone III (Moderate Risk)', label: 'Zone III (Moderate Risk)' },
+                    { value: 'Zone IV (High Risk)', label: 'Zone IV (High Risk)' },
+                    { value: 'Zone V (Very High Risk)', label: 'Zone V (Very High Risk)' },
+                    { value: 'Zone VI (Severe Risk)', label: 'Zone VI (Severe Risk - J&K/Himachal)' },
+                    { value: 'Earthquake Resistant Design', label: 'Earthquake Resistant Design' },
+                    { value: 'Not Compliant', label: 'Not Earthquake Compliant' },
+                    { value: 'Not Applicable', label: 'Not Applicable' },
+                  ]}
+                  placeholder="Seismic zone"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="visibleDamage" isHidden={hiddenFields.includes('visibleDamage')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Visible Damage"
+                  value={visibleDamage}
+                  onChange={setVisibleDamage}
+                  options={[
+                    { value: 'None', label: 'None' },
+                    { value: 'Hairline Cracks', label: 'Hairline Cracks' },
+                    { value: 'Minor Cracks', label: 'Minor Cracks' },
+                    { value: 'Major Cracks', label: 'Major Cracks' },
+                    { value: 'Seepage/Dampness', label: 'Seepage/Dampness' },
+                    { value: 'Spalling of Concrete', label: 'Spalling of Concrete' },
+                    { value: 'Corrosion of Reinforcement', label: 'Corrosion of Reinforcement' },
+                    { value: 'Settlement Cracks', label: 'Settlement Cracks' },
+                    { value: 'Multiple Issues', label: 'Multiple Issues' },
+                  ]}
+                  placeholder="Damage observed"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="firefightingProvision" isHidden={hiddenFields.includes('firefightingProvision')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Firefighting Provision"
+                  value={firefightingProvision}
+                  onChange={setFirefightingProvision}
+                  options={[
+                    { value: 'Fire Extinguishers', label: 'Fire Extinguishers' },
+                    { value: 'Fire Hydrants', label: 'Fire Hydrants' },
+                    { value: 'Sprinkler System', label: 'Sprinkler System' },
+                    { value: 'Fire Alarm System', label: 'Fire Alarm System' },
+                    { value: 'Complete Fire Safety System', label: 'Complete Fire Safety System' },
+                    { value: 'Smoke Detectors Only', label: 'Smoke Detectors Only' },
+                    { value: 'Fire NOC Obtained', label: 'Fire NOC Obtained' },
+                    { value: 'Not Provided', label: 'Not Provided' },
+                    { value: 'Not Applicable', label: 'Not Applicable' },
+                  ]}
+                  placeholder="Fire safety"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="maintenanceIssues" isHidden={hiddenFields.includes('maintenanceIssues')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Maintenance Issues"
+                  value={maintenanceIssues}
+                  onChange={setMaintenanceIssues}
+                  options={[
+                    { value: 'None', label: 'None' },
+                    { value: 'Minor Repairs Required', label: 'Minor Repairs Required' },
+                    { value: 'Paint/Whitewash Required', label: 'Paint/Whitewash Required' },
+                    { value: 'Plumbing Issues', label: 'Plumbing Issues' },
+                    { value: 'Electrical Issues', label: 'Electrical Issues' },
+                    { value: 'Waterproofing Required', label: 'Waterproofing Required' },
+                    { value: 'Seepage in Walls/Ceiling', label: 'Seepage in Walls/Ceiling' },
+                    { value: 'Flooring Repair Required', label: 'Flooring Repair Required' },
+                    { value: 'Multiple Issues', label: 'Multiple Issues' },
+                  ]}
+                  placeholder="Maintenance status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="extentOfDeterioration" isHidden={hiddenFields.includes('extentOfDeterioration')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Extent of Deterioration"
+                  value={extentOfDeterioration}
+                  onChange={setExtentOfDeterioration}
+                  options={[
+                    { value: 'Nil', label: 'Nil (0%)' },
+                    { value: '0-5%', label: 'Negligible (0-5%)' },
+                    { value: '5-10%', label: 'Minor (5-10%)' },
+                    { value: '10-20%', label: 'Moderate (10-20%)' },
+                    { value: '20-30%', label: 'Significant (20-30%)' },
+                    { value: '30-50%', label: 'Major (30-50%)' },
+                    { value: '>50%', label: 'Severe (>50%)' },
+                  ]}
+                  placeholder="Deterioration %"
+                />
+              </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
             <h3 className="glass-card-title">Economic & Rental Details</h3>
             <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Reasonable Letting Value (Rs/month)</label>
-                <input type="number" className="form-input" value={reasonableLettingValue || ''} onChange={(e) => setReasonableLettingValue(Number(e.target.value))} placeholder="0" />
-              </div>
-              <FormSelectWithCustom
-                label="Occupied by Tenant"
-                value={isOccupiedByTenant ? 'Yes' : 'No'}
-                onChange={(val) => setIsOccupiedByTenant(val === 'Yes')}
-                options={[
-                  { value: 'No', label: 'No' },
-                  { value: 'Yes', label: 'Yes' },
-                ]}
-                placeholder="Tenant status"
-              />
+              <SwipeableField fieldName="reasonableLettingValue" isHidden={hiddenFields.includes('reasonableLettingValue')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Reasonable Letting Value (Rs/month)</label>
+                  <input type="number" className="form-input" value={reasonableLettingValue || ''} onChange={(e) => setReasonableLettingValue(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
+              <SwipeableField fieldName="isOccupiedByTenant" isHidden={hiddenFields.includes('isOccupiedByTenant')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Occupied by Tenant"
+                  value={isOccupiedByTenant ? 'Yes' : 'No'}
+                  onChange={(val) => setIsOccupiedByTenant(val === 'Yes')}
+                  options={[
+                    { value: 'No', label: 'No' },
+                    { value: 'Yes', label: 'Yes' },
+                  ]}
+                  placeholder="Tenant status"
+                />
+              </SwipeableField>
               {isOccupiedByTenant && (
                 <>
-                  <div className="form-group">
-                    <label className="form-label">Number of Tenants</label>
-                    <input type="number" className="form-input" value={numberOfTenants || ''} onChange={(e) => setNumberOfTenants(Number(e.target.value))} placeholder="0" />
-                  </div>
-                  <FormSelectWithCustom
-                    label="Tenancy Duration"
-                    value={tenancyDuration}
-                    onChange={setTenancyDuration}
-                    options={[
-                      { value: 'Less than 1 year', label: 'Less than 1 year' },
-                      { value: '1-2 years', label: '1-2 years' },
-                      { value: '2-5 years', label: '2-5 years' },
-                      { value: '5-10 years', label: '5-10 years' },
-                      { value: 'More than 10 years', label: 'More than 10 years' },
-                      { value: 'Month to Month', label: 'Month to Month' },
-                    ]}
-                    placeholder="Duration"
-                  />
-                  <FormSelectWithCustom
-                    label="Tenancy Status"
-                    value={tenancyStatus}
-                    onChange={setTenancyStatus}
-                    options={[
-                      { value: 'Registered', label: 'Registered' },
-                      { value: 'Unregistered', label: 'Unregistered' },
-                      { value: 'Rent Agreement Executed', label: 'Rent Agreement Executed' },
-                      { value: 'Leave & License', label: 'Leave & License' },
-                      { value: 'Old Tenancy (Rent Control)', label: 'Old Tenancy (Rent Control)' },
-                      { value: 'Sub-let', label: 'Sub-let' },
-                    ]}
-                    placeholder="Tenancy type"
-                  />
-                  <div className="form-group">
-                    <label className="form-label">Monthly Rent (Rs)</label>
-                    <input type="number" className="form-input" value={monthlyRent || ''} onChange={(e) => setMonthlyRent(Number(e.target.value))} placeholder="0" />
-                  </div>
+                  <SwipeableField fieldName="numberOfTenants" isHidden={hiddenFields.includes('numberOfTenants')} onHide={handleHideField} onRestore={handleRestoreField}>
+                    <div className="form-group">
+                      <label className="form-label">Number of Tenants</label>
+                      <input type="number" className="form-input" value={numberOfTenants || ''} onChange={(e) => setNumberOfTenants(Number(e.target.value))} placeholder="0" />
+                    </div>
+                  </SwipeableField>
+                  <SwipeableField fieldName="tenancyDuration" isHidden={hiddenFields.includes('tenancyDuration')} onHide={handleHideField} onRestore={handleRestoreField}>
+                    <FormSelectWithCustom
+                      label="Tenancy Duration"
+                      value={tenancyDuration}
+                      onChange={setTenancyDuration}
+                      options={[
+                        { value: 'Less than 1 year', label: 'Less than 1 year' },
+                        { value: '1-2 years', label: '1-2 years' },
+                        { value: '2-5 years', label: '2-5 years' },
+                        { value: '5-10 years', label: '5-10 years' },
+                        { value: 'More than 10 years', label: 'More than 10 years' },
+                        { value: 'Month to Month', label: 'Month to Month' },
+                      ]}
+                      placeholder="Duration"
+                    />
+                  </SwipeableField>
+                  <SwipeableField fieldName="tenancyStatus" isHidden={hiddenFields.includes('tenancyStatus')} onHide={handleHideField} onRestore={handleRestoreField}>
+                    <FormSelectWithCustom
+                      label="Tenancy Status"
+                      value={tenancyStatus}
+                      onChange={setTenancyStatus}
+                      options={[
+                        { value: 'Registered', label: 'Registered' },
+                        { value: 'Unregistered', label: 'Unregistered' },
+                        { value: 'Rent Agreement Executed', label: 'Rent Agreement Executed' },
+                        { value: 'Leave & License', label: 'Leave & License' },
+                        { value: 'Old Tenancy (Rent Control)', label: 'Old Tenancy (Rent Control)' },
+                        { value: 'Sub-let', label: 'Sub-let' },
+                      ]}
+                      placeholder="Tenancy type"
+                    />
+                  </SwipeableField>
+                  <SwipeableField fieldName="monthlyRent" isHidden={hiddenFields.includes('monthlyRent')} onHide={handleHideField} onRestore={handleRestoreField}>
+                    <div className="form-group">
+                      <label className="form-label">Monthly Rent (Rs)</label>
+                      <input type="number" className="form-input" value={monthlyRent || ''} onChange={(e) => setMonthlyRent(Number(e.target.value))} placeholder="0" />
+                    </div>
+                  </SwipeableField>
                 </>
               )}
-              <FormSelectWithCustom
-                label="Property Tax Status"
-                value={propertyTaxStatus}
-                onChange={setPropertyTaxStatus}
-                options={[
-                  { value: 'Paid (Current)', label: 'Paid (Current)' },
-                  { value: 'Paid till Last FY', label: 'Paid till Last FY' },
-                  { value: 'Arrears Pending', label: 'Arrears Pending' },
-                  { value: 'Under Assessment', label: 'Under Assessment' },
-                  { value: 'Exempted', label: 'Exempted' },
-                  { value: 'Not Applicable', label: 'Not Applicable' },
-                ]}
-                placeholder="Tax status"
-              />
-              <FormSelectWithCustom
-                label="Property Insurance"
-                value={propertyInsurance}
-                onChange={setPropertyInsurance}
-                options={[
-                  { value: 'Insured (Fire + Allied Perils)', label: 'Insured (Fire + Allied Perils)' },
-                  { value: 'Insured (Comprehensive)', label: 'Insured (Comprehensive)' },
-                  { value: 'Insured (Fire Only)', label: 'Insured (Fire Only)' },
-                  { value: 'Insured (Earthquake)', label: 'Insured (Earthquake)' },
-                  { value: 'Society Insurance', label: 'Society Insurance' },
-                  { value: 'Not Insured', label: 'Not Insured' },
-                  { value: 'Not Known', label: 'Not Known' },
-                ]}
-                placeholder="Insurance status"
-              />
-              <div className="form-group">
-                <label className="form-label">Monthly Maintenance (Rs)</label>
-                <input type="number" className="form-input" value={maintenanceCharges || ''} onChange={(e) => setMaintenanceCharges(Number(e.target.value))} placeholder="0" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Security Charges (Rs/month)</label>
-                <input type="number" className="form-input" value={securityCharges || ''} onChange={(e) => setSecurityCharges(Number(e.target.value))} placeholder="0" />
-              </div>
+              <SwipeableField fieldName="propertyTaxStatus" isHidden={hiddenFields.includes('propertyTaxStatus')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Property Tax Status"
+                  value={propertyTaxStatus}
+                  onChange={setPropertyTaxStatus}
+                  options={[
+                    { value: 'Paid (Current)', label: 'Paid (Current)' },
+                    { value: 'Paid till Last FY', label: 'Paid till Last FY' },
+                    { value: 'Arrears Pending', label: 'Arrears Pending' },
+                    { value: 'Under Assessment', label: 'Under Assessment' },
+                    { value: 'Exempted', label: 'Exempted' },
+                    { value: 'Not Applicable', label: 'Not Applicable' },
+                  ]}
+                  placeholder="Tax status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="propertyInsurance" isHidden={hiddenFields.includes('propertyInsurance')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Property Insurance"
+                  value={propertyInsurance}
+                  onChange={setPropertyInsurance}
+                  options={[
+                    { value: 'Insured (Fire + Allied Perils)', label: 'Insured (Fire + Allied Perils)' },
+                    { value: 'Insured (Comprehensive)', label: 'Insured (Comprehensive)' },
+                    { value: 'Insured (Fire Only)', label: 'Insured (Fire Only)' },
+                    { value: 'Insured (Earthquake)', label: 'Insured (Earthquake)' },
+                    { value: 'Society Insurance', label: 'Society Insurance' },
+                    { value: 'Not Insured', label: 'Not Insured' },
+                    { value: 'Not Known', label: 'Not Known' },
+                  ]}
+                  placeholder="Insurance status"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="maintenanceCharges" isHidden={hiddenFields.includes('maintenanceCharges')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Monthly Maintenance (Rs)</label>
+                  <input type="number" className="form-input" value={maintenanceCharges || ''} onChange={(e) => setMaintenanceCharges(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
+              <SwipeableField fieldName="securityCharges" isHidden={hiddenFields.includes('securityCharges')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Security Charges (Rs/month)</label>
+                  <input type="number" className="form-input" value={securityCharges || ''} onChange={(e) => setSecurityCharges(Number(e.target.value))} placeholder="0" />
+                </div>
+              </SwipeableField>
             </div>
           </div>
         </div>
