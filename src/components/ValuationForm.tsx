@@ -1412,12 +1412,18 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 value={landType}
                 onChange={setLandType}
                 options={[
-                  { value: 'Solid', label: 'Solid' },
+                  { value: 'Solid/Firm', label: 'Solid/Firm' },
                   { value: 'Rocky', label: 'Rocky' },
+                  { value: 'Sandy', label: 'Sandy' },
+                  { value: 'Clay/Black Cotton', label: 'Clay/Black Cotton Soil' },
+                  { value: 'Alluvial', label: 'Alluvial' },
                   { value: 'Marsh Land', label: 'Marsh Land' },
                   { value: 'Reclaimed Land', label: 'Reclaimed Land' },
                   { value: 'Water-logged', label: 'Water-logged' },
                   { value: 'Land-locked', label: 'Land-locked' },
+                  { value: 'Hilly/Sloping', label: 'Hilly/Sloping' },
+                  { value: 'Gullied/Ravenous', label: 'Gullied/Ravenous' },
+                  { value: 'Barren/Stony', label: 'Barren/Stony' },
                 ]}
                 placeholder="Type of land"
               />
@@ -1732,9 +1738,49 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           <div className="glass-card">
             <h3 className="glass-card-title">Marketability Assessment</h3>
             <div className="grid-2">
-              <FormInput label="Location Attributes" value={locationAttributes} onChange={(e) => setLocationAttributes(e.target.value)} placeholder="e.g., Prime location, well connected" />
-              <FormInput label="Scarcity Value" value={scarcityValue} onChange={(e) => setScarcityValue(e.target.value)} placeholder="e.g., High demand area" />
-              <FormInput label="Demand & Supply" value={demandSupplyComment} onChange={(e) => setDemandSupplyComment(e.target.value)} placeholder="e.g., High demand, limited supply" />
+              <FormSelectWithCustom
+                label="Location Attributes"
+                value={locationAttributes}
+                onChange={setLocationAttributes}
+                options={[
+                  { value: 'Prime Location', label: 'Prime Location' },
+                  { value: 'Well Connected', label: 'Well Connected' },
+                  { value: 'Developing Area', label: 'Developing Area' },
+                  { value: 'Established Locality', label: 'Established Locality' },
+                  { value: 'Remote/Outskirts', label: 'Remote/Outskirts' },
+                  { value: 'Near Commercial Hub', label: 'Near Commercial Hub' },
+                  { value: 'Near IT Park', label: 'Near IT Park' },
+                  { value: 'Near Industrial Area', label: 'Near Industrial Area' },
+                ]}
+                placeholder="Location quality"
+              />
+              <FormSelectWithCustom
+                label="Scarcity Value"
+                value={scarcityValue}
+                onChange={setScarcityValue}
+                options={[
+                  { value: 'Very High', label: 'Very High (Limited Land)' },
+                  { value: 'High', label: 'High Demand' },
+                  { value: 'Moderate', label: 'Moderate' },
+                  { value: 'Low', label: 'Low (Ample Supply)' },
+                  { value: 'None', label: 'None' },
+                ]}
+                placeholder="Scarcity value"
+              />
+              <FormSelectWithCustom
+                label="Demand & Supply"
+                value={demandSupplyComment}
+                onChange={setDemandSupplyComment}
+                options={[
+                  { value: 'High Demand, Low Supply', label: 'High Demand, Low Supply' },
+                  { value: 'High Demand, Moderate Supply', label: 'High Demand, Moderate Supply' },
+                  { value: 'Moderate Demand & Supply', label: 'Moderate Demand & Supply' },
+                  { value: 'Low Demand, High Supply', label: 'Low Demand, High Supply' },
+                  { value: 'Stagnant Market', label: 'Stagnant Market' },
+                  { value: 'Emerging Market', label: 'Emerging Market' },
+                ]}
+                placeholder="Market status"
+              />
               <FormInput label="Comparable Sale Prices" value={comparableSalePrices} onChange={(e) => setComparableSalePrices(e.target.value)} placeholder="e.g., Rs 15-18 Cr nearby" />
             </div>
             <div className="mt-4">
@@ -1759,7 +1805,20 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 <label className="form-label">Guideline Value - Building (Rs)</label>
                 <input type="number" className="form-input" value={guidelineValueBuilding || ''} onChange={(e) => setGuidelineValueBuilding(Number(e.target.value))} placeholder="0" />
               </div>
-              <FormInput label="Market Rate Trend" value={marketRateTrend} onChange={(e) => setMarketRateTrend(e.target.value)} placeholder="e.g., Stable / Increasing" />
+              <FormSelectWithCustom
+                label="Market Rate Trend"
+                value={marketRateTrend}
+                onChange={setMarketRateTrend}
+                options={[
+                  { value: 'Increasing (>10% YoY)', label: 'Increasing (>10% YoY)' },
+                  { value: 'Moderately Increasing (5-10%)', label: 'Moderately Increasing (5-10%)' },
+                  { value: 'Stable', label: 'Stable' },
+                  { value: 'Moderately Declining', label: 'Moderately Declining' },
+                  { value: 'Declining', label: 'Declining' },
+                  { value: 'Volatile', label: 'Volatile' },
+                ]}
+                placeholder="Market trend"
+              />
               <div className="form-group">
                 <label className="form-label">Forced/Distress Sale Value (Rs)</label>
                 <input type="number" className="form-input" value={forcedSaleValue || ''} onChange={(e) => setForcedSaleValue(Number(e.target.value))} placeholder="75% of market value" />
@@ -1770,12 +1829,21 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               </div>
             </div>
             <div className="mt-4">
-              <label className="form-label">Valuation Methodology</label>
-              <textarea
-                className="form-input min-h-[80px]"
+              <FormSelectWithCustom
+                label="Valuation Methodology"
                 value={valuationMethodology}
-                onChange={(e) => setValuationMethodology(e.target.value)}
-                placeholder="Describe the methodology adopted for arriving at the valuation..."
+                onChange={setValuationMethodology}
+                options={[
+                  { value: 'Land & Building Method', label: 'Land & Building Method' },
+                  { value: 'Comparable Sales Method', label: 'Comparable Sales Method' },
+                  { value: 'Income Capitalization Method', label: 'Income Capitalization Method' },
+                  { value: 'Residual Method', label: 'Residual Method' },
+                  { value: 'Cost Approach (Depreciated Replacement Cost)', label: 'Cost Approach (DRC)' },
+                  { value: 'Discounted Cash Flow Method', label: 'Discounted Cash Flow (DCF)' },
+                  { value: 'Rental Capitalization Method', label: 'Rental Capitalization Method' },
+                  { value: 'Combination of Methods', label: 'Combination of Methods' },
+                ]}
+                placeholder="Select or enter methodology"
               />
             </div>
             <div className="mt-4">
@@ -1823,9 +1891,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <FormSelect label="Construction Type" value={constructionType} onChange={(e) => setConstructionType(e.target.value)} options={[
                 { value: '', label: 'Select...' },
                 { value: 'Load Bearing', label: 'Load Bearing' },
-                { value: 'RCC Frame', label: 'RCC Frame' },
-                { value: 'Steel Frame', label: 'Steel Frame' },
+                { value: 'RCC Frame', label: 'RCC Frame Structure' },
+                { value: 'RCC Frame with Shear Walls', label: 'RCC Frame with Shear Walls' },
+                { value: 'Steel Frame', label: 'Steel Frame Structure' },
                 { value: 'Load Bearing + RCC framed', label: 'Load Bearing + RCC Framed' },
+                { value: 'Prefabricated/LGSF', label: 'Prefabricated/LGSF' },
+                { value: 'Composite', label: 'Composite (Steel + Concrete)' },
+                { value: 'Mud/Kaccha', label: 'Mud/Kaccha Construction' },
+                { value: 'Timber Frame', label: 'Timber Frame' },
               ]} />
               <FormSelectWithCustom label="Foundation Type" options={FOUNDATION_OPTIONS} value={foundationType} onChange={setFoundationType} placeholder="Enter foundation type" />
               <FormSelectWithCustom label="Partitions" options={PARTITIONS_OPTIONS} value={partitions} onChange={setPartitions} placeholder="Enter partition type" />
@@ -1869,10 +1942,20 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 onChange={setOwnershipDocType}
                 options={[
                   { value: 'Sale Deed', label: 'Sale Deed' },
+                  { value: 'Conveyance Deed', label: 'Conveyance Deed' },
                   { value: 'Gift Deed', label: 'Gift Deed' },
                   { value: 'Lease Deed', label: 'Lease Deed' },
+                  { value: 'Perpetual Lease Deed', label: 'Perpetual Lease Deed' },
                   { value: 'Will', label: 'Will' },
+                  { value: 'Succession Certificate', label: 'Succession Certificate' },
                   { value: 'Partition Deed', label: 'Partition Deed' },
+                  { value: 'Relinquishment Deed', label: 'Relinquishment Deed' },
+                  { value: 'Exchange Deed', label: 'Exchange Deed' },
+                  { value: 'Settlement Deed', label: 'Settlement Deed' },
+                  { value: 'Agreement to Sell', label: 'Agreement to Sell' },
+                  { value: 'Power of Attorney', label: 'Power of Attorney (GPA/SPA)' },
+                  { value: 'Allotment Letter', label: 'Allotment Letter' },
+                  { value: 'Patta/Khata', label: 'Patta/Khata' },
                 ]}
                 placeholder="Select document type"
               />
@@ -1900,11 +1983,16 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 value={sarfaesiCompliant}
                 onChange={setSarfaesiCompliant}
                 options={[
-                  { value: 'Yes', label: 'Yes' },
-                  { value: 'No', label: 'No' },
+                  { value: 'Yes - Fully Compliant', label: 'Yes - Fully Compliant' },
+                  { value: 'Yes - Subject to Clear Title', label: 'Yes - Subject to Clear Title' },
+                  { value: 'Yes - Agricultural Land Converted', label: 'Yes - Agricultural Land Converted' },
+                  { value: 'No - Agricultural Land', label: 'No - Agricultural Land' },
+                  { value: 'No - Below Threshold', label: 'No - Below ₹1 Lakh Threshold' },
+                  { value: 'No - Disputed Property', label: 'No - Disputed Property' },
+                  { value: 'No - Encumbered', label: 'No - Encumbered' },
                   { value: 'Not Applicable', label: 'Not Applicable' },
                 ]}
-                placeholder="Compliance status"
+                placeholder="SARFAESI status"
               />
               <FormInput label="Encumbrances (if any)" value={encumbrances} onChange={(e) => setEncumbrances(e.target.value)} placeholder="e.g., None / Mortgage with bank" />
               <FormInput label="Heritage Restriction" value={heritageRestriction} onChange={(e) => setHeritageRestriction(e.target.value)} placeholder="e.g., None" />
@@ -1919,10 +2007,16 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 value={waterSupply}
                 onChange={setWaterSupply}
                 options={[
-                  { value: 'Municipal', label: 'Municipal' },
-                  { value: 'Borewell', label: 'Borewell' },
-                  { value: 'Both', label: 'Both' },
-                  { value: 'Tanker', label: 'Tanker' },
+                  { value: 'Municipal (Piped)', label: 'Municipal (Piped)' },
+                  { value: 'Borewell/Tubewell', label: 'Borewell/Tubewell' },
+                  { value: 'Municipal + Borewell', label: 'Municipal + Borewell' },
+                  { value: 'Tanker Supply', label: 'Tanker Supply' },
+                  { value: 'Open Well', label: 'Open Well' },
+                  { value: 'Hand Pump', label: 'Hand Pump' },
+                  { value: 'Water Treatment Plant', label: 'Water Treatment Plant' },
+                  { value: 'River/Canal', label: 'River/Canal' },
+                  { value: 'Rainwater Only', label: 'Rainwater Only' },
+                  { value: 'Not Available', label: 'Not Available' },
                 ]}
                 placeholder="Water source"
               />
@@ -1931,16 +2025,73 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 value={sewerageSystem}
                 onChange={setSewerageSystem}
                 options={[
-                  { value: 'Underground', label: 'Underground (Municipal)' },
+                  { value: 'Underground Municipal', label: 'Underground Municipal' },
                   { value: 'Septic Tank', label: 'Septic Tank' },
-                  { value: 'Open', label: 'Open Drain' },
+                  { value: 'Septic Tank + Soak Pit', label: 'Septic Tank + Soak Pit' },
+                  { value: 'STP (Sewage Treatment Plant)', label: 'STP (Sewage Treatment Plant)' },
+                  { value: 'Open Drain', label: 'Open Drain' },
+                  { value: 'Bio-digester', label: 'Bio-digester' },
+                  { value: 'Not Available', label: 'Not Available' },
                 ]}
                 placeholder="Sewerage type"
               />
-              <FormInput label="Storm Drainage" value={stormDrainage} onChange={(e) => setStormDrainage(e.target.value)} placeholder="e.g., Underground drainage" />
-              <FormInput label="Solid Waste Management" value={solidWasteManagement} onChange={(e) => setSolidWasteManagement(e.target.value)} placeholder="e.g., Municipal collection" />
-              <FormInput label="Electricity Status" value={electricityStatus} onChange={(e) => setElectricityStatus(e.target.value)} placeholder="e.g., BSES connection available" />
-              <FormInput label="Public Transport Access" value={publicTransportAccess} onChange={(e) => setPublicTransportAccess(e.target.value)} placeholder="e.g., Metro 500m, Bus stop 200m" />
+              <FormSelectWithCustom
+                label="Storm Drainage"
+                value={stormDrainage}
+                onChange={setStormDrainage}
+                options={[
+                  { value: 'Underground (Municipal)', label: 'Underground (Municipal)' },
+                  { value: 'Surface Drainage', label: 'Surface Drainage' },
+                  { value: 'Open Nullah', label: 'Open Nullah' },
+                  { value: 'Natural Slope', label: 'Natural Slope Drainage' },
+                  { value: 'Not Available', label: 'Not Available' },
+                ]}
+                placeholder="Drainage type"
+              />
+              <FormSelectWithCustom
+                label="Solid Waste Management"
+                value={solidWasteManagement}
+                onChange={setSolidWasteManagement}
+                options={[
+                  { value: 'Municipal Collection', label: 'Municipal Collection' },
+                  { value: 'Private Agency', label: 'Private Agency' },
+                  { value: 'Society/RWA Managed', label: 'Society/RWA Managed' },
+                  { value: 'Self Disposal', label: 'Self Disposal' },
+                  { value: 'Composting', label: 'Composting (In-house)' },
+                  { value: 'Not Available', label: 'Not Available' },
+                ]}
+                placeholder="Waste management"
+              />
+              <FormSelectWithCustom
+                label="Electricity Status"
+                value={electricityStatus}
+                onChange={setElectricityStatus}
+                options={[
+                  { value: 'Metered Connection Available', label: 'Metered Connection Available' },
+                  { value: 'DISCOM Connected (BSES/Tata/MSEDCL)', label: 'DISCOM Connected (BSES/Tata/MSEDCL)' },
+                  { value: '3-Phase Connection', label: '3-Phase Connection' },
+                  { value: 'Single Phase Connection', label: 'Single Phase Connection' },
+                  { value: 'DG Backup Available', label: 'DG Backup Available' },
+                  { value: 'Solar + Grid', label: 'Solar + Grid Connected' },
+                  { value: 'Temporary Connection', label: 'Temporary Connection' },
+                  { value: 'Not Available', label: 'Not Available' },
+                ]}
+                placeholder="Electricity status"
+              />
+              <FormSelectWithCustom
+                label="Public Transport Access"
+                value={publicTransportAccess}
+                onChange={setPublicTransportAccess}
+                options={[
+                  { value: 'Excellent (Metro + Bus within 500m)', label: 'Excellent (Metro + Bus within 500m)' },
+                  { value: 'Good (Bus/Metro within 1km)', label: 'Good (Bus/Metro within 1km)' },
+                  { value: 'Moderate (1-2km)', label: 'Moderate (1-2km)' },
+                  { value: 'Poor (>2km)', label: 'Poor (>2km)' },
+                  { value: 'Railway Station Nearby', label: 'Railway Station Nearby' },
+                  { value: 'Auto/Rickshaw Only', label: 'Auto/Rickshaw Only' },
+                ]}
+                placeholder="Transport access"
+              />
             </div>
           </div>
 
@@ -1952,31 +2103,158 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 value={rainWaterHarvesting}
                 onChange={setRainWaterHarvesting}
                 options={[
-                  { value: 'Installed', label: 'Installed' },
+                  { value: 'Installed - Rooftop Collection', label: 'Installed - Rooftop Collection' },
+                  { value: 'Installed - Recharge Pit', label: 'Installed - Recharge Pit' },
+                  { value: 'Installed - Storage Tank', label: 'Installed - Storage Tank' },
+                  { value: 'Installed - Complete System', label: 'Installed - Complete System' },
                   { value: 'Not Installed', label: 'Not Installed' },
+                  { value: 'Mandatory (Plot >100sqm)', label: 'Mandatory (Plot >100sqm)' },
                   { value: 'Not Applicable', label: 'Not Applicable' },
                 ]}
                 placeholder="RWH status"
               />
-              <FormInput label="Solar Provision" value={solarProvision} onChange={(e) => setSolarProvision(e.target.value)} placeholder="e.g., Solar water heater installed" />
-              <FormInput label="Green Building Features" value={greenBuildingFeatures} onChange={(e) => setGreenBuildingFeatures(e.target.value)} placeholder="e.g., None / LEED certified" />
-              <FormInput label="Environmental Pollution" value={environmentalPollution} onChange={(e) => setEnvironmentalPollution(e.target.value)} placeholder="e.g., Low / Industrial area nearby" />
+              <FormSelectWithCustom
+                label="Solar Provision"
+                value={solarProvision}
+                onChange={setSolarProvision}
+                options={[
+                  { value: 'Solar Water Heater Installed', label: 'Solar Water Heater Installed' },
+                  { value: 'Solar PV Panels (On-grid)', label: 'Solar PV Panels (On-grid)' },
+                  { value: 'Solar PV Panels (Off-grid)', label: 'Solar PV Panels (Off-grid)' },
+                  { value: 'Solar Street Lights', label: 'Solar Street Lights' },
+                  { value: 'Provision Available', label: 'Provision Available' },
+                  { value: 'Not Installed', label: 'Not Installed' },
+                  { value: 'Not Applicable', label: 'Not Applicable' },
+                ]}
+                placeholder="Solar status"
+              />
+              <FormSelectWithCustom
+                label="Green Building Features"
+                value={greenBuildingFeatures}
+                onChange={setGreenBuildingFeatures}
+                options={[
+                  { value: 'None', label: 'None' },
+                  { value: 'GRIHA Certified', label: 'GRIHA Certified' },
+                  { value: 'IGBC Certified', label: 'IGBC Certified' },
+                  { value: 'LEED Certified', label: 'LEED Certified' },
+                  { value: 'Energy Efficient Design', label: 'Energy Efficient Design' },
+                  { value: 'Partial Green Features', label: 'Partial Green Features' },
+                ]}
+                placeholder="Green certification"
+              />
+              <FormSelectWithCustom
+                label="Environmental Pollution"
+                value={environmentalPollution}
+                onChange={setEnvironmentalPollution}
+                options={[
+                  { value: 'None/Negligible', label: 'None/Negligible' },
+                  { value: 'Low (Residential Area)', label: 'Low (Residential Area)' },
+                  { value: 'Moderate (Commercial Area)', label: 'Moderate (Commercial Area)' },
+                  { value: 'High (Industrial Area Nearby)', label: 'High (Industrial Area Nearby)' },
+                  { value: 'Noise Pollution', label: 'Noise Pollution' },
+                  { value: 'Air Pollution', label: 'Air Pollution' },
+                  { value: 'Water Pollution', label: 'Water Pollution' },
+                ]}
+                placeholder="Pollution level"
+              />
               <FormSelectWithCustom
                 label="Structural Safety"
                 value={structuralSafety}
                 onChange={setStructuralSafety}
                 options={[
                   { value: 'Structurally Safe', label: 'Structurally Safe' },
-                  { value: 'Needs Repair', label: 'Needs Minor Repair' },
-                  { value: 'Unsafe', label: 'Structurally Unsafe' },
+                  { value: 'Good Condition', label: 'Good Condition' },
+                  { value: 'Fair Condition', label: 'Fair Condition' },
+                  { value: 'Needs Minor Repair', label: 'Needs Minor Repair' },
+                  { value: 'Needs Major Repair', label: 'Needs Major Repair' },
+                  { value: 'Dilapidated', label: 'Dilapidated' },
+                  { value: 'Structurally Unsafe', label: 'Structurally Unsafe' },
+                  { value: 'Under Construction', label: 'Under Construction' },
                 ]}
                 placeholder="Safety status"
               />
-              <FormInput label="Earthquake Resistance" value={earthquakeResistance} onChange={(e) => setEarthquakeResistance(e.target.value)} placeholder="e.g., Zone IV compliant" />
-              <FormInput label="Visible Damage" value={visibleDamage} onChange={(e) => setVisibleDamage(e.target.value)} placeholder="e.g., None / Minor cracks" />
-              <FormInput label="Firefighting Provision" value={firefightingProvision} onChange={(e) => setFirefightingProvision(e.target.value)} placeholder="e.g., Fire extinguishers provided" />
-              <FormInput label="Maintenance Issues" value={maintenanceIssues} onChange={(e) => setMaintenanceIssues(e.target.value)} placeholder="e.g., None / Seepage in basement" />
-              <FormInput label="Extent of Deterioration" value={extentOfDeterioration} onChange={(e) => setExtentOfDeterioration(e.target.value)} placeholder="e.g., Nil / 10%" />
+              <FormSelectWithCustom
+                label="Earthquake Zone/Resistance"
+                value={earthquakeResistance}
+                onChange={setEarthquakeResistance}
+                options={[
+                  { value: 'Zone II (Low Risk)', label: 'Zone II (Low Risk)' },
+                  { value: 'Zone III (Moderate Risk)', label: 'Zone III (Moderate Risk)' },
+                  { value: 'Zone IV (High Risk)', label: 'Zone IV (High Risk)' },
+                  { value: 'Zone V (Very High Risk)', label: 'Zone V (Very High Risk)' },
+                  { value: 'Zone VI (Severe Risk)', label: 'Zone VI (Severe Risk - J&K/Himachal)' },
+                  { value: 'Earthquake Resistant Design', label: 'Earthquake Resistant Design' },
+                  { value: 'Not Compliant', label: 'Not Earthquake Compliant' },
+                  { value: 'Not Applicable', label: 'Not Applicable' },
+                ]}
+                placeholder="Seismic zone"
+              />
+              <FormSelectWithCustom
+                label="Visible Damage"
+                value={visibleDamage}
+                onChange={setVisibleDamage}
+                options={[
+                  { value: 'None', label: 'None' },
+                  { value: 'Hairline Cracks', label: 'Hairline Cracks' },
+                  { value: 'Minor Cracks', label: 'Minor Cracks' },
+                  { value: 'Major Cracks', label: 'Major Cracks' },
+                  { value: 'Seepage/Dampness', label: 'Seepage/Dampness' },
+                  { value: 'Spalling of Concrete', label: 'Spalling of Concrete' },
+                  { value: 'Corrosion of Reinforcement', label: 'Corrosion of Reinforcement' },
+                  { value: 'Settlement Cracks', label: 'Settlement Cracks' },
+                  { value: 'Multiple Issues', label: 'Multiple Issues' },
+                ]}
+                placeholder="Damage observed"
+              />
+              <FormSelectWithCustom
+                label="Firefighting Provision"
+                value={firefightingProvision}
+                onChange={setFirefightingProvision}
+                options={[
+                  { value: 'Fire Extinguishers', label: 'Fire Extinguishers' },
+                  { value: 'Fire Hydrants', label: 'Fire Hydrants' },
+                  { value: 'Sprinkler System', label: 'Sprinkler System' },
+                  { value: 'Fire Alarm System', label: 'Fire Alarm System' },
+                  { value: 'Complete Fire Safety System', label: 'Complete Fire Safety System' },
+                  { value: 'Smoke Detectors Only', label: 'Smoke Detectors Only' },
+                  { value: 'Fire NOC Obtained', label: 'Fire NOC Obtained' },
+                  { value: 'Not Provided', label: 'Not Provided' },
+                  { value: 'Not Applicable', label: 'Not Applicable' },
+                ]}
+                placeholder="Fire safety"
+              />
+              <FormSelectWithCustom
+                label="Maintenance Issues"
+                value={maintenanceIssues}
+                onChange={setMaintenanceIssues}
+                options={[
+                  { value: 'None', label: 'None' },
+                  { value: 'Minor Repairs Required', label: 'Minor Repairs Required' },
+                  { value: 'Paint/Whitewash Required', label: 'Paint/Whitewash Required' },
+                  { value: 'Plumbing Issues', label: 'Plumbing Issues' },
+                  { value: 'Electrical Issues', label: 'Electrical Issues' },
+                  { value: 'Waterproofing Required', label: 'Waterproofing Required' },
+                  { value: 'Seepage in Walls/Ceiling', label: 'Seepage in Walls/Ceiling' },
+                  { value: 'Flooring Repair Required', label: 'Flooring Repair Required' },
+                  { value: 'Multiple Issues', label: 'Multiple Issues' },
+                ]}
+                placeholder="Maintenance status"
+              />
+              <FormSelectWithCustom
+                label="Extent of Deterioration"
+                value={extentOfDeterioration}
+                onChange={setExtentOfDeterioration}
+                options={[
+                  { value: 'Nil', label: 'Nil (0%)' },
+                  { value: '0-5%', label: 'Negligible (0-5%)' },
+                  { value: '5-10%', label: 'Minor (5-10%)' },
+                  { value: '10-20%', label: 'Moderate (10-20%)' },
+                  { value: '20-30%', label: 'Significant (20-30%)' },
+                  { value: '30-50%', label: 'Major (30-50%)' },
+                  { value: '>50%', label: 'Severe (>50%)' },
+                ]}
+                placeholder="Deterioration %"
+              />
             </div>
           </div>
 
@@ -2003,16 +2281,69 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                     <label className="form-label">Number of Tenants</label>
                     <input type="number" className="form-input" value={numberOfTenants || ''} onChange={(e) => setNumberOfTenants(Number(e.target.value))} placeholder="0" />
                   </div>
-                  <FormInput label="Tenancy Duration" value={tenancyDuration} onChange={(e) => setTenancyDuration(e.target.value)} placeholder="e.g., 5 years" />
-                  <FormInput label="Tenancy Status" value={tenancyStatus} onChange={(e) => setTenancyStatus(e.target.value)} placeholder="e.g., Registered / Unregistered" />
+                  <FormSelectWithCustom
+                    label="Tenancy Duration"
+                    value={tenancyDuration}
+                    onChange={setTenancyDuration}
+                    options={[
+                      { value: 'Less than 1 year', label: 'Less than 1 year' },
+                      { value: '1-2 years', label: '1-2 years' },
+                      { value: '2-5 years', label: '2-5 years' },
+                      { value: '5-10 years', label: '5-10 years' },
+                      { value: 'More than 10 years', label: 'More than 10 years' },
+                      { value: 'Month to Month', label: 'Month to Month' },
+                    ]}
+                    placeholder="Duration"
+                  />
+                  <FormSelectWithCustom
+                    label="Tenancy Status"
+                    value={tenancyStatus}
+                    onChange={setTenancyStatus}
+                    options={[
+                      { value: 'Registered', label: 'Registered' },
+                      { value: 'Unregistered', label: 'Unregistered' },
+                      { value: 'Rent Agreement Executed', label: 'Rent Agreement Executed' },
+                      { value: 'Leave & License', label: 'Leave & License' },
+                      { value: 'Old Tenancy (Rent Control)', label: 'Old Tenancy (Rent Control)' },
+                      { value: 'Sub-let', label: 'Sub-let' },
+                    ]}
+                    placeholder="Tenancy type"
+                  />
                   <div className="form-group">
                     <label className="form-label">Monthly Rent (Rs)</label>
                     <input type="number" className="form-input" value={monthlyRent || ''} onChange={(e) => setMonthlyRent(Number(e.target.value))} placeholder="0" />
                   </div>
                 </>
               )}
-              <FormInput label="Property Tax Status" value={propertyTaxStatus} onChange={(e) => setPropertyTaxStatus(e.target.value)} placeholder="e.g., Paid till date" />
-              <FormInput label="Property Insurance" value={propertyInsurance} onChange={(e) => setPropertyInsurance(e.target.value)} placeholder="e.g., Insured with LIC" />
+              <FormSelectWithCustom
+                label="Property Tax Status"
+                value={propertyTaxStatus}
+                onChange={setPropertyTaxStatus}
+                options={[
+                  { value: 'Paid (Current)', label: 'Paid (Current)' },
+                  { value: 'Paid till Last FY', label: 'Paid till Last FY' },
+                  { value: 'Arrears Pending', label: 'Arrears Pending' },
+                  { value: 'Under Assessment', label: 'Under Assessment' },
+                  { value: 'Exempted', label: 'Exempted' },
+                  { value: 'Not Applicable', label: 'Not Applicable' },
+                ]}
+                placeholder="Tax status"
+              />
+              <FormSelectWithCustom
+                label="Property Insurance"
+                value={propertyInsurance}
+                onChange={setPropertyInsurance}
+                options={[
+                  { value: 'Insured (Fire + Allied Perils)', label: 'Insured (Fire + Allied Perils)' },
+                  { value: 'Insured (Comprehensive)', label: 'Insured (Comprehensive)' },
+                  { value: 'Insured (Fire Only)', label: 'Insured (Fire Only)' },
+                  { value: 'Insured (Earthquake)', label: 'Insured (Earthquake)' },
+                  { value: 'Society Insurance', label: 'Society Insurance' },
+                  { value: 'Not Insured', label: 'Not Insured' },
+                  { value: 'Not Known', label: 'Not Known' },
+                ]}
+                placeholder="Insurance status"
+              />
               <div className="form-group">
                 <label className="form-label">Monthly Maintenance (Rs)</label>
                 <input type="number" className="form-input" value={maintenanceCharges || ''} onChange={(e) => setMaintenanceCharges(Number(e.target.value))} placeholder="0" />
