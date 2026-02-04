@@ -3,14 +3,31 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
+import { clearAccessRevokedFlag } from '@/lib/auth';
 
 export default function OnboardingFlow() {
-  const { user, logout } = useAuth();
+  const { user, userDoc, logout, refreshUserDoc } = useAuth();
   const { pendingInvites, createNewFirm, acceptFirmInvite, loading, error } = useFirm();
-  const [step, setStep] = useState<'choice' | 'create' | 'invites'>('choice');
+  const [step, setStep] = useState<'choice' | 'create' | 'invites' | 'revoked'>(() =>
+    userDoc?.accessRevoked ? 'revoked' : 'choice'
+  );
   const [firmName, setFirmName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  const handleClearRevoked = async () => {
+    if (!user) return;
+    setIsSubmitting(true);
+    try {
+      await clearAccessRevokedFlag(user.uid);
+      await refreshUserDoc();
+      setStep('choice');
+    } catch (err) {
+      console.error('Error clearing revoked flag:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleCreateFirm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,6 +261,62 @@ export default function OnboardingFlow() {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Access Revoked Step */}
+        {step === 'revoked' && (
+          <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-600/20 mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-white mb-2">Access Revoked</h2>
+              <p className="text-gray-400 text-sm">
+                Your access to your previous firm has been removed by the administrator.
+              </p>
+            </div>
+
+            <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+              <p className="text-gray-300 text-sm">
+                This may happen when:
+              </p>
+              <ul className="mt-2 space-y-1 text-gray-400 text-sm list-disc list-inside">
+                <li>Your firm subscription seats were reduced</li>
+                <li>You were removed from the team</li>
+                <li>The firm was restructured</li>
+              </ul>
+            </div>
+
+            <p className="text-gray-400 text-sm mb-6">
+              You can create your own firm or wait for a new invitation from another firm.
+            </p>
+
+            <button
+              onClick={handleClearRevoked}
+              disabled={isSubmitting}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Please wait...
+                </>
+              ) : (
+                'Continue'
+              )}
+            </button>
+
+            <div className="mt-4 pt-4 border-t border-gray-700 text-center">
+              <button
+                onClick={logout}
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                Sign out and use a different account
+              </button>
             </div>
           </div>
         )}

@@ -19,6 +19,9 @@ export interface UserDocument {
   trialReportsUsed?: number;
   linkedDevices?: string[];
   subscriptionStatus?: SubscriptionStatusType;
+  // Access revocation tracking
+  accessRevoked?: boolean;
+  accessRevokedAt?: Timestamp;
 }
 
 export interface Firm {

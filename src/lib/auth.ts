@@ -75,7 +75,16 @@ export async function updateUserFirmId(userId: string, firmId: string): Promise<
 
 export async function clearUserFirmId(userId: string): Promise<void> {
   const userRef = doc(db, 'users', userId);
-  await setDoc(userRef, { firmId: null }, { merge: true });
+  await setDoc(userRef, {
+    firmId: null,
+    accessRevoked: true,
+    accessRevokedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function clearAccessRevokedFlag(userId: string): Promise<void> {
+  const userRef = doc(db, 'users', userId);
+  await setDoc(userRef, { accessRevoked: false }, { merge: true });
 }
 
 export function subscribeToAuthState(callback: (user: User | null) => void): () => void {

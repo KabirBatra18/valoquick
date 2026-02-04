@@ -6,6 +6,8 @@ import {
   createOrUpdateTrialRecord,
   incrementTrialUsage,
   getUserTrialCount,
+  getFirmTrialCount,
+  incrementFirmTrialUsage,
   getSubscription,
 } from './firestore';
 import { TrialStatus, TRIAL_LIMIT, MAX_DEVICES_PER_ACCOUNT, Subscription } from '@/types/subscription';
@@ -42,8 +44,22 @@ export async function checkTrialStatus(
       // Active subscription - unlimited reports
       return { allowed: true, remaining: Infinity };
     }
+
+    // Firm-based trial: 5 reports shared across entire firm
+    const firmTrialCount = await getFirmTrialCount(firmId);
+    if (firmTrialCount >= TRIAL_LIMIT) {
+      return {
+        allowed: false,
+        remaining: 0,
+        reason: 'USER_LIMIT_REACHED', // Using this reason for firm limit too
+      };
+    }
+
+    const remaining = TRIAL_LIMIT - firmTrialCount;
+    return { allowed: remaining > 0, remaining };
   }
 
+  // User without a firm: fallback to device/user-based trial
   const deviceId = await getDeviceFingerprint();
 
   // Ensure device is linked to user
@@ -89,7 +105,14 @@ export async function checkTrialStatus(
   return { allowed: remaining > 0, remaining };
 }
 
-export async function recordTrialUsage(userId: string): Promise<void> {
+export async function recordTrialUsage(userId: string, firmId?: string | null): Promise<void> {
+  // If user has a firm, increment firm-level trial usage
+  if (firmId) {
+    await incrementFirmTrialUsage(firmId);
+    return;
+  }
+
+  // Fallback to device/user-based tracking for users without a firm
   const deviceId = await getDeviceFingerprint();
   await incrementTrialUsage(deviceId, userId);
 }

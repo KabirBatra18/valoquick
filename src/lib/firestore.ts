@@ -581,6 +581,23 @@ export async function getUserTrialCount(userId: string): Promise<number> {
   return 0;
 }
 
+export async function getFirmTrialCount(firmId: string): Promise<number> {
+  const firmRef = doc(db, 'firms', firmId);
+  const firmSnap = await getDoc(firmRef);
+
+  if (firmSnap.exists()) {
+    return firmSnap.data().trialReportsUsed || 0;
+  }
+  return 0;
+}
+
+export async function incrementFirmTrialUsage(firmId: string): Promise<void> {
+  const firmRef = doc(db, 'firms', firmId);
+  await updateDoc(firmRef, {
+    trialReportsUsed: increment(1),
+  });
+}
+
 export async function linkDeviceToUser(
   userId: string,
   deviceId: string

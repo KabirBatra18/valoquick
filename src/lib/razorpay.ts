@@ -1,6 +1,6 @@
 'use client';
 
-import { PRICING, PlanType } from '@/types/subscription';
+import { PRICING, SEAT_PRICING, PlanType } from '@/types/subscription';
 import { authenticatedFetch } from './api-client';
 
 declare global {
@@ -68,12 +68,13 @@ export interface CreateSubscriptionResult {
 
 export async function createRazorpaySubscription(
   plan: PlanType,
-  firmId: string
+  firmId: string,
+  additionalSeats: number = 0
 ): Promise<CreateSubscriptionResult> {
   try {
     const response = await authenticatedFetch('/api/create-order', {
       method: 'POST',
-      body: JSON.stringify({ plan, firmId }),
+      body: JSON.stringify({ plan, firmId, additionalSeats }),
     });
 
     if (!response.ok) {
@@ -96,6 +97,7 @@ export interface OpenCheckoutOptions {
   firmId: string;
   userEmail: string;
   userName: string;
+  additionalSeats?: number;
   onSuccess: (response: RazorpayResponse) => void;
   onDismiss?: () => void;
 }
@@ -104,12 +106,24 @@ export async function openRazorpayCheckout(options: OpenCheckoutOptions): Promis
   await loadRazorpayScript();
 
   const planDetails = PRICING[options.plan];
+  const additionalSeats = options.additionalSeats || 0;
+
+  // Calculate total for description
+  const baseAmount = planDetails.amount;
+  const seatsAmount = additionalSeats * SEAT_PRICING[options.plan].amount;
+  const totalAmount = (baseAmount + seatsAmount) / 100;
+
+  let description = `${planDetails.name} Plan`;
+  if (additionalSeats > 0) {
+    description += ` + ${additionalSeats} extra seat${additionalSeats > 1 ? 's' : ''}`;
+  }
+  description += ` - ₹${totalAmount.toLocaleString('en-IN')}/${planDetails.period}`;
 
   const razorpayOptions: RazorpayOptions = {
     key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
     subscription_id: options.subscriptionId,
     name: 'ValuQuick',
-    description: `${planDetails.name} Plan - ${planDetails.displayAmount}/${planDetails.period}`,
+    description,
     prefill: {
       name: options.userName,
       email: options.userEmail,
@@ -132,7 +146,8 @@ export async function verifyPayment(
   subscriptionId: string,
   signature: string,
   firmId: string,
-  plan: PlanType
+  plan: PlanType,
+  additionalSeats: number = 0
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await authenticatedFetch('/api/verify-payment', {
@@ -143,6 +158,7 @@ export async function verifyPayment(
         razorpay_signature: signature,
         firmId,
         plan,
+        additionalSeats,
       }),
     });
 

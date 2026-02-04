@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       razorpay_signature,
       firmId,
       plan,
+      additionalSeats = 0,
     } = await req.json();
 
     if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature || !firmId || !plan) {
@@ -69,7 +70,8 @@ export async function POST(req: NextRequest) {
     // Update subscription in Firestore
     const periodEnd = calculatePeriodEnd(plan as PlanType);
 
-    await adminDb.collection('subscriptions').doc(firmId).set({
+    // Prepare subscription data with seat info
+    const subscriptionData: Record<string, unknown> = {
       plan,
       status: 'active',
       razorpaySubscriptionId: razorpay_subscription_id,
@@ -77,7 +79,14 @@ export async function POST(req: NextRequest) {
       currentPeriodEnd: Timestamp.fromDate(periodEnd),
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-    }, { merge: true });
+      seats: {
+        included: 1,
+        purchased: additionalSeats,
+        total: 1 + additionalSeats,
+      },
+    };
+
+    await adminDb.collection('subscriptions').doc(firmId).set(subscriptionData, { merge: true });
 
     return NextResponse.json({ success: true });
   } catch (error) {

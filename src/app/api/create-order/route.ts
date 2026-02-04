@@ -28,6 +28,20 @@ function getPlanId(plan: PlanType): string | null {
   }
 }
 
+// Get Seat Plan ID from environment variables
+function getSeatPlanId(plan: PlanType): string | null {
+  switch (plan) {
+    case 'monthly':
+      return process.env.RAZORPAY_SEAT_PLAN_MONTHLY || null;
+    case 'halfyearly':
+      return process.env.RAZORPAY_SEAT_PLAN_HALFYEARLY || null;
+    case 'yearly':
+      return process.env.RAZORPAY_SEAT_PLAN_YEARLY || null;
+    default:
+      return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Verify authentication
@@ -48,7 +62,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { plan, firmId } = await req.json();
+    const { plan, firmId, additionalSeats = 0 } = await req.json();
 
     if (!plan || !firmId) {
       return NextResponse.json(
@@ -81,6 +95,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // If additional seats requested, verify seat plan exists
+    let seatPlanId: string | null = null;
+    if (additionalSeats > 0) {
+      seatPlanId = getSeatPlanId(plan as PlanType);
+      if (!seatPlanId) {
+        return NextResponse.json(
+          { error: 'Seat plans not configured. Please contact support.' },
+          { status: 503 }
+        );
+      }
+    }
+
     // Create auto-recurring subscription in Razorpay
     // IMPORTANT: Include 'app: valuquick' to distinguish from other apps using same Razorpay account
     const subscription = await razorpay.subscriptions.create({
@@ -91,12 +117,34 @@ export async function POST(req: NextRequest) {
         app: 'valuquick', // Critical: identifies this as a ValuQuick subscription
         firmId,
         plan,
+        additionalSeats: String(additionalSeats),
       },
     });
 
+    // If additional seats, create a seats subscription too
+    let seatsSubscriptionId: string | undefined;
+    if (additionalSeats > 0 && seatPlanId) {
+      const seatsSubscription = await razorpay.subscriptions.create({
+        plan_id: seatPlanId,
+        customer_notify: 1,
+        quantity: additionalSeats,
+        total_count: plan === 'yearly' ? 10 : 120,
+        notes: {
+          app: 'valuquick',
+          type: 'seats',
+          firmId,
+          plan,
+          seatCount: String(additionalSeats),
+        },
+      });
+      seatsSubscriptionId = seatsSubscription.id;
+    }
+
     return NextResponse.json({
       subscriptionId: subscription.id,
+      seatsSubscriptionId,
       plan,
+      additionalSeats,
     });
   } catch (error) {
     console.error('Error creating Razorpay subscription:', error);

@@ -341,7 +341,7 @@ export default function Home() {
       // Record trial usage after successful PDF generation (if not subscribed)
       if (!isSubscribed && userId) {
         try {
-          await recordTrialUsage(userId);
+          await recordTrialUsage(userId, firmId);
           await refreshSubscription();
         } catch (err) {
           console.error('Error recording trial usage:', err);
