@@ -163,14 +163,20 @@ export async function verifyFirmMembership(userId: string, firmId: string): Prom
 export async function verifyFirmOwner(userId: string, firmId: string): Promise<boolean> {
   try {
     const db = getAdminDb();
-    const firmDoc = await db.collection('firms').doc(firmId).get();
 
-    if (!firmDoc.exists) {
+    // Check member record for owner role (more reliable than firm doc)
+    const memberDoc = await db.collection('firms').doc(firmId)
+      .collection('members').doc(userId).get();
+
+    if (!memberDoc.exists) {
+      console.log('verifyFirmOwner: Member doc not found for user', userId, 'in firm', firmId);
       return false;
     }
 
-    const firmData = firmDoc.data();
-    return firmData?.ownerId === userId;
+    const memberData = memberDoc.data();
+    const isOwner = memberData?.role === 'owner';
+    console.log('verifyFirmOwner: User', userId, 'role is', memberData?.role, '- isOwner:', isOwner);
+    return isOwner;
   } catch (error) {
     console.error('Firm owner verification error:', error);
     return false;
