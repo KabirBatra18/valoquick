@@ -146,7 +146,7 @@ export default function TeamManagement({ onClose }: TeamManagementProps) {
                   {usedSeats} / {totalSeats} seats used
                 </span>
               ) : (
-                <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full">
+                <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 dark:bg-yellow-500/20 dark:text-yellow-400 rounded-full font-medium">
                   Trial
                 </span>
               )}
