@@ -21,6 +21,18 @@ export interface ReportFormData {
   block: string;
   area: string;
   city: string;
+  wardVillageTaluka: string;
+  subRegistryBlock: string;
+  district: string;
+  nearbyLandmark: string;
+
+  // Physical Characteristics
+  landType: string; // Solid, Rocky, Marsh Land, Reclaimed, Water-logged, Land-locked
+  accessApproach: string;
+  abutingRoads: string;
+  plinthArea: number;
+  carpetArea: number;
+  saleableArea: number;
 
   // Boundaries
   northBoundary: string;
@@ -35,10 +47,13 @@ export interface ReportFormData {
   // Owner Details
   originalOwner: string;
   originalOwnerYear: string;
+  ownerPhone: string;
   currentOwners: { name: string; share: string }[];
+  developerName: string;
 
   // Valuation Inputs
   referenceNo: string;
+  inspectionDate: string;
   valuationDate: string;
   valuationForDate: string;
   purpose: string;
@@ -97,6 +112,87 @@ export interface ReportFormData {
   buildingOccupancy: string;
   civicAmenities: string[];
 
+  // Legal & Regulatory
+  ownershipDocType: string; // Sale Deed, Gift Deed, Lease Deed
+  leaseholdRestrictions: string;
+  easementAgreement: string;
+  acquisitionNotification: string;
+  roadWideningNotification: string;
+  heritageRestriction: string;
+  encumbrances: string;
+  buildingPlanSanction: string;
+  approvalAuthority: string;
+  planViolations: string;
+  occupancyCertificateStatus: string;
+  unauthorizedConstructions: string;
+  farFsiPermitted: string;
+  farFsiConsumed: string;
+  groundCoverage: string;
+  planningZone: string;
+  zoningRegulations: string;
+  surroundingLandUse: string;
+  demolitionProceedings: string;
+  sarfaesiCompliant: string;
+
+  // Economic/Rental Details
+  reasonableLettingValue: number;
+  isOccupiedByTenant: boolean;
+  numberOfTenants: number;
+  tenancyDuration: string;
+  tenancyStatus: string;
+  monthlyRent: number;
+  propertyTaxStatus: string;
+  propertyInsurance: string;
+  maintenanceCharges: number;
+  securityCharges: number;
+
+  // Infrastructure
+  waterSupply: string;
+  sewerageSystem: string;
+  stormDrainage: string;
+  solidWasteManagement: string;
+  electricityStatus: string;
+  publicTransportAccess: string;
+  nearbySchool: string;
+  nearbyMedical: string;
+  nearbyRecreation: string;
+
+  // Environmental
+  greenBuildingFeatures: string;
+  rainWaterHarvesting: string;
+  solarProvision: string;
+  environmentalPollution: string;
+
+  // Engineering/Safety
+  structuralSafety: string;
+  earthquakeResistance: string;
+  visibleDamage: string;
+  airConditioningSystem: string;
+  firefightingProvision: string;
+  maintenanceIssues: string;
+  extentOfDeterioration: string;
+
+  // Architectural
+  architecturalStyle: string;
+  heritageValue: string;
+  landscapeElements: string;
+
+  // Marketability
+  locationAttributes: string;
+  scarcityValue: string;
+  demandSupplyComment: string;
+  comparableSalePrices: string;
+  lastTwoTransactions: string;
+
+  // Valuation Summary
+  guidelineValueLand: number;
+  guidelineValueBuilding: number;
+  marketRateTrend: string;
+  forcedSaleValue: number;
+  insuranceValue: number;
+  valuationMethodology: string;
+  variationJustification: string;
+
   // Photos
   photos: string[];
 
@@ -113,6 +209,16 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   block: '',
   area: '',
   city: '',
+  wardVillageTaluka: '',
+  subRegistryBlock: '',
+  district: '',
+  nearbyLandmark: '',
+  landType: '',
+  accessApproach: '',
+  abutingRoads: '',
+  plinthArea: 0,
+  carpetArea: 0,
+  saleableArea: 0,
   northBoundary: '',
   southBoundary: '',
   eastBoundary: '',
@@ -123,8 +229,11 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   southWestBoundary: '',
   originalOwner: '',
   originalOwnerYear: '',
+  ownerPhone: '',
   currentOwners: [{ name: '', share: '' }],
+  developerName: '',
   referenceNo: '',
+  inspectionDate: '',
   valuationDate: '',
   valuationForDate: '',
   purpose: '',
@@ -170,6 +279,80 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   isLeasehold: false,
   buildingOccupancy: '',
   civicAmenities: [],
+  // Legal & Regulatory
+  ownershipDocType: '',
+  leaseholdRestrictions: '',
+  easementAgreement: '',
+  acquisitionNotification: '',
+  roadWideningNotification: '',
+  heritageRestriction: '',
+  encumbrances: '',
+  buildingPlanSanction: '',
+  approvalAuthority: '',
+  planViolations: '',
+  occupancyCertificateStatus: '',
+  unauthorizedConstructions: '',
+  farFsiPermitted: '',
+  farFsiConsumed: '',
+  groundCoverage: '',
+  planningZone: '',
+  zoningRegulations: '',
+  surroundingLandUse: '',
+  demolitionProceedings: '',
+  sarfaesiCompliant: '',
+  // Economic/Rental
+  reasonableLettingValue: 0,
+  isOccupiedByTenant: false,
+  numberOfTenants: 0,
+  tenancyDuration: '',
+  tenancyStatus: '',
+  monthlyRent: 0,
+  propertyTaxStatus: '',
+  propertyInsurance: '',
+  maintenanceCharges: 0,
+  securityCharges: 0,
+  // Infrastructure
+  waterSupply: '',
+  sewerageSystem: '',
+  stormDrainage: '',
+  solidWasteManagement: '',
+  electricityStatus: '',
+  publicTransportAccess: '',
+  nearbySchool: '',
+  nearbyMedical: '',
+  nearbyRecreation: '',
+  // Environmental
+  greenBuildingFeatures: '',
+  rainWaterHarvesting: '',
+  solarProvision: '',
+  environmentalPollution: '',
+  // Engineering/Safety
+  structuralSafety: '',
+  earthquakeResistance: '',
+  visibleDamage: '',
+  airConditioningSystem: '',
+  firefightingProvision: '',
+  maintenanceIssues: '',
+  extentOfDeterioration: '',
+  // Architectural
+  architecturalStyle: '',
+  heritageValue: '',
+  landscapeElements: '',
+  // Marketability
+  locationAttributes: '',
+  scarcityValue: '',
+  demandSupplyComment: '',
+  comparableSalePrices: '',
+  lastTwoTransactions: '',
+  // Valuation Summary
+  guidelineValueLand: 0,
+  guidelineValueBuilding: 0,
+  marketRateTrend: '',
+  forcedSaleValue: 0,
+  insuranceValue: 0,
+  valuationMethodology: '',
+  variationJustification: '',
+  // Photos & Location
   photos: [],
   locationLat: null,
   locationLng: null,

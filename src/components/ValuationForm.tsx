@@ -896,6 +896,104 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [buildingOccupancy, setBuildingOccupancy] = useState(initialData?.buildingOccupancy || '');
   const [civicAmenities, setCivicAmenities] = useState<string[]>(initialData?.civicAmenities || []);
 
+  // Additional Property Details
+  const [wardVillageTaluka, setWardVillageTaluka] = useState(initialData?.wardVillageTaluka || '');
+  const [subRegistryBlock, setSubRegistryBlock] = useState(initialData?.subRegistryBlock || '');
+  const [district, setDistrict] = useState(initialData?.district || '');
+  const [nearbyLandmark, setNearbyLandmark] = useState(initialData?.nearbyLandmark || '');
+  const [landType, setLandType] = useState(initialData?.landType || '');
+  const [accessApproach, setAccessApproach] = useState(initialData?.accessApproach || '');
+  const [abutingRoads, setAbutingRoads] = useState(initialData?.abutingRoads || '');
+  const [plinthArea, setPlinthArea] = useState<number>(initialData?.plinthArea || 0);
+  const [carpetArea, setCarpetArea] = useState<number>(initialData?.carpetArea || 0);
+  const [saleableArea, setSaleableArea] = useState<number>(initialData?.saleableArea || 0);
+
+  // Additional Owner Details
+  const [ownerPhone, setOwnerPhone] = useState(initialData?.ownerPhone || '');
+  const [developerName, setDeveloperName] = useState(initialData?.developerName || '');
+  const [inspectionDate, setInspectionDate] = useState(initialData?.inspectionDate || '');
+
+  // Legal & Regulatory
+  const [ownershipDocType, setOwnershipDocType] = useState(initialData?.ownershipDocType || '');
+  const [leaseholdRestrictions, setLeaseholdRestrictions] = useState(initialData?.leaseholdRestrictions || '');
+  const [easementAgreement, setEasementAgreement] = useState(initialData?.easementAgreement || '');
+  const [acquisitionNotification, setAcquisitionNotification] = useState(initialData?.acquisitionNotification || '');
+  const [roadWideningNotification, setRoadWideningNotification] = useState(initialData?.roadWideningNotification || '');
+  const [heritageRestriction, setHeritageRestriction] = useState(initialData?.heritageRestriction || '');
+  const [encumbrances, setEncumbrances] = useState(initialData?.encumbrances || '');
+  const [buildingPlanSanction, setBuildingPlanSanction] = useState(initialData?.buildingPlanSanction || '');
+  const [approvalAuthority, setApprovalAuthority] = useState(initialData?.approvalAuthority || '');
+  const [planViolations, setPlanViolations] = useState(initialData?.planViolations || '');
+  const [occupancyCertificateStatus, setOccupancyCertificateStatus] = useState(initialData?.occupancyCertificateStatus || '');
+  const [unauthorizedConstructions, setUnauthorizedConstructions] = useState(initialData?.unauthorizedConstructions || '');
+  const [farFsiPermitted, setFarFsiPermitted] = useState(initialData?.farFsiPermitted || '');
+  const [farFsiConsumed, setFarFsiConsumed] = useState(initialData?.farFsiConsumed || '');
+  const [groundCoverage, setGroundCoverage] = useState(initialData?.groundCoverage || '');
+  const [planningZone, setPlanningZone] = useState(initialData?.planningZone || '');
+  const [zoningRegulations, setZoningRegulations] = useState(initialData?.zoningRegulations || '');
+  const [surroundingLandUse, setSurroundingLandUse] = useState(initialData?.surroundingLandUse || '');
+  const [demolitionProceedings, setDemolitionProceedings] = useState(initialData?.demolitionProceedings || '');
+  const [sarfaesiCompliant, setSarfaesiCompliant] = useState(initialData?.sarfaesiCompliant || '');
+
+  // Economic/Rental Details
+  const [reasonableLettingValue, setReasonableLettingValue] = useState<number>(initialData?.reasonableLettingValue || 0);
+  const [isOccupiedByTenant, setIsOccupiedByTenant] = useState(initialData?.isOccupiedByTenant || false);
+  const [numberOfTenants, setNumberOfTenants] = useState<number>(initialData?.numberOfTenants || 0);
+  const [tenancyDuration, setTenancyDuration] = useState(initialData?.tenancyDuration || '');
+  const [tenancyStatus, setTenancyStatus] = useState(initialData?.tenancyStatus || '');
+  const [monthlyRent, setMonthlyRent] = useState<number>(initialData?.monthlyRent || 0);
+  const [propertyTaxStatus, setPropertyTaxStatus] = useState(initialData?.propertyTaxStatus || '');
+  const [propertyInsurance, setPropertyInsurance] = useState(initialData?.propertyInsurance || '');
+  const [maintenanceCharges, setMaintenanceCharges] = useState<number>(initialData?.maintenanceCharges || 0);
+  const [securityCharges, setSecurityCharges] = useState<number>(initialData?.securityCharges || 0);
+
+  // Infrastructure
+  const [waterSupply, setWaterSupply] = useState(initialData?.waterSupply || '');
+  const [sewerageSystem, setSewerageSystem] = useState(initialData?.sewerageSystem || '');
+  const [stormDrainage, setStormDrainage] = useState(initialData?.stormDrainage || '');
+  const [solidWasteManagement, setSolidWasteManagement] = useState(initialData?.solidWasteManagement || '');
+  const [electricityStatus, setElectricityStatus] = useState(initialData?.electricityStatus || '');
+  const [publicTransportAccess, setPublicTransportAccess] = useState(initialData?.publicTransportAccess || '');
+  const [nearbySchool, setNearbySchool] = useState(initialData?.nearbySchool || '');
+  const [nearbyMedical, setNearbyMedical] = useState(initialData?.nearbyMedical || '');
+  const [nearbyRecreation, setNearbyRecreation] = useState(initialData?.nearbyRecreation || '');
+
+  // Environmental
+  const [greenBuildingFeatures, setGreenBuildingFeatures] = useState(initialData?.greenBuildingFeatures || '');
+  const [rainWaterHarvesting, setRainWaterHarvesting] = useState(initialData?.rainWaterHarvesting || '');
+  const [solarProvision, setSolarProvision] = useState(initialData?.solarProvision || '');
+  const [environmentalPollution, setEnvironmentalPollution] = useState(initialData?.environmentalPollution || '');
+
+  // Engineering/Safety
+  const [structuralSafety, setStructuralSafety] = useState(initialData?.structuralSafety || '');
+  const [earthquakeResistance, setEarthquakeResistance] = useState(initialData?.earthquakeResistance || '');
+  const [visibleDamage, setVisibleDamage] = useState(initialData?.visibleDamage || '');
+  const [airConditioningSystem, setAirConditioningSystem] = useState(initialData?.airConditioningSystem || '');
+  const [firefightingProvision, setFirefightingProvision] = useState(initialData?.firefightingProvision || '');
+  const [maintenanceIssues, setMaintenanceIssues] = useState(initialData?.maintenanceIssues || '');
+  const [extentOfDeterioration, setExtentOfDeterioration] = useState(initialData?.extentOfDeterioration || '');
+
+  // Architectural
+  const [architecturalStyle, setArchitecturalStyle] = useState(initialData?.architecturalStyle || '');
+  const [heritageValue, setHeritageValue] = useState(initialData?.heritageValue || '');
+  const [landscapeElements, setLandscapeElements] = useState(initialData?.landscapeElements || '');
+
+  // Marketability
+  const [locationAttributes, setLocationAttributes] = useState(initialData?.locationAttributes || '');
+  const [scarcityValue, setScarcityValue] = useState(initialData?.scarcityValue || '');
+  const [demandSupplyComment, setDemandSupplyComment] = useState(initialData?.demandSupplyComment || '');
+  const [comparableSalePrices, setComparableSalePrices] = useState(initialData?.comparableSalePrices || '');
+  const [lastTwoTransactions, setLastTwoTransactions] = useState(initialData?.lastTwoTransactions || '');
+
+  // Valuation Summary
+  const [guidelineValueLand, setGuidelineValueLand] = useState<number>(initialData?.guidelineValueLand || 0);
+  const [guidelineValueBuilding, setGuidelineValueBuilding] = useState<number>(initialData?.guidelineValueBuilding || 0);
+  const [marketRateTrend, setMarketRateTrend] = useState(initialData?.marketRateTrend || '');
+  const [forcedSaleValue, setForcedSaleValue] = useState<number>(initialData?.forcedSaleValue || 0);
+  const [insuranceValue, setInsuranceValue] = useState<number>(initialData?.insuranceValue || 0);
+  const [valuationMethodology, setValuationMethodology] = useState(initialData?.valuationMethodology || '');
+  const [variationJustification, setVariationJustification] = useState(initialData?.variationJustification || '');
+
   // Photos
   const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
   const [photoPage, setPhotoPage] = useState(0);
@@ -973,6 +1071,16 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         block,
         area,
         city,
+        wardVillageTaluka,
+        subRegistryBlock,
+        district,
+        nearbyLandmark,
+        landType,
+        accessApproach,
+        abutingRoads,
+        plinthArea,
+        carpetArea,
+        saleableArea,
         northBoundary,
         southBoundary,
         eastBoundary,
@@ -983,8 +1091,11 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         southWestBoundary,
         originalOwner,
         originalOwnerYear,
+        ownerPhone,
         currentOwners,
+        developerName,
         referenceNo,
+        inspectionDate,
         valuationDate,
         valuationForDate,
         purpose,
@@ -1030,6 +1141,80 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         isLeasehold,
         buildingOccupancy,
         civicAmenities,
+        // Legal & Regulatory
+        ownershipDocType,
+        leaseholdRestrictions,
+        easementAgreement,
+        acquisitionNotification,
+        roadWideningNotification,
+        heritageRestriction,
+        encumbrances,
+        buildingPlanSanction,
+        approvalAuthority,
+        planViolations,
+        occupancyCertificateStatus,
+        unauthorizedConstructions,
+        farFsiPermitted,
+        farFsiConsumed,
+        groundCoverage,
+        planningZone,
+        zoningRegulations,
+        surroundingLandUse,
+        demolitionProceedings,
+        sarfaesiCompliant,
+        // Economic/Rental
+        reasonableLettingValue,
+        isOccupiedByTenant,
+        numberOfTenants,
+        tenancyDuration,
+        tenancyStatus,
+        monthlyRent,
+        propertyTaxStatus,
+        propertyInsurance,
+        maintenanceCharges,
+        securityCharges,
+        // Infrastructure
+        waterSupply,
+        sewerageSystem,
+        stormDrainage,
+        solidWasteManagement,
+        electricityStatus,
+        publicTransportAccess,
+        nearbySchool,
+        nearbyMedical,
+        nearbyRecreation,
+        // Environmental
+        greenBuildingFeatures,
+        rainWaterHarvesting,
+        solarProvision,
+        environmentalPollution,
+        // Engineering/Safety
+        structuralSafety,
+        earthquakeResistance,
+        visibleDamage,
+        airConditioningSystem,
+        firefightingProvision,
+        maintenanceIssues,
+        extentOfDeterioration,
+        // Architectural
+        architecturalStyle,
+        heritageValue,
+        landscapeElements,
+        // Marketability
+        locationAttributes,
+        scarcityValue,
+        demandSupplyComment,
+        comparableSalePrices,
+        lastTwoTransactions,
+        // Valuation Summary
+        guidelineValueLand,
+        guidelineValueBuilding,
+        marketRateTrend,
+        forcedSaleValue,
+        insuranceValue,
+        valuationMethodology,
+        variationJustification,
+        // Photos & Location
         photos,
         locationLat,
         locationLng,
@@ -1038,11 +1223,12 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       });
     }
   }, [
-    propertyNo, block, area, city,
+    propertyNo, block, area, city, wardVillageTaluka, subRegistryBlock, district, nearbyLandmark,
+    landType, accessApproach, abutingRoads, plinthArea, carpetArea, saleableArea,
     northBoundary, southBoundary, eastBoundary, westBoundary,
     northEastBoundary, northWestBoundary, southEastBoundary, southWestBoundary,
-    originalOwner, originalOwnerYear, currentOwners,
-    referenceNo, valuationDate, valuationForDate, purpose,
+    originalOwner, originalOwnerYear, ownerPhone, currentOwners, developerName,
+    referenceNo, inspectionDate, valuationDate, valuationForDate, purpose,
     plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
     floorArea, plinthAreaRate, costIndex, specificationIncreasePercent,
     yearOfConstruction, estimatedLifeYears, ageAtValuation,
@@ -1051,6 +1237,20 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     noOfWaterClosets, noOfSinks, sanitaryFittingsClass, compoundWallHeight, compoundWallType,
     overheadTank, noOfPumps, sewerDisposal,
     propertyType, localityClass, plotShape, isLeasehold, buildingOccupancy, civicAmenities,
+    ownershipDocType, leaseholdRestrictions, easementAgreement, acquisitionNotification, roadWideningNotification,
+    heritageRestriction, encumbrances, buildingPlanSanction, approvalAuthority, planViolations,
+    occupancyCertificateStatus, unauthorizedConstructions, farFsiPermitted, farFsiConsumed, groundCoverage,
+    planningZone, zoningRegulations, surroundingLandUse, demolitionProceedings, sarfaesiCompliant,
+    reasonableLettingValue, isOccupiedByTenant, numberOfTenants, tenancyDuration, tenancyStatus, monthlyRent,
+    propertyTaxStatus, propertyInsurance, maintenanceCharges, securityCharges,
+    waterSupply, sewerageSystem, stormDrainage, solidWasteManagement, electricityStatus, publicTransportAccess,
+    nearbySchool, nearbyMedical, nearbyRecreation,
+    greenBuildingFeatures, rainWaterHarvesting, solarProvision, environmentalPollution,
+    structuralSafety, earthquakeResistance, visibleDamage, airConditioningSystem, firefightingProvision,
+    maintenanceIssues, extentOfDeterioration, architecturalStyle, heritageValue, landscapeElements,
+    locationAttributes, scarcityValue, demandSupplyComment, comparableSalePrices, lastTwoTransactions,
+    guidelineValueLand, guidelineValueBuilding, marketRateTrend, forcedSaleValue, insuranceValue,
+    valuationMethodology, variationJustification,
     photos, locationLat, locationLng, locationCapturedAt, locationMapUrl, onDataChange
   ]);
 
@@ -1197,6 +1397,46 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <FormInput label="Block" value={block} onChange={(e) => setBlock(e.target.value)} placeholder="e.g., F" required />
               <FormInput label="Area / Colony" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g., TAGORE GARDEN" required />
               <FormSelectWithCustom label="City" options={CITY_OPTIONS} value={city} onChange={setCity} placeholder="Enter city name" />
+              <FormInput label="Ward / Village / Taluka" value={wardVillageTaluka} onChange={(e) => setWardVillageTaluka(e.target.value)} placeholder="e.g., Ward 45" />
+              <FormInput label="Sub-Registry / Block" value={subRegistryBlock} onChange={(e) => setSubRegistryBlock(e.target.value)} placeholder="e.g., Block-A" />
+              <FormInput label="District" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g., West Delhi" />
+              <FormInput label="Nearby Landmark" value={nearbyLandmark} onChange={(e) => setNearbyLandmark(e.target.value)} placeholder="e.g., Near Metro Station" />
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Physical Characteristics</h3>
+            <div className="grid-2">
+              <FormSelectWithCustom
+                label="Land Type"
+                value={landType}
+                onChange={setLandType}
+                options={[
+                  { value: 'Solid', label: 'Solid' },
+                  { value: 'Rocky', label: 'Rocky' },
+                  { value: 'Marsh Land', label: 'Marsh Land' },
+                  { value: 'Reclaimed Land', label: 'Reclaimed Land' },
+                  { value: 'Water-logged', label: 'Water-logged' },
+                  { value: 'Land-locked', label: 'Land-locked' },
+                ]}
+                placeholder="Type of land"
+              />
+              <FormInput label="Access / Approach" value={accessApproach} onChange={(e) => setAccessApproach(e.target.value)} placeholder="e.g., Direct road access" />
+              <FormInput label="Abutting Roads" value={abutingRoads} onChange={(e) => setAbutingRoads(e.target.value)} placeholder="e.g., 30ft road on East" />
+            </div>
+            <div className="grid-3 mt-4">
+              <div className="form-group">
+                <label className="form-label">Plinth Area (sq.m.)</label>
+                <input type="number" className="form-input" value={plinthArea || ''} onChange={(e) => setPlinthArea(Number(e.target.value))} placeholder="0" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Carpet Area (sq.m.)</label>
+                <input type="number" className="form-input" value={carpetArea || ''} onChange={(e) => setCarpetArea(Number(e.target.value))} placeholder="0" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Saleable Area (sq.m.)</label>
+                <input type="number" className="form-input" value={saleableArea || ''} onChange={(e) => setSaleableArea(Number(e.target.value))} placeholder="0" />
+              </div>
             </div>
           </div>
 
@@ -1335,6 +1575,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <div className="grid-2">
               <FormInput label="Owner Name" value={originalOwner} onChange={(e) => setOriginalOwner(e.target.value)} placeholder="e.g., SMT RAJ KHURANA" required />
               <FormInput label="Year of Ownership" value={originalOwnerYear} onChange={(e) => setOriginalOwnerYear(e.target.value)} placeholder="e.g., 2001" required />
+              <FormInput label="Phone Number" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} placeholder="e.g., 9811741187" />
+              <FormInput label="Developer Name (if applicable)" value={developerName} onChange={(e) => setDeveloperName(e.target.value)} placeholder="e.g., DLF Ltd." />
             </div>
           </div>
 
@@ -1394,10 +1636,15 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">Reference Details</h3>
-            <div className="grid-3">
+            <div className="grid-2">
               <FormInput label="Reference No." value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="e.g., 19/2025" required />
               <FormDatePicker
-                label="Valuation Date"
+                label="Date of Inspection"
+                value={inspectionDate}
+                onChange={setInspectionDate}
+              />
+              <FormDatePicker
+                label="Date of Valuation Report"
                 value={valuationDate}
                 onChange={setValuationDate}
                 required
@@ -1481,6 +1728,66 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               })()}
             </div>
           )}
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Marketability Assessment</h3>
+            <div className="grid-2">
+              <FormInput label="Location Attributes" value={locationAttributes} onChange={(e) => setLocationAttributes(e.target.value)} placeholder="e.g., Prime location, well connected" />
+              <FormInput label="Scarcity Value" value={scarcityValue} onChange={(e) => setScarcityValue(e.target.value)} placeholder="e.g., High demand area" />
+              <FormInput label="Demand & Supply" value={demandSupplyComment} onChange={(e) => setDemandSupplyComment(e.target.value)} placeholder="e.g., High demand, limited supply" />
+              <FormInput label="Comparable Sale Prices" value={comparableSalePrices} onChange={(e) => setComparableSalePrices(e.target.value)} placeholder="e.g., Rs 15-18 Cr nearby" />
+            </div>
+            <div className="mt-4">
+              <label className="form-label">Last Two Transactions in Locality</label>
+              <textarea
+                className="form-input min-h-[80px]"
+                value={lastTwoTransactions}
+                onChange={(e) => setLastTwoTransactions(e.target.value)}
+                placeholder="e.g., 1. Plot D-42 sold at Rs 16 Cr in Jan 2024&#10;2. Plot D-46 sold at Rs 14.5 Cr in Nov 2023"
+              />
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Valuation Summary</h3>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Guideline Value - Land (Rs)</label>
+                <input type="number" className="form-input" value={guidelineValueLand || ''} onChange={(e) => setGuidelineValueLand(Number(e.target.value))} placeholder="0" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Guideline Value - Building (Rs)</label>
+                <input type="number" className="form-input" value={guidelineValueBuilding || ''} onChange={(e) => setGuidelineValueBuilding(Number(e.target.value))} placeholder="0" />
+              </div>
+              <FormInput label="Market Rate Trend" value={marketRateTrend} onChange={(e) => setMarketRateTrend(e.target.value)} placeholder="e.g., Stable / Increasing" />
+              <div className="form-group">
+                <label className="form-label">Forced/Distress Sale Value (Rs)</label>
+                <input type="number" className="form-input" value={forcedSaleValue || ''} onChange={(e) => setForcedSaleValue(Number(e.target.value))} placeholder="75% of market value" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Insurance Value (Rs)</label>
+                <input type="number" className="form-input" value={insuranceValue || ''} onChange={(e) => setInsuranceValue(Number(e.target.value))} placeholder="Construction cost" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="form-label">Valuation Methodology</label>
+              <textarea
+                className="form-input min-h-[80px]"
+                value={valuationMethodology}
+                onChange={(e) => setValuationMethodology(e.target.value)}
+                placeholder="Describe the methodology adopted for arriving at the valuation..."
+              />
+            </div>
+            <div className="mt-4">
+              <label className="form-label">Variation Justification (if &gt;20% from Guideline)</label>
+              <textarea
+                className="form-input min-h-[60px]"
+                value={variationJustification}
+                onChange={(e) => setVariationJustification(e.target.value)}
+                placeholder="If variation is 20% or more from guideline value, provide justification..."
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -1550,6 +1857,170 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <div className="grid-2">
               <FormSelectWithCustom label="Height" options={COMPOUND_WALL_HEIGHT_OPTIONS} value={compoundWallHeight} onChange={setCompoundWallHeight} placeholder="e.g., 5 ft" />
               <FormSelectWithCustom label="Type" options={COMPOUND_WALL_TYPE_OPTIONS} value={compoundWallType} onChange={setCompoundWallType} placeholder="Enter wall type" />
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Legal & Regulatory</h3>
+            <div className="grid-2">
+              <FormSelectWithCustom
+                label="Ownership Document Type"
+                value={ownershipDocType}
+                onChange={setOwnershipDocType}
+                options={[
+                  { value: 'Sale Deed', label: 'Sale Deed' },
+                  { value: 'Gift Deed', label: 'Gift Deed' },
+                  { value: 'Lease Deed', label: 'Lease Deed' },
+                  { value: 'Will', label: 'Will' },
+                  { value: 'Partition Deed', label: 'Partition Deed' },
+                ]}
+                placeholder="Select document type"
+              />
+              <FormSelectWithCustom
+                label="Occupancy Certificate Status"
+                value={occupancyCertificateStatus}
+                onChange={setOccupancyCertificateStatus}
+                options={[
+                  { value: 'Issued', label: 'Issued' },
+                  { value: 'Not Issued', label: 'Not Issued' },
+                  { value: 'Applied', label: 'Applied' },
+                  { value: 'Not Applicable', label: 'Not Applicable' },
+                ]}
+                placeholder="OC Status"
+              />
+              <FormInput label="Building Plan Sanction" value={buildingPlanSanction} onChange={(e) => setBuildingPlanSanction(e.target.value)} placeholder="e.g., Sanctioned by MCD" />
+              <FormInput label="Approval Authority" value={approvalAuthority} onChange={(e) => setApprovalAuthority(e.target.value)} placeholder="e.g., MCD / DDA" />
+              <FormInput label="Plan Violations (if any)" value={planViolations} onChange={(e) => setPlanViolations(e.target.value)} placeholder="e.g., None observed" />
+              <FormInput label="Unauthorized Constructions" value={unauthorizedConstructions} onChange={(e) => setUnauthorizedConstructions(e.target.value)} placeholder="e.g., Nil / Covered balcony" />
+              <FormInput label="FAR/FSI Permitted" value={farFsiPermitted} onChange={(e) => setFarFsiPermitted(e.target.value)} placeholder="e.g., 3.5" />
+              <FormInput label="FAR/FSI Consumed" value={farFsiConsumed} onChange={(e) => setFarFsiConsumed(e.target.value)} placeholder="e.g., 2.8" />
+              <FormInput label="Ground Coverage (%)" value={groundCoverage} onChange={(e) => setGroundCoverage(e.target.value)} placeholder="e.g., 80%" />
+              <FormSelectWithCustom
+                label="SARFAESI Compliant"
+                value={sarfaesiCompliant}
+                onChange={setSarfaesiCompliant}
+                options={[
+                  { value: 'Yes', label: 'Yes' },
+                  { value: 'No', label: 'No' },
+                  { value: 'Not Applicable', label: 'Not Applicable' },
+                ]}
+                placeholder="Compliance status"
+              />
+              <FormInput label="Encumbrances (if any)" value={encumbrances} onChange={(e) => setEncumbrances(e.target.value)} placeholder="e.g., None / Mortgage with bank" />
+              <FormInput label="Heritage Restriction" value={heritageRestriction} onChange={(e) => setHeritageRestriction(e.target.value)} placeholder="e.g., None" />
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Infrastructure & Utilities</h3>
+            <div className="grid-2">
+              <FormSelectWithCustom
+                label="Water Supply"
+                value={waterSupply}
+                onChange={setWaterSupply}
+                options={[
+                  { value: 'Municipal', label: 'Municipal' },
+                  { value: 'Borewell', label: 'Borewell' },
+                  { value: 'Both', label: 'Both' },
+                  { value: 'Tanker', label: 'Tanker' },
+                ]}
+                placeholder="Water source"
+              />
+              <FormSelectWithCustom
+                label="Sewerage System"
+                value={sewerageSystem}
+                onChange={setSewerageSystem}
+                options={[
+                  { value: 'Underground', label: 'Underground (Municipal)' },
+                  { value: 'Septic Tank', label: 'Septic Tank' },
+                  { value: 'Open', label: 'Open Drain' },
+                ]}
+                placeholder="Sewerage type"
+              />
+              <FormInput label="Storm Drainage" value={stormDrainage} onChange={(e) => setStormDrainage(e.target.value)} placeholder="e.g., Underground drainage" />
+              <FormInput label="Solid Waste Management" value={solidWasteManagement} onChange={(e) => setSolidWasteManagement(e.target.value)} placeholder="e.g., Municipal collection" />
+              <FormInput label="Electricity Status" value={electricityStatus} onChange={(e) => setElectricityStatus(e.target.value)} placeholder="e.g., BSES connection available" />
+              <FormInput label="Public Transport Access" value={publicTransportAccess} onChange={(e) => setPublicTransportAccess(e.target.value)} placeholder="e.g., Metro 500m, Bus stop 200m" />
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Environmental & Safety</h3>
+            <div className="grid-2">
+              <FormSelectWithCustom
+                label="Rain Water Harvesting"
+                value={rainWaterHarvesting}
+                onChange={setRainWaterHarvesting}
+                options={[
+                  { value: 'Installed', label: 'Installed' },
+                  { value: 'Not Installed', label: 'Not Installed' },
+                  { value: 'Not Applicable', label: 'Not Applicable' },
+                ]}
+                placeholder="RWH status"
+              />
+              <FormInput label="Solar Provision" value={solarProvision} onChange={(e) => setSolarProvision(e.target.value)} placeholder="e.g., Solar water heater installed" />
+              <FormInput label="Green Building Features" value={greenBuildingFeatures} onChange={(e) => setGreenBuildingFeatures(e.target.value)} placeholder="e.g., None / LEED certified" />
+              <FormInput label="Environmental Pollution" value={environmentalPollution} onChange={(e) => setEnvironmentalPollution(e.target.value)} placeholder="e.g., Low / Industrial area nearby" />
+              <FormSelectWithCustom
+                label="Structural Safety"
+                value={structuralSafety}
+                onChange={setStructuralSafety}
+                options={[
+                  { value: 'Structurally Safe', label: 'Structurally Safe' },
+                  { value: 'Needs Repair', label: 'Needs Minor Repair' },
+                  { value: 'Unsafe', label: 'Structurally Unsafe' },
+                ]}
+                placeholder="Safety status"
+              />
+              <FormInput label="Earthquake Resistance" value={earthquakeResistance} onChange={(e) => setEarthquakeResistance(e.target.value)} placeholder="e.g., Zone IV compliant" />
+              <FormInput label="Visible Damage" value={visibleDamage} onChange={(e) => setVisibleDamage(e.target.value)} placeholder="e.g., None / Minor cracks" />
+              <FormInput label="Firefighting Provision" value={firefightingProvision} onChange={(e) => setFirefightingProvision(e.target.value)} placeholder="e.g., Fire extinguishers provided" />
+              <FormInput label="Maintenance Issues" value={maintenanceIssues} onChange={(e) => setMaintenanceIssues(e.target.value)} placeholder="e.g., None / Seepage in basement" />
+              <FormInput label="Extent of Deterioration" value={extentOfDeterioration} onChange={(e) => setExtentOfDeterioration(e.target.value)} placeholder="e.g., Nil / 10%" />
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card-title">Economic & Rental Details</h3>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Reasonable Letting Value (Rs/month)</label>
+                <input type="number" className="form-input" value={reasonableLettingValue || ''} onChange={(e) => setReasonableLettingValue(Number(e.target.value))} placeholder="0" />
+              </div>
+              <FormSelectWithCustom
+                label="Occupied by Tenant"
+                value={isOccupiedByTenant ? 'Yes' : 'No'}
+                onChange={(val) => setIsOccupiedByTenant(val === 'Yes')}
+                options={[
+                  { value: 'No', label: 'No' },
+                  { value: 'Yes', label: 'Yes' },
+                ]}
+                placeholder="Tenant status"
+              />
+              {isOccupiedByTenant && (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Number of Tenants</label>
+                    <input type="number" className="form-input" value={numberOfTenants || ''} onChange={(e) => setNumberOfTenants(Number(e.target.value))} placeholder="0" />
+                  </div>
+                  <FormInput label="Tenancy Duration" value={tenancyDuration} onChange={(e) => setTenancyDuration(e.target.value)} placeholder="e.g., 5 years" />
+                  <FormInput label="Tenancy Status" value={tenancyStatus} onChange={(e) => setTenancyStatus(e.target.value)} placeholder="e.g., Registered / Unregistered" />
+                  <div className="form-group">
+                    <label className="form-label">Monthly Rent (Rs)</label>
+                    <input type="number" className="form-input" value={monthlyRent || ''} onChange={(e) => setMonthlyRent(Number(e.target.value))} placeholder="0" />
+                  </div>
+                </>
+              )}
+              <FormInput label="Property Tax Status" value={propertyTaxStatus} onChange={(e) => setPropertyTaxStatus(e.target.value)} placeholder="e.g., Paid till date" />
+              <FormInput label="Property Insurance" value={propertyInsurance} onChange={(e) => setPropertyInsurance(e.target.value)} placeholder="e.g., Insured with LIC" />
+              <div className="form-group">
+                <label className="form-label">Monthly Maintenance (Rs)</label>
+                <input type="number" className="form-input" value={maintenanceCharges || ''} onChange={(e) => setMaintenanceCharges(Number(e.target.value))} placeholder="0" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Security Charges (Rs/month)</label>
+                <input type="number" className="form-input" value={securityCharges || ''} onChange={(e) => setSecurityCharges(Number(e.target.value))} placeholder="0" />
+              </div>
             </div>
           </div>
         </div>
