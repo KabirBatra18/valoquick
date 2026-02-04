@@ -7,16 +7,16 @@ import { auth } from './firebase';
  * Forces refresh to ensure token is valid
  */
 export async function getAuthToken(): Promise<string | null> {
-  const user = auth.currentUser;
+  const user = auth?.currentUser;
   if (!user) {
-    console.warn('getAuthToken: No current user');
+    console.warn('getAuthToken: No current user. Auth initialized:', !!auth);
     return null;
   }
 
   try {
     // Force refresh to ensure we have a valid token
     const token = await user.getIdToken(true);
-    console.log('getAuthToken: Got token for user', user.uid);
+    console.log('getAuthToken: Got fresh token for user', user.uid, 'Token length:', token.length);
     return token;
   } catch (error) {
     console.error('Error getting auth token:', error);
@@ -57,6 +57,9 @@ export async function authenticatedFetch(
 
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    console.log('authenticatedFetch: Sending request to', url, 'with auth token');
+  } else {
+    console.warn('authenticatedFetch: No token available, sending unauthenticated request to', url);
   }
 
   return fetch(url, {
