@@ -29,6 +29,7 @@ export interface Firm {
 }
 
 export interface FirmMember {
+  userId: string;
   email: string;
   displayName: string;
   role: 'owner' | 'admin' | 'member';

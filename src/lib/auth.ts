@@ -73,6 +73,11 @@ export async function updateUserFirmId(userId: string, firmId: string): Promise<
   await setDoc(userRef, { firmId }, { merge: true });
 }
 
+export async function clearUserFirmId(userId: string): Promise<void> {
+  const userRef = doc(db, 'users', userId);
+  await setDoc(userRef, { firmId: null }, { merge: true });
+}
+
 export function subscribeToAuthState(callback: (user: User | null) => void): () => void {
   return onAuthStateChanged(auth, callback);
 }

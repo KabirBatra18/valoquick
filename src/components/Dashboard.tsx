@@ -8,6 +8,7 @@ import { useReports } from '@/hooks/useReports';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import TrialBanner from './TrialBanner';
 import PricingSection from './PricingSection';
+import TeamManagement from './TeamManagement';
 
 interface DashboardProps {
   onOpenReport: (reportId: string) => void;
@@ -36,6 +37,7 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isCreating, setIsCreating] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [showTeam, setShowTeam] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -148,6 +150,9 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
         </div>
       )}
 
+      {/* Team Management Modal */}
+      {showTeam && <TeamManagement onClose={() => setShowTeam(false)} />}
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -157,6 +162,17 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
               <p className="text-xs text-text-tertiary">{firm?.name || 'Property Valuation Reports'}</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Team Button */}
+              <button
+                onClick={() => setShowTeam(true)}
+                className="p-2.5 rounded-xl bg-surface-100 border border-surface-200 hover:bg-surface-200 transition-all duration-300"
+                title="Manage Team"
+              >
+                <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </button>
+
               {/* User Menu */}
               <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-100 rounded-xl border border-surface-200">
                 {user?.photoURL ? (

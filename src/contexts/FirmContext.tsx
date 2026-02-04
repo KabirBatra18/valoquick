@@ -6,21 +6,32 @@ import { Firm, FirmMember, FirmInvite } from '@/types/firebase';
 import {
   getFirm,
   getFirmMembers,
+  getFirmInvites,
   getPendingInvitesForUser,
   createFirm,
   acceptInvite,
+  createInvite,
+  deleteInvite,
+  removeMember,
+  updateMemberRole,
 } from '@/lib/firestore';
 
 interface FirmContextType {
   firm: Firm | null;
   members: FirmMember[];
-  pendingInvites: FirmInvite[];
+  firmInvites: FirmInvite[]; // Invites sent by this firm
+  pendingInvites: FirmInvite[]; // Invites received by current user
   loading: boolean;
   error: string | null;
   createNewFirm: (name: string) => Promise<void>;
   acceptFirmInvite: (inviteId: string, firmId: string) => Promise<void>;
+  inviteMember: (email: string, role: 'admin' | 'member') => Promise<void>;
+  cancelInvite: (inviteId: string) => Promise<void>;
+  removeFirmMember: (userId: string) => Promise<void>;
+  updateFirmMemberRole: (userId: string, role: 'admin' | 'member') => Promise<void>;
   refreshFirm: () => Promise<void>;
   refreshInvites: () => Promise<void>;
+  isOwner: boolean;
 }
 
 const FirmContext = createContext<FirmContextType | undefined>(undefined);
@@ -29,9 +40,13 @@ export function FirmProvider({ children }: { children: ReactNode }) {
   const { user, userDoc, refreshUserDoc } = useAuth();
   const [firm, setFirm] = useState<Firm | null>(null);
   const [members, setMembers] = useState<FirmMember[]>([]);
+  const [firmInvites, setFirmInvites] = useState<FirmInvite[]>([]);
   const [pendingInvites, setPendingInvites] = useState<FirmInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if current user is the owner
+  const isOwner = members.some(m => m.userId === user?.uid && m.role === 'owner');
 
   const refreshFirm = async () => {
     if (userDoc?.firmId) {
@@ -41,6 +56,8 @@ export function FirmProvider({ children }: { children: ReactNode }) {
         if (firmData) {
           const membersData = await getFirmMembers(userDoc.firmId);
           setMembers(membersData);
+          const firmInvitesData = await getFirmInvites(userDoc.firmId);
+          setFirmInvites(firmInvitesData);
         }
       } catch (err) {
         console.error('Error fetching firm:', err);
@@ -49,6 +66,7 @@ export function FirmProvider({ children }: { children: ReactNode }) {
     } else {
       setFirm(null);
       setMembers([]);
+      setFirmInvites([]);
     }
   };
 
@@ -76,6 +94,7 @@ export function FirmProvider({ children }: { children: ReactNode }) {
     } else {
       setFirm(null);
       setMembers([]);
+      setFirmInvites([]);
       setPendingInvites([]);
       setLoading(false);
     }
@@ -112,18 +131,84 @@ export function FirmProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const inviteMember = async (email: string, role: 'admin' | 'member') => {
+    if (!user || !firm) throw new Error('Must be signed in with a firm to invite');
+
+    setError(null);
+    try {
+      await createInvite(firm.id, firm.name, email, role, user.uid);
+      await refreshFirm();
+    } catch (err: unknown) {
+      console.error('Error inviting member:', err);
+      if (err instanceof Error && 'code' in err && err.code === 'SEAT_LIMIT_REACHED') {
+        setError('Seat limit reached. Please purchase more seats to invite new members.');
+      } else {
+        setError('Failed to send invite. Please try again.');
+      }
+      throw err;
+    }
+  };
+
+  const cancelInvite = async (inviteId: string) => {
+    if (!firm) throw new Error('No firm found');
+
+    setError(null);
+    try {
+      await deleteInvite(firm.id, inviteId);
+      await refreshFirm();
+    } catch (err) {
+      console.error('Error canceling invite:', err);
+      setError('Failed to cancel invite. Please try again.');
+      throw err;
+    }
+  };
+
+  const removeFirmMember = async (userId: string) => {
+    if (!firm) throw new Error('No firm found');
+
+    setError(null);
+    try {
+      await removeMember(firm.id, userId);
+      await refreshFirm();
+    } catch (err) {
+      console.error('Error removing member:', err);
+      setError('Failed to remove member. Please try again.');
+      throw err;
+    }
+  };
+
+  const updateFirmMemberRole = async (userId: string, role: 'admin' | 'member') => {
+    if (!firm) throw new Error('No firm found');
+
+    setError(null);
+    try {
+      await updateMemberRole(firm.id, userId, role);
+      await refreshFirm();
+    } catch (err) {
+      console.error('Error updating member role:', err);
+      setError('Failed to update member role. Please try again.');
+      throw err;
+    }
+  };
+
   return (
     <FirmContext.Provider
       value={{
         firm,
         members,
+        firmInvites,
         pendingInvites,
         loading,
         error,
         createNewFirm,
         acceptFirmInvite,
+        inviteMember,
+        cancelInvite,
+        removeFirmMember,
+        updateFirmMemberRole,
         refreshFirm,
         refreshInvites,
+        isOwner,
       }}
     >
       {children}

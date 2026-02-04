@@ -18,7 +18,7 @@ import { db } from './firebase';
 import { Firm, FirmMember, FirmInvite, FirestoreReportMetadata } from '@/types/firebase';
 import { SavedReport, ReportFormData } from '@/types/report';
 import { TrialRecord, Subscription, TRIAL_LIMIT, MAX_DEVICES_PER_ACCOUNT } from '@/types/subscription';
-import { updateUserFirmId } from './auth';
+import { updateUserFirmId, clearUserFirmId } from './auth';
 import { arrayUnion, increment } from 'firebase/firestore';
 
 // ============ FIRM FUNCTIONS ============
@@ -69,6 +69,7 @@ export async function getFirmMembers(firmId: string): Promise<FirmMember[]> {
   const membersSnap = await getDocs(membersRef);
 
   return membersSnap.docs.map((doc) => ({
+    userId: doc.id,
     ...doc.data(),
   })) as FirmMember[];
 }
@@ -217,6 +218,8 @@ export async function deleteInvite(firmId: string, inviteId: string): Promise<vo
 export async function removeMember(firmId: string, userId: string): Promise<void> {
   const memberRef = doc(db, 'firms', firmId, 'members', userId);
   await deleteDoc(memberRef);
+  // Clear the user's firmId so they know they've been removed
+  await clearUserFirmId(userId);
 }
 
 export async function updateMemberRole(
