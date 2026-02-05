@@ -128,17 +128,6 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
         </div>
       )}
 
-      {/* Step indicator */}
-      <div className="flex items-center justify-center gap-2 mb-4 sm:mb-6">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step === 1 ? 'bg-brand text-white' : 'bg-green-500 text-white'}`}>
-          {step === 1 ? '1' : '✓'}
-        </div>
-        <div className={`w-12 h-1 rounded ${step === 2 ? 'bg-brand' : 'bg-surface-300'}`} />
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step === 2 ? 'bg-brand text-white' : 'bg-surface-300 text-text-tertiary'}`}>
-          2
-        </div>
-      </div>
-
       <div className="glass-card p-4 sm:p-6 md:p-8">
         {/* STEP 1: Plan & Team Selection */}
         {step === 1 && (
