@@ -130,13 +130,15 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
       <div className="glass-card p-4 sm:p-6 md:p-8">
         {/* Plan Selector */}
         <div className="mb-5 sm:mb-6">
-          <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2 sm:mb-3">Billing Cycle</label>
+          <label className="block text-sm sm:text-base font-semibold text-text-primary mb-2 sm:mb-3">
+            Step 1: Choose Billing Cycle
+          </label>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {(['monthly', 'halfyearly', 'yearly'] as PlanType[]).map((plan) => (
               <button
                 key={plan}
                 onClick={() => setSelectedPlan(plan)}
-                className={`relative p-2 sm:p-3 rounded-lg sm:rounded-xl border-2 transition-all ${
+                className={`relative p-2.5 sm:p-3 rounded-lg sm:rounded-xl border-2 transition-all ${
                   selectedPlan === plan
                     ? 'border-brand bg-brand/10'
                     : 'border-surface-300 hover:border-surface-200'
@@ -154,63 +156,126 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
           </div>
         </div>
 
-        {/* Team Size Selector */}
+        {/* Extra Members Section - Redesigned for clarity */}
         <div className="mb-5 sm:mb-6">
-          <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2 sm:mb-3">Team Size</label>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              onClick={() => setTeamSize(Math.max(1, teamSize - 1))}
-              disabled={teamSize <= 1}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-surface-200 text-text-primary font-bold text-base sm:text-lg hover:bg-surface-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-            >
-              -
-            </button>
-            <div className="flex-1 text-center min-w-0">
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary">{teamSize}</div>
-              <div className="text-[10px] sm:text-xs text-text-tertiary">
-                {teamSize === 1 ? 'member' : 'members'}
+          <label className="block text-sm sm:text-base font-semibold text-text-primary mb-2 sm:mb-3">
+            Step 2: Add Extra Team Members
+          </label>
+
+          {/* Included member highlight */}
+          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm sm:text-base font-semibold text-green-600 dark:text-green-400">
+                  1 Member Included FREE
+                </div>
+                <div className="text-[11px] sm:text-xs text-text-tertiary">
+                  Your account is already included in the base plan
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => setTeamSize(teamSize + 1)}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-surface-200 text-text-primary font-bold text-base sm:text-lg hover:bg-surface-300 transition-colors flex-shrink-0"
-            >
-              +
-            </button>
           </div>
-          <p className="text-[10px] sm:text-xs text-text-tertiary text-center mt-2">
-            +{SEAT_PRICING[selectedPlan].displayAmount}/{planDetails[selectedPlan].period} per extra member
-          </p>
+
+          {/* Extra members selector */}
+          <div className="bg-surface-200/50 rounded-xl p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <div className="text-sm sm:text-base font-medium text-text-primary">
+                  Extra Members
+                </div>
+                <div className="text-[11px] sm:text-xs text-text-tertiary">
+                  {SEAT_PRICING[selectedPlan].displayAmount} each per {planDetails[selectedPlan].period}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={() => setTeamSize(Math.max(1, teamSize - 1))}
+                  disabled={teamSize <= 1}
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-xl hover:bg-surface-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                >
+                  −
+                </button>
+                <div className="w-12 sm:w-14 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-text-primary">{additionalSeats}</div>
+                </div>
+                <button
+                  onClick={() => setTeamSize(teamSize + 1)}
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-xl hover:bg-surface-200 transition-colors flex-shrink-0"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Total team size summary */}
+          <div className="mt-3 text-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand/10 text-brand rounded-full text-xs sm:text-sm font-medium">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Total Team: {teamSize} {teamSize === 1 ? 'person' : 'people'}
+            </span>
+          </div>
         </div>
 
-        {/* Price Breakdown */}
+        {/* Price Breakdown - Clear and explicit */}
         <div className="border-t border-surface-200 pt-4 sm:pt-6 mb-4 sm:mb-6">
-          <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
-            <div className="flex justify-between text-xs sm:text-sm gap-2">
-              <span className="text-text-secondary truncate">Base ({planDetails[selectedPlan].label})</span>
-              <span className="text-text-primary font-medium flex-shrink-0">{formatPrice(basePriceAmount)}</span>
-            </div>
-            {additionalSeats > 0 && (
-              <div className="flex justify-between text-xs sm:text-sm gap-2">
-                <span className="text-text-secondary truncate">
-                  +{additionalSeats} seat{additionalSeats > 1 ? 's' : ''}
-                </span>
-                <span className="text-text-primary font-medium flex-shrink-0">{formatPrice(seatPriceAmount)}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex justify-between items-end border-t border-surface-200 pt-3 sm:pt-4 gap-2">
-            <div className="min-w-0">
-              <div className="text-[10px] sm:text-sm text-text-tertiary">Total/{planDetails[selectedPlan].period}</div>
-              <div className="text-xl sm:text-2xl font-bold text-text-primary">{formatPrice(totalAmount)}</div>
-            </div>
-            {selectedPlan !== 'monthly' && (
-              <div className="text-right flex-shrink-0">
-                <span className="text-[10px] sm:text-xs text-green-500 font-medium">
-                  Save {PRICING[selectedPlan].savings}
+          <label className="block text-sm sm:text-base font-semibold text-text-primary mb-3 sm:mb-4">
+            Price Summary
+          </label>
+
+          <div className="bg-surface-200/30 rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3">
+            {/* Base plan */}
+            <div className="flex justify-between items-center text-sm sm:text-base">
+              <div className="flex items-center gap-2">
+                <span className="text-text-secondary">Base Plan</span>
+                <span className="text-[10px] sm:text-xs text-text-tertiary bg-surface-200 px-1.5 py-0.5 rounded">
+                  1 member included
                 </span>
               </div>
-            )}
+              <span className="text-text-primary font-semibold">{formatPrice(basePriceAmount)}</span>
+            </div>
+
+            {/* Extra members */}
+            <div className="flex justify-between items-center text-sm sm:text-base">
+              <div className="flex items-center gap-2">
+                <span className="text-text-secondary">Extra Members</span>
+                <span className="text-[10px] sm:text-xs text-text-tertiary bg-surface-200 px-1.5 py-0.5 rounded">
+                  {additionalSeats} × {SEAT_PRICING[selectedPlan].displayAmount}
+                </span>
+              </div>
+              <span className="text-text-primary font-semibold">{formatPrice(seatPriceAmount)}</span>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-surface-300 pt-2 sm:pt-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-base sm:text-lg font-bold text-text-primary">
+                    Total to Pay
+                  </div>
+                  <div className="text-[11px] sm:text-xs text-text-tertiary">
+                    Per {planDetails[selectedPlan].period}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl sm:text-2xl font-bold text-brand">
+                    {formatPrice(totalAmount)}
+                  </div>
+                  {selectedPlan !== 'monthly' && (
+                    <div className="text-[10px] sm:text-xs text-green-500 font-medium">
+                      You save {PRICING[selectedPlan].savings}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
