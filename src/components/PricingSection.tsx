@@ -21,12 +21,13 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
   const { firm } = useFirm();
   const { refreshSubscription } = useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('yearly');
-  const [teamSize, setTeamSize] = useState(1); // 1 = just the owner
+  const [extraMembers, setExtraMembers] = useState(0); // Extra members beyond the 1 included
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1); // Step 1: Select plan, Step 2: Add team, Step 3: Review & pay
 
-  const additionalSeats = Math.max(0, teamSize - 1); // Base plan includes 1 seat
+  const additionalSeats = extraMembers; // Extra members = additional seats
+  const totalTeamSize = 1 + extraMembers; // 1 included + extra members
   const basePriceAmount = PRICING[selectedPlan].amount;
   const seatPriceAmount = SEAT_PRICING[selectedPlan].amount * additionalSeats;
   const totalAmount = basePriceAmount + seatPriceAmount;
@@ -134,12 +135,12 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
           </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary text-center mb-2">
             {step === 1 && 'Step 1: Choose Billing'}
-            {step === 2 && 'Step 2: Team Size'}
+            {step === 2 && 'Step 2: Add Team Members'}
             {step === 3 && 'Step 3: Review & Pay'}
           </h2>
           <p className="text-sm sm:text-base text-text-secondary text-center mb-6 sm:mb-8">
             {step === 1 && 'How often would you like to be billed?'}
-            {step === 2 && 'How many people will use ValuQuick?'}
+            {step === 2 && 'Need extra logins for your staff?'}
             {step === 3 && 'Check everything looks correct'}
           </p>
         </>
@@ -233,7 +234,7 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
               onClick={() => setStep(2)}
               className="w-full btn btn-primary text-sm sm:text-lg py-3 sm:py-4 rounded-xl font-semibold flex items-center justify-center gap-2"
             >
-              Next: Choose Team Size
+              Next: Add Team Members
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
@@ -244,66 +245,90 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
         {/* STEP 2: Team Size */}
         {step === 2 && (
           <>
-            {/* Explanation Box */}
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-5">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            {/* Your Account - Included */}
+            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm sm:text-base font-semibold text-blue-600 dark:text-blue-400 mb-1">
-                    What is Team Size?
+                  <div className="text-sm sm:text-base font-semibold text-green-600 dark:text-green-400">
+                    Your Account (Included in Plan)
                   </div>
                   <div className="text-xs sm:text-sm text-text-secondary">
-                    This is the total number of people who will use ValuQuick in your firm.
-                    Each person needs their own login to create and view reports.
+                    You can use ValuQuick with your base subscription
                   </div>
+                </div>
+                <div className="ml-auto">
+                  <span className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400 bg-green-500/20 px-2 py-1 rounded-full">
+                    Included
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Team Size Selector */}
+            {/* Extra Members Selector */}
             <div className="mb-5">
-              <label className="block text-sm sm:text-base font-semibold text-text-primary mb-3">
-                How many people will use ValuQuick?
+              <label className="block text-sm sm:text-base font-semibold text-text-primary mb-2">
+                Do you need extra logins for your team?
               </label>
+              <p className="text-xs sm:text-sm text-text-tertiary mb-4">
+                Add extra members if you want your staff or colleagues to also use ValuQuick with their own login.
+              </p>
 
               <div className="bg-surface-200/50 rounded-xl p-4 sm:p-5">
-                <div className="flex items-center justify-center gap-4 sm:gap-6">
-                  <button
-                    onClick={() => setTeamSize(Math.max(1, teamSize - 1))}
-                    disabled={teamSize <= 1}
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-2xl hover:bg-surface-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-                  >
-                    −
-                  </button>
-                  <div className="text-center min-w-[80px]">
-                    <div className="text-4xl sm:text-5xl font-bold text-text-primary">{teamSize}</div>
-                    <div className="text-xs sm:text-sm text-text-tertiary mt-1">
-                      {teamSize === 1 ? 'person' : 'people'}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm sm:text-base font-medium text-text-primary">
+                      Extra Members
+                    </div>
+                    <div className="text-xs text-text-tertiary">
+                      {SEAT_PRICING[selectedPlan].displayAmount} per member
                     </div>
                   </div>
-                  <button
-                    onClick={() => setTeamSize(teamSize + 1)}
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-2xl hover:bg-surface-200 transition-colors flex-shrink-0"
-                  >
-                    +
-                  </button>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <button
+                      onClick={() => setExtraMembers(Math.max(0, extraMembers - 1))}
+                      disabled={extraMembers <= 0}
+                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-2xl hover:bg-surface-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                    >
+                      −
+                    </button>
+                    <div className="text-center min-w-[50px]">
+                      <div className="text-3xl sm:text-4xl font-bold text-text-primary">{extraMembers}</div>
+                    </div>
+                    <button
+                      onClick={() => setExtraMembers(extraMembers + 1)}
+                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-2xl hover:bg-surface-200 transition-colors flex-shrink-0"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
+              </div>
+
+              {/* Total Team Summary */}
+              <div className="mt-4 flex items-center justify-center">
+                <span className="inline-flex items-center gap-2 px-4 py-2 bg-brand/10 text-brand rounded-full text-sm font-medium">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Total: {totalTeamSize} {totalTeamSize === 1 ? 'person' : 'people'} can use ValuQuick
+                </span>
               </div>
 
               {/* Price breakdown */}
               <div className="mt-4 bg-surface-200/30 rounded-xl p-4">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-text-secondary">
-                    <span>Base plan (1 person)</span>
+                    <span>Base plan (includes you)</span>
                     <span>{formatPrice(basePriceAmount)}</span>
                   </div>
-                  {additionalSeats > 0 && (
+                  {extraMembers > 0 && (
                     <div className="flex justify-between text-text-secondary">
-                      <span>{additionalSeats} additional {additionalSeats === 1 ? 'person' : 'people'}</span>
+                      <span>{extraMembers} extra {extraMembers === 1 ? 'member' : 'members'}</span>
                       <span>{formatPrice(seatPriceAmount)}</span>
                     </div>
                   )}
@@ -378,15 +403,15 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
                   </div>
                 </div>
 
-                {/* Additional people */}
-                {additionalSeats > 0 && (
+                {/* Extra members */}
+                {extraMembers > 0 && (
                   <div className="flex justify-between items-center pb-3 border-b border-surface-300">
                     <div>
                       <div className="text-sm sm:text-base font-medium text-text-primary">
-                        Additional People
+                        Extra Members
                       </div>
                       <div className="text-[11px] sm:text-xs text-text-tertiary">
-                        {additionalSeats} {additionalSeats === 1 ? 'person' : 'people'} × {SEAT_PRICING[selectedPlan].displayAmount}
+                        {extraMembers} {extraMembers === 1 ? 'member' : 'members'} × {SEAT_PRICING[selectedPlan].displayAmount}
                       </div>
                     </div>
                     <div className="text-base sm:text-lg font-semibold text-text-primary">
@@ -429,10 +454,10 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
                 </div>
                 <div>
                   <div className="text-sm sm:text-base font-semibold text-text-primary">
-                    {teamSize} {teamSize === 1 ? 'Person' : 'People'} Can Use ValuQuick
+                    {totalTeamSize} {totalTeamSize === 1 ? 'Person' : 'People'} Can Use ValuQuick
                   </div>
                   <div className="text-[11px] sm:text-xs text-text-tertiary">
-                    Each person will have their own login
+                    {extraMembers === 0 ? 'Just you' : `You + ${extraMembers} extra ${extraMembers === 1 ? 'member' : 'members'}`}
                   </div>
                 </div>
               </div>
