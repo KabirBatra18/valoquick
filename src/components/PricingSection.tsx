@@ -24,7 +24,7 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
   const [teamSize, setTeamSize] = useState(1); // 1 = just the owner
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<1 | 2>(1); // Step 1: Select plan & team, Step 2: Review & pay
+  const [step, setStep] = useState<1 | 2 | 3>(1); // Step 1: Select plan, Step 2: Add team, Step 3: Review & pay
 
   const additionalSeats = Math.max(0, teamSize - 1); // Base plan includes 1 seat
   const basePriceAmount = PRICING[selectedPlan].amount;
@@ -113,11 +113,34 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
     <div className="max-w-2xl mx-auto">
       {showHeader && (
         <>
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {[1, 2, 3].map((s) => (
+              <div key={s} className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                  step >= s ? 'bg-brand text-white' : 'bg-surface-200 text-text-tertiary'
+                }`}>
+                  {step > s ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : s}
+                </div>
+                {s < 3 && (
+                  <div className={`w-8 h-0.5 ${step > s ? 'bg-brand' : 'bg-surface-300'}`} />
+                )}
+              </div>
+            ))}
+          </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary text-center mb-2">
-            {step === 1 ? 'Choose Your Plan' : 'Review & Pay'}
+            {step === 1 && 'Step 1: Choose Billing'}
+            {step === 2 && 'Step 2: Team Size'}
+            {step === 3 && 'Step 3: Review & Pay'}
           </h2>
           <p className="text-sm sm:text-base text-text-secondary text-center mb-6 sm:mb-8">
-            {step === 1 ? 'Unlimited reports. Add team members as needed.' : 'Confirm your subscription details'}
+            {step === 1 && 'How often would you like to be billed?'}
+            {step === 2 && 'How many people will use ValuQuick?'}
+            {step === 3 && 'Check everything looks correct'}
           </p>
         </>
       )}
@@ -129,102 +152,79 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
       )}
 
       <div className="glass-card p-4 sm:p-6 md:p-8">
-        {/* STEP 1: Plan & Team Selection */}
+        {/* STEP 1: Choose Billing Cycle */}
         {step === 1 && (
           <>
-            {/* Plan Selector */}
-            <div className="mb-5 sm:mb-6">
-              <label className="block text-sm sm:text-base font-semibold text-text-primary mb-2 sm:mb-3">
-                Select Billing Cycle
-              </label>
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                {(['monthly', 'halfyearly', 'yearly'] as PlanType[]).map((plan) => (
-                  <button
-                    key={plan}
-                    onClick={() => setSelectedPlan(plan)}
-                    className={`relative p-2.5 sm:p-3 rounded-lg sm:rounded-xl border-2 transition-all ${
-                      selectedPlan === plan
-                        ? 'border-brand bg-brand/10'
-                        : 'border-surface-300 hover:border-surface-200'
-                    }`}
-                  >
-                    {plan === 'yearly' && (
-                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] bg-green-500 text-white px-1.5 sm:px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
-                        BEST
-                      </span>
-                    )}
-                    <div className="text-xs sm:text-sm font-semibold text-text-primary">{planDetails[plan].label}</div>
-                    <div className="text-[10px] sm:text-xs text-text-tertiary">₹{planDetails[plan].perMonth}/mo</div>
-                  </button>
-                ))}
-              </div>
+            {/* Plan Options */}
+            <div className="space-y-3 mb-6">
+              {(['yearly', 'halfyearly', 'monthly'] as PlanType[]).map((plan) => (
+                <button
+                  key={plan}
+                  onClick={() => setSelectedPlan(plan)}
+                  className={`relative w-full p-4 sm:p-5 rounded-xl border-2 transition-all text-left ${
+                    selectedPlan === plan
+                      ? 'border-brand bg-brand/10'
+                      : 'border-surface-300 hover:border-surface-200'
+                  }`}
+                >
+                  {plan === 'yearly' && (
+                    <span className="absolute -top-2.5 right-4 text-[10px] sm:text-xs bg-green-500 text-white px-2 sm:px-3 py-0.5 rounded-full font-semibold">
+                      BEST VALUE
+                    </span>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-base sm:text-lg font-semibold text-text-primary">
+                        {planDetails[plan].label}
+                      </div>
+                      <div className="text-xs sm:text-sm text-text-tertiary mt-0.5">
+                        Billed every {planDetails[plan].period}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg sm:text-xl font-bold text-text-primary">
+                        ₹{planDetails[plan].perMonth}
+                      </div>
+                      <div className="text-xs text-text-tertiary">per month</div>
+                    </div>
+                  </div>
+                  {selectedPlan === plan && plan !== 'monthly' && PRICING[plan].savings && (
+                    <div className="mt-2 text-xs sm:text-sm text-green-500 font-medium">
+                      You save {PRICING[plan].savings}
+                    </div>
+                  )}
+                </button>
+              ))}
             </div>
 
-            {/* Extra Members Section */}
-            <div className="mb-5 sm:mb-6">
-              <label className="block text-sm sm:text-base font-semibold text-text-primary mb-2 sm:mb-3">
-                Add Team Members
-              </label>
-
-              {/* Included member highlight */}
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm sm:text-base font-semibold text-green-600 dark:text-green-400">
-                      1 Member Included FREE
-                    </div>
-                    <div className="text-[11px] sm:text-xs text-text-tertiary">
-                      Your account is already included
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Extra members selector */}
-              <div className="bg-surface-200/50 rounded-xl p-3 sm:p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="text-sm sm:text-base font-medium text-text-primary">
-                      Extra Members
-                    </div>
-                    <div className="text-[11px] sm:text-xs text-text-tertiary">
-                      {SEAT_PRICING[selectedPlan].displayAmount} each
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <button
-                      onClick={() => setTeamSize(Math.max(1, teamSize - 1))}
-                      disabled={teamSize <= 1}
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-xl hover:bg-surface-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-                    >
-                      −
-                    </button>
-                    <div className="w-12 sm:w-14 text-center">
-                      <div className="text-2xl sm:text-3xl font-bold text-text-primary">{additionalSeats}</div>
-                    </div>
-                    <button
-                      onClick={() => setTeamSize(teamSize + 1)}
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-xl hover:bg-surface-200 transition-colors flex-shrink-0"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Total team size summary */}
-              <div className="mt-3 text-center">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand/10 text-brand rounded-full text-xs sm:text-sm font-medium">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            {/* Features */}
+            <div className="bg-surface-200/30 rounded-xl p-4 mb-6">
+              <div className="text-sm font-semibold text-text-primary mb-3">What&apos;s included:</div>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
+                  <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Total Team: {teamSize} {teamSize === 1 ? 'person' : 'people'}
-                </span>
+                  Unlimited Reports
+                </div>
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
+                  <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  PDF Export
+                </div>
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
+                  <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Team Collaboration
+                </div>
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
+                  <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Cancel Anytime
+                </div>
               </div>
             </div>
 
@@ -233,49 +233,133 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
               onClick={() => setStep(2)}
               className="w-full btn btn-primary text-sm sm:text-lg py-3 sm:py-4 rounded-xl font-semibold flex items-center justify-center gap-2"
             >
-              Next: Review Payment
+              Next: Choose Team Size
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
+          </>
+        )}
 
-            {/* Features */}
-            <div className="mt-6 grid grid-cols-2 gap-2 sm:gap-3">
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
-                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Unlimited Reports
+        {/* STEP 2: Team Size */}
+        {step === 2 && (
+          <>
+            {/* Explanation Box */}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-5">
+              <div className="flex gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm sm:text-base font-semibold text-blue-600 dark:text-blue-400 mb-1">
+                    What is Team Size?
+                  </div>
+                  <div className="text-xs sm:text-sm text-text-secondary">
+                    This is the total number of people who will use ValuQuick in your firm.
+                    Each person needs their own login to create and view reports.
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
-                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                PDF Export
+            </div>
+
+            {/* Team Size Selector */}
+            <div className="mb-5">
+              <label className="block text-sm sm:text-base font-semibold text-text-primary mb-3">
+                How many people will use ValuQuick?
+              </label>
+
+              <div className="bg-surface-200/50 rounded-xl p-4 sm:p-5">
+                <div className="flex items-center justify-center gap-4 sm:gap-6">
+                  <button
+                    onClick={() => setTeamSize(Math.max(1, teamSize - 1))}
+                    disabled={teamSize <= 1}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-2xl hover:bg-surface-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                  >
+                    −
+                  </button>
+                  <div className="text-center min-w-[80px]">
+                    <div className="text-4xl sm:text-5xl font-bold text-text-primary">{teamSize}</div>
+                    <div className="text-xs sm:text-sm text-text-tertiary mt-1">
+                      {teamSize === 1 ? 'person' : 'people'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setTeamSize(teamSize + 1)}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-surface-100 border border-surface-300 text-text-primary font-bold text-2xl hover:bg-surface-200 transition-colors flex-shrink-0"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
-                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Team Collaboration
+
+              {/* Price breakdown */}
+              <div className="mt-4 bg-surface-200/30 rounded-xl p-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-text-secondary">
+                    <span>Base plan (1 person)</span>
+                    <span>{formatPrice(basePriceAmount)}</span>
+                  </div>
+                  {additionalSeats > 0 && (
+                    <div className="flex justify-between text-text-secondary">
+                      <span>{additionalSeats} additional {additionalSeats === 1 ? 'person' : 'people'}</span>
+                      <span>{formatPrice(seatPriceAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold text-text-primary pt-2 border-t border-surface-300">
+                    <span>Total ({planDetails[selectedPlan].period})</span>
+                    <span className="text-brand">{formatPrice(totalAmount)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
-                <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </div>
+
+            {/* Important Note */}
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 sm:p-4 mb-5">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                Cancel Anytime
+                <div className="text-xs sm:text-sm text-text-secondary">
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">Note:</span> Each account can only be used on one device at a time.
+                  If someone else logs in, the previous device will be logged out automatically.
+                </div>
               </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={() => setStep(3)}
+                className="w-full btn btn-primary text-sm sm:text-lg py-3 sm:py-4 rounded-xl font-semibold flex items-center justify-center gap-2"
+              >
+                Next: Review & Pay
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => setStep(1)}
+                className="w-full py-2.5 sm:py-3 text-sm text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
             </div>
           </>
         )}
 
-        {/* STEP 2: Review & Pay */}
-        {step === 2 && (
+        {/* STEP 3: Review & Pay */}
+        {step === 3 && (
           <>
             {/* Order Summary */}
             <div className="mb-5 sm:mb-6">
               <label className="block text-sm sm:text-base font-semibold text-text-primary mb-3 sm:mb-4">
-                Your Order
+                Your Order Summary
               </label>
 
               <div className="bg-surface-200/30 rounded-xl p-4 sm:p-5 space-y-3 sm:space-y-4">
@@ -286,7 +370,7 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
                       {planDetails[selectedPlan].label} Plan
                     </div>
                     <div className="text-[11px] sm:text-xs text-text-tertiary">
-                      Includes 1 member
+                      For 1 person
                     </div>
                   </div>
                   <div className="text-base sm:text-lg font-semibold text-text-primary">
@@ -294,36 +378,38 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
                   </div>
                 </div>
 
-                {/* Extra members */}
-                <div className="flex justify-between items-center pb-3 border-b border-surface-300">
-                  <div>
-                    <div className="text-sm sm:text-base font-medium text-text-primary">
-                      Extra Members
+                {/* Additional people */}
+                {additionalSeats > 0 && (
+                  <div className="flex justify-between items-center pb-3 border-b border-surface-300">
+                    <div>
+                      <div className="text-sm sm:text-base font-medium text-text-primary">
+                        Additional People
+                      </div>
+                      <div className="text-[11px] sm:text-xs text-text-tertiary">
+                        {additionalSeats} {additionalSeats === 1 ? 'person' : 'people'} × {SEAT_PRICING[selectedPlan].displayAmount}
+                      </div>
                     </div>
-                    <div className="text-[11px] sm:text-xs text-text-tertiary">
-                      {additionalSeats} × {SEAT_PRICING[selectedPlan].displayAmount}
+                    <div className="text-base sm:text-lg font-semibold text-text-primary">
+                      {formatPrice(seatPriceAmount)}
                     </div>
                   </div>
-                  <div className="text-base sm:text-lg font-semibold text-text-primary">
-                    {formatPrice(seatPriceAmount)}
-                  </div>
-                </div>
+                )}
 
                 {/* Total */}
                 <div className="flex justify-between items-center pt-1">
                   <div>
                     <div className="text-base sm:text-lg font-bold text-text-primary">
-                      Total
+                      Total Amount
                     </div>
                     <div className="text-[11px] sm:text-xs text-text-tertiary">
-                      Billed per {planDetails[selectedPlan].period}
+                      Billed every {planDetails[selectedPlan].period}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl sm:text-3xl font-bold text-brand">
                       {formatPrice(totalAmount)}
                     </div>
-                    {selectedPlan !== 'monthly' && (
+                    {selectedPlan !== 'monthly' && PRICING[selectedPlan].savings && (
                       <div className="text-xs sm:text-sm text-green-500 font-medium">
                         You save {PRICING[selectedPlan].savings}
                       </div>
@@ -343,10 +429,10 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
                 </div>
                 <div>
                   <div className="text-sm sm:text-base font-semibold text-text-primary">
-                    Team of {teamSize} {teamSize === 1 ? 'Person' : 'People'}
+                    {teamSize} {teamSize === 1 ? 'Person' : 'People'} Can Use ValuQuick
                   </div>
                   <div className="text-[11px] sm:text-xs text-text-tertiary">
-                    1 included + {additionalSeats} extra {additionalSeats === 1 ? 'member' : 'members'}
+                    Each person will have their own login
                   </div>
                 </div>
               </div>
@@ -373,13 +459,13 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
               </button>
 
               <button
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 className="w-full py-2.5 sm:py-3 text-sm text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Edit
+                Back
               </button>
             </div>
 

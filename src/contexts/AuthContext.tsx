@@ -1,8 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { User } from 'firebase/auth';
-import { subscribeToAuthState, signInWithGoogle, signOut, getUserDocument } from '@/lib/auth';
+import {
+  subscribeToAuthState,
+  signInWithGoogle,
+  signOut,
+  getUserDocument,
+  subscribeToSessionChanges,
+  clearLocalSessionId,
+} from '@/lib/auth';
 import { UserDocument } from '@/types/firebase';
 
 interface AuthContextType {
@@ -10,6 +17,7 @@ interface AuthContextType {
   userDoc: UserDocument | null;
   loading: boolean;
   error: string | null;
+  sessionExpired: boolean;
   signIn: () => Promise<void>;
   logout: () => Promise<void>;
   refreshUserDoc: () => Promise<void>;
@@ -22,6 +30,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userDoc, setUserDoc] = useState<UserDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  // Handle session invalidation (logged in from another device)
+  const handleSessionInvalid = useCallback(async () => {
+    console.log('Session invalidated - logged in from another device');
+    setSessionExpired(true);
+    clearLocalSessionId();
+    await signOut();
+    setUser(null);
+    setUserDoc(null);
+  }, []);
 
   const refreshUserDoc = async () => {
     if (user) {
@@ -35,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Subscribe to auth state changes
   useEffect(() => {
     const unsubscribe = subscribeToAuthState(async (firebaseUser) => {
       setUser(firebaseUser);
@@ -57,8 +77,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Subscribe to session changes for single-device enforcement
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = subscribeToSessionChanges(user.uid, handleSessionInvalid);
+
+    return () => unsubscribe();
+  }, [user, handleSessionInvalid]);
+
   const signIn = async () => {
     setError(null);
+    setSessionExpired(false); // Clear session expired flag on new sign in
     setLoading(true);
     try {
       await signInWithGoogle();
@@ -94,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userDoc, loading, error, signIn, logout, refreshUserDoc }}>
+    <AuthContext.Provider value={{ user, userDoc, loading, error, sessionExpired, signIn, logout, refreshUserDoc }}>
       {children}
     </AuthContext.Provider>
   );

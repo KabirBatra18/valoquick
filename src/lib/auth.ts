@@ -5,16 +5,42 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserDocument } from '@/types/firebase';
 
 const googleProvider = new GoogleAuthProvider();
 
+// Session management for single-device restriction
+const SESSION_KEY = 'valuquick_session_id';
+
+function generateSessionId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+}
+
+export function getLocalSessionId(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(SESSION_KEY);
+}
+
+function setLocalSessionId(sessionId: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(SESSION_KEY, sessionId);
+}
+
+export function clearLocalSessionId(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(SESSION_KEY);
+}
+
 export async function signInWithGoogle(): Promise<User> {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
+
+    // Generate a new session ID for single-device restriction
+    const sessionId = generateSessionId();
+    setLocalSessionId(sessionId);
 
     // Create or update user document
     const userRef = doc(db, 'users', user.uid);
@@ -26,12 +52,17 @@ export async function signInWithGoogle(): Promise<User> {
         email: user.email || '', // Handle null email edge case
         displayName: user.displayName || 'User',
         firmId: null,
+        currentSessionId: sessionId,
         createdAt: serverTimestamp(),
         lastLoginAt: serverTimestamp(),
       });
     } else {
-      // Existing user - update last login
-      await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+      // Existing user - update last login and session ID
+      // This will invalidate any other active sessions
+      await setDoc(userRef, {
+        lastLoginAt: serverTimestamp(),
+        currentSessionId: sessionId,
+      }, { merge: true });
     }
 
     return user;
@@ -55,7 +86,45 @@ export async function signInWithGoogle(): Promise<User> {
 }
 
 export async function signOut(): Promise<void> {
+  clearLocalSessionId();
   await firebaseSignOut(auth);
+}
+
+// Check if current session is valid (matches the one in Firestore)
+export async function isSessionValid(userId: string): Promise<boolean> {
+  const localSessionId = getLocalSessionId();
+  if (!localSessionId) return false;
+
+  const userRef = doc(db, 'users', userId);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) return false;
+
+  const userData = userSnap.data();
+  return userData.currentSessionId === localSessionId;
+}
+
+// Subscribe to session changes to detect when logged out from another device
+export function subscribeToSessionChanges(
+  userId: string,
+  onSessionInvalid: () => void
+): () => void {
+  const userRef = doc(db, 'users', userId);
+
+  return onSnapshot(userRef, (snapshot) => {
+    if (!snapshot.exists()) {
+      onSessionInvalid();
+      return;
+    }
+
+    const userData = snapshot.data();
+    const localSessionId = getLocalSessionId();
+
+    // If session IDs don't match, this device has been logged out
+    if (localSessionId && userData.currentSessionId !== localSessionId) {
+      onSessionInvalid();
+    }
+  });
 }
 
 export async function getUserDocument(userId: string): Promise<UserDocument | null> {
