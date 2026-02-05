@@ -13,6 +13,7 @@ import {
   Timestamp,
   onSnapshot,
   addDoc,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Firm, FirmMember, FirmInvite, FirestoreReportMetadata } from '@/types/firebase';
@@ -42,7 +43,7 @@ export async function createFirm(
   // Add user as owner member
   const memberRef = doc(db, 'firms', firmId, 'members', userId);
   await setDoc(memberRef, {
-    email: userEmail,
+    email: userEmail.toLowerCase(), // Normalize email
     displayName: userDisplayName,
     role: 'owner',
     joinedAt: serverTimestamp(),
@@ -152,50 +153,73 @@ export async function acceptInvite(
   userEmail: string,
   userDisplayName: string
 ): Promise<void> {
-  // Update invite status
-  const inviteRef = doc(db, 'firms', firmId, 'invites', inviteId);
-  const inviteSnap = await getDoc(inviteRef);
+  // Use a transaction to prevent race conditions when multiple users accept invites simultaneously
+  await runTransaction(db, async (transaction) => {
+    // Read invite first
+    const inviteRef = doc(db, 'firms', firmId, 'invites', inviteId);
+    const inviteSnap = await transaction.get(inviteRef);
 
-  if (!inviteSnap.exists()) {
-    throw new Error('Invite not found');
-  }
+    if (!inviteSnap.exists()) {
+      throw new Error('Invite not found');
+    }
 
-  // Check seat limit before accepting (don't count pending invites, just members)
-  // This is a double-check in case seats were reduced after invite was sent
-  const membersSnap = await getDocs(collection(db, 'firms', firmId, 'members'));
-  const memberCount = membersSnap.size;
+    const inviteData = inviteSnap.data();
 
-  const subscription = await getSubscription(firmId);
-  const seatLimit = subscription?.seats?.total || 1;
+    // Check if already accepted
+    if (inviteData.status === 'accepted') {
+      throw new Error('Invite already accepted');
+    }
 
-  if (memberCount >= seatLimit) {
-    const error = new Error('SEAT_LIMIT_REACHED') as Error & {
-      code: string;
-      memberCount: number;
-      seatLimit: number;
-    };
-    error.code = 'SEAT_LIMIT_REACHED';
-    error.memberCount = memberCount;
-    error.seatLimit = seatLimit;
-    throw error;
-  }
+    // Get current member count within transaction
+    const membersRef = collection(db, 'firms', firmId, 'members');
+    const membersSnap = await getDocs(membersRef);
+    const memberCount = membersSnap.size;
 
-  const inviteData = inviteSnap.data();
+    // Get subscription to check seat limit
+    const subRef = doc(db, 'subscriptions', firmId);
+    const subSnap = await transaction.get(subRef);
 
-  // Add user as member
-  const memberRef = doc(db, 'firms', firmId, 'members', userId);
-  await setDoc(memberRef, {
-    email: userEmail,
-    displayName: userDisplayName,
-    role: inviteData.role,
-    joinedAt: serverTimestamp(),
-    invitedBy: inviteData.invitedBy,
+    let seatLimit = 1;
+    if (subSnap.exists()) {
+      const subscription = subSnap.data();
+      if (subscription?.status === 'active') {
+        seatLimit = subscription.seats?.total || 1;
+      } else {
+        // Trial period - allow unlimited
+        seatLimit = Infinity;
+      }
+    } else {
+      // No subscription = trial period - allow unlimited
+      seatLimit = Infinity;
+    }
+
+    if (memberCount >= seatLimit) {
+      const error = new Error('SEAT_LIMIT_REACHED') as Error & {
+        code: string;
+        memberCount: number;
+        seatLimit: number;
+      };
+      error.code = 'SEAT_LIMIT_REACHED';
+      error.memberCount = memberCount;
+      error.seatLimit = seatLimit;
+      throw error;
+    }
+
+    // All checks passed - add user as member
+    const memberRef = doc(db, 'firms', firmId, 'members', userId);
+    transaction.set(memberRef, {
+      email: userEmail.toLowerCase(),
+      displayName: userDisplayName,
+      role: inviteData.role,
+      joinedAt: serverTimestamp(),
+      invitedBy: inviteData.invitedBy,
+    });
+
+    // Update invite status
+    transaction.update(inviteRef, { status: 'accepted' });
   });
 
-  // Update invite status
-  await updateDoc(inviteRef, { status: 'accepted' });
-
-  // Update user's firmId
+  // Update user's firmId (outside transaction as it's a different document)
   await updateUserFirmId(userId, firmId);
 }
 
@@ -643,20 +667,40 @@ export async function createOrUpdateTrialRecord(
 export async function incrementTrialUsage(
   deviceId: string,
   userId: string
-): Promise<void> {
+): Promise<{ success: boolean; remaining: number }> {
   const trialRef = doc(db, 'trials', deviceId);
   const userRef = doc(db, 'users', userId);
 
-  // Increment device trial count
-  await updateDoc(trialRef, {
-    reportsGenerated: increment(1),
-    lastUsedAt: serverTimestamp(),
-  });
+  // Use transaction to prevent race condition
+  return runTransaction(db, async (transaction) => {
+    // Read current counts
+    const trialSnap = await transaction.get(trialRef);
+    const userSnap = await transaction.get(userRef);
 
-  // Increment user trial count
-  await updateDoc(userRef, {
-    trialReportsUsed: increment(1),
-    linkedDevices: arrayUnion(deviceId),
+    const currentTrialCount = trialSnap.exists() ? (trialSnap.data().reportsGenerated || 0) : 0;
+    const currentUserCount = userSnap.exists() ? (userSnap.data().trialReportsUsed || 0) : 0;
+
+    // Check if limit would be exceeded
+    const maxCount = Math.max(currentTrialCount, currentUserCount);
+    if (maxCount >= TRIAL_LIMIT) {
+      return { success: false, remaining: 0 };
+    }
+
+    // Increment device trial count
+    if (trialSnap.exists()) {
+      transaction.update(trialRef, {
+        reportsGenerated: increment(1),
+        lastUsedAt: serverTimestamp(),
+      });
+    }
+
+    // Increment user trial count
+    transaction.update(userRef, {
+      trialReportsUsed: increment(1),
+      linkedDevices: arrayUnion(deviceId),
+    });
+
+    return { success: true, remaining: TRIAL_LIMIT - maxCount - 1 };
   });
 }
 

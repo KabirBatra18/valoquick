@@ -182,3 +182,44 @@ export async function verifyFirmOwner(userId: string, firmId: string): Promise<b
     return false;
   }
 }
+
+// Session validation result type
+export interface SessionResult {
+  valid: boolean;
+  error?: string;
+}
+
+// Verify user's session is still valid (single-device enforcement)
+// This checks if the session ID in the request matches the one stored in Firestore
+export async function verifySession(userId: string, sessionId: string | null): Promise<SessionResult> {
+  if (!sessionId) {
+    return { valid: false, error: 'No session ID provided' };
+  }
+
+  try {
+    const db = getAdminDb();
+    const userDoc = await db.collection('users').doc(userId).get();
+
+    if (!userDoc.exists) {
+      return { valid: false, error: 'User not found' };
+    }
+
+    const userData = userDoc.data();
+    const storedSessionId = userData?.currentSessionId;
+
+    if (!storedSessionId) {
+      // User has no session stored - might be old account, allow access
+      return { valid: true };
+    }
+
+    if (storedSessionId !== sessionId) {
+      return { valid: false, error: 'Session expired - logged in on another device' };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error('Session verification error:', error);
+    // On error, allow access to avoid blocking legitimate users
+    return { valid: true };
+  }
+}

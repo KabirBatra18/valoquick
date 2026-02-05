@@ -3,7 +3,7 @@ import puppeteerCore from 'puppeteer-core';
 import puppeteer from 'puppeteer';
 import chromium from '@sparticuz/chromium';
 import { ValuationReport } from '@/types/valuation';
-import { verifyAuth, adminDb } from '@/lib/firebase-admin';
+import { verifyAuth, adminDb, verifySession } from '@/lib/firebase-admin';
 import { TRIAL_LIMIT } from '@/types/subscription';
 
 // Configure for serverless - allow up to 5 minutes for PDF generation
@@ -56,6 +56,16 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = authResult.user.uid;
+
+    // Verify session is valid (single-device enforcement)
+    const sessionId = request.headers.get('x-session-id');
+    const sessionResult = await verifySession(userId, sessionId);
+    if (!sessionResult.valid) {
+      return NextResponse.json(
+        { error: sessionResult.error || 'Session expired' },
+        { status: 401 }
+      );
+    }
 
     // Server-side subscription/trial validation
     const userDoc = await adminDb.collection('users').doc(userId).get();

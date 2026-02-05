@@ -33,8 +33,16 @@ service cloud.firestore {
     match /trials/{deviceId} {
       // Any authenticated user can read trial data (to check limits)
       allow read: if isAuthenticated();
-      // Any authenticated user can create/update trial data
-      allow create, update: if isAuthenticated();
+      // Only allow creating new trial records if they don't exist
+      // Prevent users from resetting their trial count
+      allow create: if isAuthenticated()
+        && request.resource.data.reportsGenerated == 0
+        && request.resource.data.keys().hasAll(['deviceFingerprint', 'reportsGenerated', 'linkedGoogleIds', 'createdAt', 'lastUsedAt']);
+      // Only allow incrementing reportsGenerated, not decreasing it
+      // And only allow adding to linkedGoogleIds array, not removing
+      allow update: if isAuthenticated()
+        && request.resource.data.reportsGenerated >= resource.data.reportsGenerated
+        && request.resource.data.linkedGoogleIds.hasAll(resource.data.linkedGoogleIds);
       // No deletes allowed
       allow delete: if false;
     }

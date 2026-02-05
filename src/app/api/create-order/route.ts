@@ -1,7 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { PlanType } from '@/types/subscription';
-import { verifyAuth, verifyFirmOwner } from '@/lib/firebase-admin';
+import { verifyAuth, verifyFirmOwner, verifySession } from '@/lib/firebase-admin';
+
+// Rate limiting: track requests per user
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX = 10; // Max 10 requests per minute
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+
+  if (!userLimit || now > userLimit.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+
+  if (userLimit.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  userLimit.count++;
+  return true;
+}
 
 function getRazorpayInstance() {
   const key_id = process.env.RAZORPAY_KEY_ID;
@@ -53,6 +75,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userId = authResult.user.uid;
+
+    // Rate limiting
+    if (!checkRateLimit(userId)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment.' },
+        { status: 429 }
+      );
+    }
+
+    // Verify session is valid (single-device enforcement)
+    const sessionId = req.headers.get('x-session-id');
+    const sessionResult = await verifySession(userId, sessionId);
+    if (!sessionResult.valid) {
+      return NextResponse.json(
+        { error: sessionResult.error || 'Session expired' },
+        { status: 401 }
+      );
+    }
+
     const razorpay = getRazorpayInstance();
 
     if (!razorpay) {
@@ -62,7 +104,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { plan, firmId, additionalSeats = 0 } = await req.json();
+    const body = await req.json();
+    const { plan, firmId } = body;
+
+    // Validate and sanitize additionalSeats
+    let additionalSeats = 0;
+    if (body.additionalSeats !== undefined) {
+      const parsed = parseInt(body.additionalSeats, 10);
+      if (isNaN(parsed) || parsed < 0) {
+        additionalSeats = 0;
+      } else if (parsed > 100) {
+        return NextResponse.json(
+          { error: 'Maximum 100 additional seats allowed' },
+          { status: 400 }
+        );
+      } else {
+        additionalSeats = parsed;
+      }
+    }
 
     if (!plan || !firmId) {
       return NextResponse.json(
@@ -72,7 +131,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Only firm owner can create subscriptions
-    const isOwner = await verifyFirmOwner(authResult.user.uid, firmId);
+    const isOwner = await verifyFirmOwner(userId, firmId);
     if (!isOwner) {
       return NextResponse.json(
         { error: 'Only firm owners can subscribe' },

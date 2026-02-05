@@ -15,7 +15,14 @@ const googleProvider = new GoogleAuthProvider();
 const SESSION_KEY = 'valuquick_session_id';
 
 function generateSessionId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+  // Use cryptographically secure random ID
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function getLocalSessionId(): string | null {

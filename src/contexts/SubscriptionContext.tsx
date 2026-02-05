@@ -109,6 +109,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.uid, firm?.id, checkTrial]);
 
+  // Re-validate subscription on page focus/visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && firm?.id) {
+        // Force refresh subscription and trial status when page becomes visible
+        refreshSeatInfo();
+        if (user?.uid) {
+          checkTrial().catch(console.error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [firm?.id, user?.uid, refreshSeatInfo, checkTrial]);
+
   const refreshSubscription = async () => {
     if (user?.uid) {
       await checkTrial();

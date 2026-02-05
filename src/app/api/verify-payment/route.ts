@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { adminDb, verifyAuth, verifyFirmOwner } from '@/lib/firebase-admin';
+import { adminDb, verifyAuth, verifyFirmOwner, verifySession } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { PlanType } from '@/types/subscription';
+
+// Idempotency: track processed payment IDs to prevent duplicate processing
+const processedPayments = new Map<string, { success: boolean; processedAt: number }>();
+const IDEMPOTENCY_WINDOW = 3600000; // 1 hour
+
+// Clean old entries periodically
+function cleanOldPayments() {
+  const now = Date.now();
+  for (const [key, value] of processedPayments) {
+    if (now - value.processedAt > IDEMPOTENCY_WINDOW) {
+      processedPayments.delete(key);
+    }
+  }
+}
 
 function calculatePeriodEnd(plan: PlanType): Date {
   const now = new Date();
@@ -28,14 +42,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userId = authResult.user.uid;
+
+    // Verify session is valid (single-device enforcement)
+    const sessionId = req.headers.get('x-session-id');
+    const sessionResult = await verifySession(userId, sessionId);
+    if (!sessionResult.valid) {
+      return NextResponse.json(
+        { error: sessionResult.error || 'Session expired' },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
     const {
       razorpay_payment_id,
       razorpay_subscription_id,
       razorpay_signature,
       firmId,
       plan,
-      additionalSeats = 0,
-    } = await req.json();
+    } = body;
+
+    // Validate and sanitize additionalSeats
+    let additionalSeats = 0;
+    if (body.additionalSeats !== undefined) {
+      const parsed = parseInt(body.additionalSeats, 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+        additionalSeats = parsed;
+      }
+    }
 
     if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature || !firmId || !plan) {
       return NextResponse.json(
@@ -44,8 +79,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Idempotency check - prevent duplicate processing
+    cleanOldPayments();
+    const idempotencyKey = `${razorpay_payment_id}_${razorpay_subscription_id}`;
+    const existingPayment = processedPayments.get(idempotencyKey);
+    if (existingPayment) {
+      return NextResponse.json({ success: existingPayment.success, duplicate: true });
+    }
+
     // Only firm owner can verify subscription payments
-    const isOwner = await verifyFirmOwner(authResult.user.uid, firmId);
+    const isOwner = await verifyFirmOwner(userId, firmId);
     if (!isOwner) {
       return NextResponse.json(
         { error: 'Only firm owners can verify subscription payments' },
@@ -61,6 +104,7 @@ export async function POST(req: NextRequest) {
 
     if (expectedSignature !== razorpay_signature) {
       console.error('Invalid Razorpay signature');
+      processedPayments.set(idempotencyKey, { success: false, processedAt: Date.now() });
       return NextResponse.json(
         { error: 'Invalid payment signature' },
         { status: 400 }
@@ -87,6 +131,9 @@ export async function POST(req: NextRequest) {
     };
 
     await adminDb.collection('subscriptions').doc(firmId).set(subscriptionData, { merge: true });
+
+    // Mark as processed for idempotency
+    processedPayments.set(idempotencyKey, { success: true, processedAt: Date.now() });
 
     return NextResponse.json({ success: true });
   } catch (error) {

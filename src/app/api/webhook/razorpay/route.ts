@@ -7,6 +7,25 @@ import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 // App identifier to distinguish ValuQuick events from other apps using same Razorpay account
 const APP_IDENTIFIER = 'valuquick';
 
+// Idempotency: track processed webhook events to prevent duplicate processing
+const processedWebhooks = new Map<string, { processedAt: number }>();
+const WEBHOOK_IDEMPOTENCY_WINDOW = 3600000; // 1 hour
+
+function cleanOldWebhooks() {
+  const now = Date.now();
+  for (const [key, value] of processedWebhooks) {
+    if (now - value.processedAt > WEBHOOK_IDEMPOTENCY_WINDOW) {
+      processedWebhooks.delete(key);
+    }
+  }
+}
+
+function getWebhookIdempotencyKey(event: string, payload: RazorpayWebhookPayload['payload']): string {
+  const subscriptionId = payload.subscription?.entity?.id || '';
+  const paymentId = payload.payment?.entity?.id || '';
+  return `${event}_${subscriptionId}_${paymentId}`;
+}
+
 function getRazorpayInstance() {
   const key_id = process.env.RAZORPAY_KEY_ID;
   const key_secret = process.env.RAZORPAY_KEY_SECRET;
@@ -299,6 +318,17 @@ export async function POST(req: NextRequest) {
       console.log('Ignoring non-ValuQuick event:', event.event);
       return NextResponse.json({ received: true, ignored: true });
     }
+
+    // Idempotency check - prevent duplicate processing
+    cleanOldWebhooks();
+    const idempotencyKey = getWebhookIdempotencyKey(event.event, event.payload);
+    if (processedWebhooks.has(idempotencyKey)) {
+      console.log('Duplicate webhook ignored:', idempotencyKey);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
+    // Mark as processing
+    processedWebhooks.set(idempotencyKey, { processedAt: Date.now() });
 
     switch (event.event) {
       case 'subscription.charged':

@@ -1,6 +1,7 @@
 'use client';
 
 import { auth } from './firebase';
+import { getLocalSessionId } from './auth';
 
 /**
  * Get the current user's ID token for API authentication
@@ -16,7 +17,6 @@ export async function getAuthToken(): Promise<string | null> {
   try {
     // Force refresh to ensure we have a valid token
     const token = await user.getIdToken(true);
-    console.log('getAuthToken: Got fresh token for user', user.uid, 'Token length:', token.length);
     return token;
   } catch (error) {
     console.error('Error getting auth token:', error);
@@ -43,12 +43,14 @@ export async function getAuthHeaders(): Promise<HeadersInit> {
 
 /**
  * Make an authenticated API request
+ * Includes session ID for single-device enforcement
  */
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
   const token = await getAuthToken();
+  const sessionId = getLocalSessionId();
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -57,9 +59,11 @@ export async function authenticatedFetch(
 
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-    console.log('authenticatedFetch: Sending request to', url, 'with auth token');
-  } else {
-    console.warn('authenticatedFetch: No token available, sending unauthenticated request to', url);
+  }
+
+  // Include session ID for single-device validation
+  if (sessionId) {
+    (headers as Record<string, string>)['X-Session-Id'] = sessionId;
   }
 
   return fetch(url, {

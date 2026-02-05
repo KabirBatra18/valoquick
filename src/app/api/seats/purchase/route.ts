@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { adminDb, verifyAuth, verifyFirmOwner } from '@/lib/firebase-admin';
+import { adminDb, verifyAuth, verifyFirmOwner, verifySession } from '@/lib/firebase-admin';
 import { SEAT_PRICING, PlanType } from '@/types/subscription';
 
 function getRazorpayInstance() {
@@ -34,6 +34,18 @@ export async function POST(req: NextRequest) {
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json(
         { error: authResult.error || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const userId = authResult.user.uid;
+
+    // Verify session is valid (single-device enforcement)
+    const sessionId = req.headers.get('x-session-id');
+    const sessionResult = await verifySession(userId, sessionId);
+    if (!sessionResult.valid) {
+      return NextResponse.json(
+        { error: sessionResult.error || 'Session expired' },
         { status: 401 }
       );
     }
