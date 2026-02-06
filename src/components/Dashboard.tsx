@@ -244,36 +244,6 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
         {/* Trial Banner */}
         <TrialBanner onUpgrade={() => setShowPricing(true)} />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="glass-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-text-primary">{activeCount}</p>
-                <p className="text-xs text-text-tertiary">In Progress</p>
-              </div>
-            </div>
-          </div>
-          <div className="glass-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-text-primary">{concludedCount}</p>
-                <p className="text-xs text-text-tertiary">Completed</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Tabs */}
         <div className="flex gap-2 mb-4">
           <button

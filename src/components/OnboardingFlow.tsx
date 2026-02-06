@@ -7,8 +7,8 @@ import { clearAccessRevokedFlag } from '@/lib/auth';
 
 export default function OnboardingFlow() {
   const { user, userDoc, logout, refreshUserDoc } = useAuth();
-  const { pendingInvites, createNewFirm, acceptFirmInvite, loading, error } = useFirm();
-  const [step, setStep] = useState<'choice' | 'create' | 'invites' | 'revoked'>(() =>
+  const { pendingInvites, createNewFirm, acceptFirmInvite, loading, error, trialBlocked } = useFirm();
+  const [step, setStep] = useState<'choice' | 'create' | 'invites' | 'revoked' | 'blocked'>(() =>
     userDoc?.accessRevoked ? 'revoked' : 'choice'
   );
   const [firmName, setFirmName] = useState('');
@@ -42,7 +42,11 @@ export default function OnboardingFlow() {
     try {
       await createNewFirm(firmName.trim());
     } catch (err) {
-      setLocalError('Failed to create firm. Please try again.');
+      if (err instanceof Error && err.message === 'TRIAL_BLOCKED') {
+        setStep('blocked');
+      } else {
+        setLocalError('Failed to create firm. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -311,6 +315,48 @@ export default function OnboardingFlow() {
             </button>
 
             <div className="mt-4 pt-4 border-t border-gray-700 text-center">
+              <button
+                onClick={logout}
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                Sign out and use a different account
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Trial Blocked Step */}
+        {step === 'blocked' && (
+          <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-600/20 mb-4">
+                <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-white mb-2">Free Trial Not Available</h2>
+              <p className="text-gray-400 text-sm">
+                Free trial is not available for this account. Please subscribe to continue using ValuQuick.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <a
+                href="/pricing"
+                className="block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-center"
+              >
+                Subscribe Now
+              </a>
+
+              <a
+                href="mailto:support@valuquick.in"
+                className="block w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors text-center"
+              >
+                Contact Support
+              </a>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-700 text-center">
               <button
                 onClick={logout}
                 className="text-gray-400 hover:text-white text-sm transition-colors"

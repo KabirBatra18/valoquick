@@ -40,10 +40,22 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['deviceFingerprint', 'reportsGenerated', 'linkedGoogleIds', 'createdAt', 'lastUsedAt']);
       // Only allow incrementing reportsGenerated, not decreasing it
       // And only allow adding to linkedGoogleIds array, not removing
+      // firmActivated field cannot be changed once set
       allow update: if isAuthenticated()
         && request.resource.data.reportsGenerated >= resource.data.reportsGenerated
-        && request.resource.data.linkedGoogleIds.hasAll(resource.data.linkedGoogleIds);
+        && request.resource.data.linkedGoogleIds.hasAll(resource.data.linkedGoogleIds)
+        && (resource.data.firmActivated == null || request.resource.data.firmActivated == resource.data.firmActivated);
       // No deletes allowed
+      allow delete: if false;
+    }
+
+    // IP-based trial tracking - prevents same office from getting multiple trials
+    // Only server (admin SDK) can write to this collection
+    match /ipTrials/{ipPrefix} {
+      allow read: if isAuthenticated();
+      // No client writes allowed - only admin SDK via API routes
+      allow create: if false;
+      allow update: if false;
       allow delete: if false;
     }
 
