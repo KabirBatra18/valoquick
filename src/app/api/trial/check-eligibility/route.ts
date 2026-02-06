@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { notifyAbuseAlert, notifyNewFirm } from '@/lib/email';
 
 const TRIAL_LIMIT = 5;
+
+// Track sent abuse alerts to avoid spam (in-memory cache)
+const sentAbuseAlerts = new Map<string, number>();
+const ABUSE_ALERT_COOLDOWN = 3600000; // 1 hour
 
 // Extract IP prefix (first 3 octets for IPv4)
 function getIpPrefix(ip: string): string {
@@ -127,7 +132,15 @@ export async function POST(request: NextRequest) {
         if (firmId && linkedFirms.includes(firmId)) {
           // This is the same firm - allowed
         } else if (linkedFirms.length >= 1) {
-          // Another firm already used trial from this IP
+          // Another firm already used trial from this IP - send abuse alert
+          const now = Date.now();
+          const lastAlert = sentAbuseAlerts.get(ipPrefix) || 0;
+          if (now - lastAlert > ABUSE_ALERT_COOLDOWN) {
+            sentAbuseAlerts.set(ipPrefix, now);
+            // Send alert asynchronously (don't await)
+            notifyAbuseAlert(ipPrefix, linkedFirms.length + 1, linkedFirms).catch(console.error);
+          }
+
           return NextResponse.json({
             eligible: false,
             reason: 'NETWORK_USED',
@@ -217,6 +230,19 @@ export async function PUT(request: NextRequest) {
         createdAt: FieldValue.serverTimestamp(),
         trialActivatedAt: FieldValue.serverTimestamp(),
       });
+    }
+
+    // Send new firm notification
+    try {
+      const firmDoc = await adminDb.collection('firms').doc(firmId).get();
+      const firmData = firmDoc.data();
+      if (firmData) {
+        const userDoc = await adminDb.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        notifyNewFirm(firmData.name || 'Unknown Firm', userData?.email || 'Unknown').catch(console.error);
+      }
+    } catch (emailError) {
+      console.error('Error sending new firm notification:', emailError);
     }
 
     return NextResponse.json({ success: true, ipPrefix });

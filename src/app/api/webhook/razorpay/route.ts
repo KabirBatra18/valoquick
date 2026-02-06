@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { notifyNewSubscription, notifySubscriptionCancelled } from '@/lib/email';
 
 // App identifier to distinguish ValuQuick events from other apps using same Razorpay account
 const APP_IDENTIFIER = 'valuquick';
@@ -125,6 +126,25 @@ async function handleSubscriptionCharged(payload: RazorpayWebhookPayload['payloa
   }, { merge: true });
 
   console.log(`Base subscription renewed for firm ${firmId}, next billing: ${periodEnd}`);
+
+  // Send email notification for new subscription
+  try {
+    const firmDoc = await adminDb.collection('firms').doc(firmId).get();
+    const firmData = firmDoc.data();
+    const firmName = firmData?.name || 'Unknown Firm';
+
+    // Get owner email
+    const membersSnapshot = await adminDb.collection('firms').doc(firmId).collection('members').where('role', '==', 'owner').get();
+    const ownerEmail = membersSnapshot.docs[0]?.data()?.email || 'Unknown';
+
+    // Calculate amount based on plan
+    const planPrices: Record<string, number> = { monthly: 999, halfyearly: 4999, yearly: 7999 };
+    const amount = planPrices[plan] || 999;
+
+    await notifyNewSubscription(firmName, plan, amount, ownerEmail);
+  } catch (emailError) {
+    console.error('Error sending subscription email:', emailError);
+  }
 }
 
 // Handle seats subscription charged/renewed
@@ -248,6 +268,21 @@ async function handleSubscriptionCancelled(payload: RazorpayWebhookPayload['payl
       updatedAt: Timestamp.now(),
     });
     console.log(`Base subscription cancelled for firm ${firmId}`);
+
+    // Send email notification for cancellation
+    try {
+      const firmDoc = await adminDb.collection('firms').doc(firmId).get();
+      const firmData = firmDoc.data();
+      const firmName = firmData?.name || 'Unknown Firm';
+
+      const membersSnapshot = await adminDb.collection('firms').doc(firmId).collection('members').where('role', '==', 'owner').get();
+      const ownerEmail = membersSnapshot.docs[0]?.data()?.email || 'Unknown';
+
+      const plan = currentData?.plan || 'unknown';
+      await notifySubscriptionCancelled(firmName, plan, ownerEmail);
+    } catch (emailError) {
+      console.error('Error sending cancellation email:', emailError);
+    }
   }
 }
 
