@@ -1,6 +1,7 @@
 import { getAdminDb } from './firebase-admin';
+import { ADMIN_EMAIL } from './admin-client';
 
-const ADMIN_EMAIL = 'kabirbatra220@gmail.com';
+export { isAdminEmail, ADMIN_EMAIL } from './admin-client';
 
 /**
  * Verify if a user is an admin by checking their email
@@ -16,12 +17,3 @@ export async function verifyAdmin(userId: string): Promise<boolean> {
     return false;
   }
 }
-
-/**
- * Check if an email is the admin email (client-side check)
- */
-export function isAdminEmail(email: string | null | undefined): boolean {
-  return email === ADMIN_EMAIL;
-}
-
-export { ADMIN_EMAIL };
