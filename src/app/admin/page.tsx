@@ -1008,8 +1008,8 @@ function TrendChart({
                 fontSize: '12px',
                 color: 'var(--color-text-primary)',
               }}
-              labelFormatter={formatChartDate}
-              formatter={(value: number) => [formatValue(value), title]}
+              labelFormatter={(label) => formatChartDate(String(label))}
+              formatter={(value) => [formatValue(Number(value ?? 0)), title]}
             />
             <Area
               type="monotone"
