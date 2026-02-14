@@ -25,9 +25,6 @@ export default function FooterPreview({ branding }: FooterPreviewProps) {
   if (!html) {
     return (
       <div className="rounded-lg border border-surface-200 overflow-hidden">
-        <div className="px-3 py-1.5 bg-surface-200/50 border-b border-surface-200">
-          <span className="text-text-tertiary text-xs font-medium">Footer Preview</span>
-        </div>
         <div className="p-4 text-text-tertiary text-xs text-center">
           Footer is disabled
         </div>
@@ -37,9 +34,6 @@ export default function FooterPreview({ branding }: FooterPreviewProps) {
 
   return (
     <div className="rounded-lg border border-surface-200 overflow-hidden bg-white">
-      <div className="px-3 py-1.5 bg-surface-200/50 border-b border-surface-200">
-        <span className="text-text-tertiary text-xs font-medium">Footer Preview</span>
-      </div>
       <iframe
         srcDoc={html}
         className="w-full border-0"

@@ -31,9 +31,6 @@ export default function HeaderPreview({ branding, valuerInfo = DEFAULT_VALUER }:
 
   return (
     <div className="rounded-lg border border-surface-200 overflow-hidden bg-white">
-      <div className="px-3 py-1.5 bg-surface-200/50 border-b border-surface-200">
-        <span className="text-text-tertiary text-xs font-medium">Header Preview</span>
-      </div>
       <iframe
         srcDoc={html}
         className="w-full border-0"
