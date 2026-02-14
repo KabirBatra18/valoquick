@@ -28,7 +28,7 @@ export default function TemplateSelector({ selected, onSelect, primaryColor = '#
             }`}
           >
             {/* Mini preview */}
-            <div className="bg-white rounded-lg mb-3 overflow-hidden border border-gray-200" style={{ height: '80px' }}>
+            <div className="bg-white rounded-lg mb-3 overflow-hidden border border-gray-200" style={{ height: '110px' }}>
               <TemplatePreviewThumb style={style} color={primaryColor} />
             </div>
 
@@ -53,113 +53,112 @@ export default function TemplateSelector({ selected, onSelect, primaryColor = '#
   );
 }
 
-// Mini visual thumbnail for each template style
+// Realistic miniature header preview for each template style
 function TemplatePreviewThumb({ style, color }: { style: TemplateStyle; color: string }) {
-  const barHeight = 3;
-  const lineColor = '#ccc';
+  const firmName = 'Sharma & Associates';
+  const subtitle = 'Architects, Engineers & Valuers';
+  const address = '12/4 Rajouri Garden, New Delhi';
+  const contact = 'Mob: 9876543210';
+  const valuerName = 'Ar. Rajesh Sharma';
+  const valuerQual = 'B.Arch, M.Plan';
+
+  const bodyLines = (
+    <div style={{ padding: '0 8px', marginTop: 4 }}>
+      <div style={{ width: '55%', height: 2, backgroundColor: '#d4d4d4', borderRadius: 1, margin: '0 auto' }} />
+      <div style={{ width: '40%', height: 2, backgroundColor: '#d4d4d4', borderRadius: 1, margin: '3px auto 0' }} />
+    </div>
+  );
 
   switch (style) {
     case 'classic':
       return (
-        <div className="p-2 h-full flex flex-col">
-          <div className="flex justify-between items-start mb-1">
-            <div>
-              <div style={{ width: 50, height: 6, backgroundColor: color, borderRadius: 2 }} />
-              <div style={{ width: 70, height: 3, backgroundColor: lineColor, borderRadius: 1, marginTop: 2 }} />
-              <div style={{ width: 55, height: 3, backgroundColor: lineColor, borderRadius: 1, marginTop: 1 }} />
+        <div style={{ fontFamily: "'Times New Roman', Times, serif", height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 8px 6px' }}>
+            <div style={{ flex: 1, color }}>
+              <div style={{ fontSize: 9, fontWeight: 700, lineHeight: 1.1 }}>{firmName}</div>
+              <div style={{ fontSize: 5.5, color: '#555', marginTop: 1 }}>{subtitle}</div>
+              <div style={{ fontSize: 5, color: '#666', marginTop: 1 }}>{address}</div>
+              <div style={{ fontSize: 5, color: '#666' }}>{contact}</div>
             </div>
-            <div className="text-right">
-              <div style={{ width: 40, height: 4, backgroundColor: '#333', borderRadius: 1, marginLeft: 'auto' }} />
-              <div style={{ width: 35, height: 3, backgroundColor: lineColor, borderRadius: 1, marginTop: 1, marginLeft: 'auto' }} />
+            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 6 }}>
+              <div style={{ fontSize: 6, fontWeight: 600, color: '#333' }}>{valuerName}</div>
+              <div style={{ fontSize: 5, color: '#666' }}>{valuerQual}</div>
             </div>
           </div>
-          <div style={{ width: '100%', height: 2, backgroundColor: color, marginTop: 2 }} />
-          <div className="flex-1 mt-2">
-            <div style={{ width: '60%', height: 3, backgroundColor: lineColor, borderRadius: 1, margin: '0 auto' }} />
-            <div style={{ width: '40%', height: 3, backgroundColor: lineColor, borderRadius: 1, margin: '3px auto 0' }} />
-          </div>
+          <div style={{ height: 2, backgroundColor: color, margin: '0 8px' }} />
+          {bodyLines}
         </div>
       );
 
     case 'modern':
       return (
-        <div className="p-2 h-full flex flex-col">
-          <div className="flex" style={{ borderLeft: `3px solid ${color}`, paddingLeft: 6 }}>
-            <div className="flex-1">
-              <div style={{ width: 55, height: 7, backgroundColor: color, borderRadius: 2 }} />
-              <div style={{ width: 70, height: 2, backgroundColor: lineColor, borderRadius: 1, marginTop: 3, letterSpacing: 1 }} />
+        <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', borderLeft: `3px solid ${color}`, margin: '8px 8px 0', paddingLeft: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: 0.3, lineHeight: 1.1 }}>{firmName}</div>
+              <div style={{ fontSize: 4.5, color: '#888', marginTop: 2, textTransform: 'uppercase' as const, letterSpacing: 0.8 }}>{subtitle}</div>
+              <div style={{ fontSize: 5, color: '#666', marginTop: 2 }}>{address}</div>
             </div>
-            <div className="text-right">
-              <div style={{ width: 30, height: 4, backgroundColor: '#333', borderRadius: 1, marginLeft: 'auto' }} />
-              <div className="flex gap-1 mt-1 justify-end">
-                <div style={{ width: 22, height: 8, backgroundColor: `${color}20`, border: `1px solid ${color}40`, borderRadius: 6 }} />
-                <div style={{ width: 22, height: 8, backgroundColor: `${color}20`, border: `1px solid ${color}40`, borderRadius: 6 }} />
+            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 6 }}>
+              <div style={{ fontSize: 6, fontWeight: 600, color: '#333' }}>{valuerName}</div>
+              <div style={{ display: 'flex', gap: 2, marginTop: 2, justifyContent: 'flex-end' }}>
+                <span style={{ fontSize: 4, padding: '1px 4px', borderRadius: 6, backgroundColor: `${color}15`, border: `1px solid ${color}40`, color }}>{valuerQual}</span>
               </div>
             </div>
           </div>
-          <div className="flex-1 mt-3">
-            <div style={{ width: '60%', height: 3, backgroundColor: lineColor, borderRadius: 1, margin: '0 auto' }} />
-          </div>
+          {bodyLines}
         </div>
       );
 
     case 'elegant':
       return (
-        <div className="p-2 h-full flex flex-col">
-          <div style={{ borderTop: `1px solid ${color}`, borderBottom: `1px solid ${color}`, padding: '4px 0' }}>
-            <div style={{ borderTop: `1px solid ${color}`, borderBottom: `1px solid ${color}`, padding: '3px 0' }}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <div style={{ width: 50, height: 6, backgroundColor: color, borderRadius: 2, fontVariant: 'small-caps' }} />
-                  <div style={{ width: 60, height: 3, backgroundColor: lineColor, borderRadius: 1, marginTop: 2, fontStyle: 'italic' }} />
-                </div>
-                <div className="text-right">
-                  <div style={{ width: 35, height: 4, backgroundColor: '#444', borderRadius: 1, marginLeft: 'auto' }} />
-                  <div style={{ width: 30, height: 3, backgroundColor: lineColor, borderRadius: 1, marginTop: 1, marginLeft: 'auto' }} />
-                </div>
+        <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ borderTop: `1px solid ${color}`, borderBottom: `1px solid ${color}`, margin: '6px 8px 0', padding: '2px 0' }}>
+            <div style={{ borderTop: `1px solid ${color}`, borderBottom: `1px solid ${color}`, padding: '5px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, fontVariant: 'small-caps', letterSpacing: 1.5, color, lineHeight: 1.1 }}>{firmName}</div>
+                <div style={{ fontSize: 5.5, fontStyle: 'italic', color: '#555', marginTop: 1 }}>{subtitle}</div>
+                <div style={{ fontSize: 4.5, color: '#666', marginTop: 1 }}>{address}</div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 6 }}>
+                <div style={{ fontSize: 6, fontWeight: 600, color: '#444' }}>{valuerName}</div>
+                <div style={{ fontSize: 5, color: '#666' }}>{valuerQual}</div>
               </div>
             </div>
           </div>
-          <div className="flex-1 mt-2">
-            <div style={{ width: '50%', height: 3, backgroundColor: lineColor, borderRadius: 1, margin: '0 auto' }} />
-          </div>
+          {bodyLines}
         </div>
       );
 
     case 'boldCorporate':
       return (
-        <div className="h-full flex flex-col">
-          <div style={{ backgroundColor: color, padding: '6px 8px', borderRadius: '4px 4px 0 0' }}>
-            <div className="flex justify-between items-start">
-              <div>
-                <div style={{ width: 55, height: 7, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 2 }} />
-                <div style={{ width: 70, height: 2, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 1, marginTop: 2 }} />
-              </div>
-              <div className="text-right">
-                <div style={{ width: 35, height: 4, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 1, marginLeft: 'auto' }} />
-                <div style={{ width: 30, height: 3, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 1, marginTop: 1, marginLeft: 'auto' }} />
-              </div>
+        <div style={{ fontFamily: "Arial, Helvetica, sans-serif", height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ backgroundColor: color, padding: '7px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 900, color: '#fff', textTransform: 'uppercase' as const, letterSpacing: 0.5, lineHeight: 1.1 }}>{firmName}</div>
+              <div style={{ fontSize: 4.5, color: 'rgba(255,255,255,0.7)', marginTop: 2, textTransform: 'uppercase' as const, letterSpacing: 1 }}>{subtitle}</div>
+              <div style={{ fontSize: 4.5, color: 'rgba(255,255,255,0.6)', marginTop: 1 }}>{address}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 6 }}>
+              <div style={{ fontSize: 6, fontWeight: 700, color: 'rgba(255,255,255,0.95)' }}>{valuerName}</div>
+              <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.7)' }}>{valuerQual}</div>
             </div>
           </div>
-          <div className="flex-1 p-2">
-            <div style={{ width: '60%', height: 3, backgroundColor: lineColor, borderRadius: 1, margin: '4px auto 0' }} />
-          </div>
+          {bodyLines}
         </div>
       );
 
     case 'minimal':
       return (
-        <div className="p-2 h-full flex flex-col">
-          <div className="flex justify-between items-center pb-1" style={{ borderBottom: `1px solid #eee` }}>
-            <div className="flex items-center gap-1">
-              <div style={{ width: 12, height: 12, backgroundColor: '#ddd', borderRadius: 3 }} />
-              <div style={{ width: 40, height: 5, backgroundColor: '#555', borderRadius: 1 }} />
+        <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 8px 6px', borderBottom: '1px solid #eee' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 14, height: 14, backgroundColor: '#e5e5e5', borderRadius: 3 }} />
+              <div style={{ fontSize: 8, fontWeight: 500, color: '#333' }}>{firmName}</div>
             </div>
-            <div style={{ width: 25, height: barHeight, backgroundColor: '#bbb', borderRadius: 1 }} />
+            <div style={{ fontSize: 5, color: '#999' }}>{valuerName}</div>
           </div>
-          <div className="flex-1 mt-2">
-            <div style={{ width: '50%', height: 3, backgroundColor: lineColor, borderRadius: 1, margin: '0 auto' }} />
-          </div>
+          {bodyLines}
         </div>
       );
 
