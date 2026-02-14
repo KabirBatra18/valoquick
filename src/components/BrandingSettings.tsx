@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useFirm } from '@/contexts/FirmContext';
 import { FirmBranding, TemplateStyle, DEFAULT_BRANDING } from '@/types/branding';
 import { uploadFirmLogo, deleteFirmLogo } from '@/lib/logo-storage';
@@ -113,7 +113,7 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="relative bg-surface-100 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-surface-200">
+      <div className="relative bg-surface-100 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-surface-200">
         {/* Header */}
         <div className="flex items-center justify-between px-4 lg:px-6 py-4 border-b border-surface-200">
           <div>
@@ -183,8 +183,6 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                   onChange={(c) => updateHeader('primaryColor', c)}
                 />
               </div>
-
-              <HeaderPreview branding={formData} />
             </div>
           )}
 
@@ -253,56 +251,50 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                   />
                 </div>
               </div>
-
-              <HeaderPreview branding={formData} />
             </div>
           )}
 
           {/* Header Tab */}
           {activeTab === 'header' && (
-            <div className="space-y-5">
-              <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-1">Header Sections</h3>
-                <p className="text-text-tertiary text-xs mb-4">Toggle which sections appear in your report header</p>
-                <div className="space-y-3">
-                  {[
-                    { key: 'showLogo', label: 'Firm Logo', desc: 'Show your logo in the header' },
-                    { key: 'showFirmName', label: 'Firm Name', desc: 'Display your firm name prominently' },
-                    { key: 'showSubtitle', label: 'Subtitle / Tagline', desc: 'Show your firm description' },
-                    { key: 'showAddress', label: 'Address', desc: 'Include firm address' },
-                    { key: 'showContact', label: 'Contact Details', desc: 'Show phone and email' },
-                    { key: 'showValuerInfo', label: 'Valuer Information', desc: 'Display valuer name, qualification, and designation' },
-                  ].map((item) => {
-                    const isOn = formData.header[item.key as keyof typeof formData.header] as boolean;
-                    return (
-                      <label
-                        key={item.key}
-                        className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary mb-1">Header Sections</h3>
+              <p className="text-text-tertiary text-xs mb-4">Toggle which sections appear in your report header</p>
+              <div className="space-y-3">
+                {[
+                  { key: 'showLogo', label: 'Firm Logo', desc: 'Show your logo in the header' },
+                  { key: 'showFirmName', label: 'Firm Name', desc: 'Display your firm name prominently' },
+                  { key: 'showSubtitle', label: 'Subtitle / Tagline', desc: 'Show your firm description' },
+                  { key: 'showAddress', label: 'Address', desc: 'Include firm address' },
+                  { key: 'showContact', label: 'Contact Details', desc: 'Show phone and email' },
+                  { key: 'showValuerInfo', label: 'Valuer Information', desc: 'Display valuer name, qualification, and designation' },
+                ].map((item) => {
+                  const isOn = formData.header[item.key as keyof typeof formData.header] as boolean;
+                  return (
+                    <label
+                      key={item.key}
+                      className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-text-primary font-medium">{item.label}</span>
+                        <p className="text-text-tertiary text-xs">{item.desc}</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isOn}
+                        onClick={() => updateHeader(item.key, !isOn)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${
+                          isOn ? 'bg-brand' : 'bg-surface-300'
+                        }`}
                       >
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm text-text-primary font-medium">{item.label}</span>
-                          <p className="text-text-tertiary text-xs">{item.desc}</p>
-                        </div>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={isOn}
-                          onClick={() => updateHeader(item.key, !isOn)}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${
-                            isOn ? 'bg-brand' : 'bg-surface-300'
-                          }`}
-                        >
-                          <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 translate-y-[2px] ${
-                            isOn ? 'translate-x-[22px]' : 'translate-x-[2px]'
-                          }`} />
-                        </button>
-                      </label>
-                    );
-                  })}
-                </div>
+                        <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 translate-y-[2px] ${
+                          isOn ? 'translate-x-[22px]' : 'translate-x-[2px]'
+                        }`} />
+                      </button>
+                    </label>
+                  );
+                })}
               </div>
-
-              <HeaderPreview branding={formData} />
             </div>
           )}
 
@@ -376,14 +368,21 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                   )}
                 </div>
               )}
-
-              <FooterPreview branding={formData} />
             </div>
           )}
         </div>
 
+        {/* Live Preview — always visible, never scrolled away */}
+        <div className="flex-shrink-0 border-t border-surface-200 px-4 lg:px-6 py-3 space-y-2">
+          {activeTab === 'footer' ? (
+            <FooterPreview branding={formData} />
+          ) : (
+            <HeaderPreview branding={formData} />
+          )}
+        </div>
+
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 px-4 lg:px-6 py-4 border-t border-surface-200">
+        <div className="flex items-center justify-end gap-3 px-4 lg:px-6 py-3 border-t border-surface-200">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-200 rounded-lg transition-colors"
