@@ -1,6 +1,14 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 const ADMIN_EMAIL = 'kabirbatra220@gmail.com';
 const FROM_EMAIL = 'ValuQuick <notifications@valuquick.in>';
@@ -14,13 +22,14 @@ interface EmailResult {
  * Send email notification to admin
  */
 async function sendAdminEmail(subject: string, html: string): Promise<EmailResult> {
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend();
+  if (!client) {
     console.log('RESEND_API_KEY not set, skipping email');
     return { success: false, error: 'API key not configured' };
   }
 
   try {
-    await resend.emails.send({
+    await client.emails.send({
       from: FROM_EMAIL,
       to: ADMIN_EMAIL,
       subject,
