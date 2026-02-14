@@ -131,15 +131,15 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-surface-200 px-4 lg:px-6 overflow-x-auto">
+        <div className="flex gap-1 border-b border-surface-200 px-4 lg:px-6 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-brand text-brand'
-                  : 'border-transparent text-text-tertiary hover:text-text-secondary'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
               }`}
             >
               {tab.label}
@@ -272,34 +272,33 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                     { key: 'showAddress', label: 'Address', desc: 'Include firm address' },
                     { key: 'showContact', label: 'Contact Details', desc: 'Show phone and email' },
                     { key: 'showValuerInfo', label: 'Valuer Information', desc: 'Display valuer name, qualification, and designation' },
-                  ].map((item) => (
-                    <label
-                      key={item.key}
-                      className="flex items-center justify-between p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
-                    >
-                      <div>
-                        <span className="text-sm text-text-primary font-medium">{item.label}</span>
-                        <p className="text-text-tertiary text-xs">{item.desc}</p>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={formData.header[item.key as keyof typeof formData.header] as boolean}
-                          onChange={(e) => updateHeader(item.key, e.target.checked)}
-                          className="sr-only"
-                        />
-                        <div className={`w-10 h-6 rounded-full transition-colors ${
-                          formData.header[item.key as keyof typeof formData.header]
-                            ? 'bg-brand' : 'bg-surface-300'
-                        }`}>
-                          <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform mt-1 ${
-                            formData.header[item.key as keyof typeof formData.header]
-                              ? 'translate-x-5' : 'translate-x-1'
-                          }`} />
+                  ].map((item) => {
+                    const isOn = formData.header[item.key as keyof typeof formData.header] as boolean;
+                    return (
+                      <label
+                        key={item.key}
+                        className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-text-primary font-medium">{item.label}</span>
+                          <p className="text-text-tertiary text-xs">{item.desc}</p>
                         </div>
-                      </div>
-                    </label>
-                  ))}
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isOn}
+                          onClick={() => updateHeader(item.key, !isOn)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${
+                            isOn ? 'bg-brand' : 'bg-surface-300'
+                          }`}
+                        >
+                          <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 translate-y-[2px] ${
+                            isOn ? 'translate-x-[22px]' : 'translate-x-[2px]'
+                          }`} />
+                        </button>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -310,26 +309,24 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
           {/* Footer Tab */}
           {activeTab === 'footer' && (
             <div className="space-y-5">
-              <label className="flex items-center justify-between p-3 bg-surface-200/30 rounded-xl cursor-pointer">
-                <div>
+              <label className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl cursor-pointer">
+                <div className="flex-1 min-w-0">
                   <span className="text-sm text-text-primary font-semibold">Enable Footer</span>
                   <p className="text-text-tertiary text-xs">Show a footer at the bottom of each page</p>
                 </div>
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={formData.footer.enabled}
-                    onChange={(e) => updateFooter('enabled', e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div className={`w-10 h-6 rounded-full transition-colors ${
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formData.footer.enabled}
+                  onClick={() => updateFooter('enabled', !formData.footer.enabled)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${
                     formData.footer.enabled ? 'bg-brand' : 'bg-surface-300'
-                  }`}>
-                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform mt-1 ${
-                      formData.footer.enabled ? 'translate-x-5' : 'translate-x-1'
-                    }`} />
-                  </div>
-                </div>
+                  }`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 translate-y-[2px] ${
+                    formData.footer.enabled ? 'translate-x-[22px]' : 'translate-x-[2px]'
+                  }`} />
+                </button>
               </label>
 
               {formData.footer.enabled && (
@@ -338,34 +335,33 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                     { key: 'showPageNumbers', label: 'Page Numbers', desc: 'Show "Page X" on each page' },
                     { key: 'showContactInfo', label: 'Contact Information', desc: 'Repeat firm name, phone, email in footer' },
                     { key: 'showDisclaimer', label: 'Disclaimer Text', desc: 'Add a custom disclaimer note' },
-                  ].map((item) => (
-                    <label
-                      key={item.key}
-                      className="flex items-center justify-between p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
-                    >
-                      <div>
-                        <span className="text-sm text-text-primary font-medium">{item.label}</span>
-                        <p className="text-text-tertiary text-xs">{item.desc}</p>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={formData.footer[item.key as keyof typeof formData.footer] as boolean}
-                          onChange={(e) => updateFooter(item.key, e.target.checked)}
-                          className="sr-only"
-                        />
-                        <div className={`w-10 h-6 rounded-full transition-colors ${
-                          formData.footer[item.key as keyof typeof formData.footer]
-                            ? 'bg-brand' : 'bg-surface-300'
-                        }`}>
-                          <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform mt-1 ${
-                            formData.footer[item.key as keyof typeof formData.footer]
-                              ? 'translate-x-5' : 'translate-x-1'
-                          }`} />
+                  ].map((item) => {
+                    const isOn = formData.footer[item.key as keyof typeof formData.footer] as boolean;
+                    return (
+                      <label
+                        key={item.key}
+                        className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-text-primary font-medium">{item.label}</span>
+                          <p className="text-text-tertiary text-xs">{item.desc}</p>
                         </div>
-                      </div>
-                    </label>
-                  ))}
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isOn}
+                          onClick={() => updateFooter(item.key, !isOn)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${
+                            isOn ? 'bg-brand' : 'bg-surface-300'
+                          }`}
+                        >
+                          <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 translate-y-[2px] ${
+                            isOn ? 'translate-x-[22px]' : 'translate-x-[2px]'
+                          }`} />
+                        </button>
+                      </label>
+                    );
+                  })}
 
                   {formData.footer.showDisclaimer && (
                     <div className="mt-2">
