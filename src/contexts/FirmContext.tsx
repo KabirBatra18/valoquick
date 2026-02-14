@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { Firm, FirmMember, FirmInvite } from '@/types/firebase';
+import { FirmBranding } from '@/types/branding';
 import {
   getFirm,
   getFirmMembers,
@@ -14,6 +15,7 @@ import {
   deleteInvite,
   removeMember,
   updateMemberRole,
+  updateFirmBranding,
 } from '@/lib/firestore';
 import { getDeviceFingerprint, getPersistentId } from '@/lib/fingerprint';
 
@@ -88,6 +90,9 @@ interface FirmContextType {
   refreshInvites: () => Promise<void>;
   checkEligibility: () => Promise<boolean>;
   isOwner: boolean;
+  isAdmin: boolean;
+  canEditBranding: boolean;
+  updateBranding: (branding: Partial<FirmBranding>) => Promise<void>;
 }
 
 const FirmContext = createContext<FirmContextType | undefined>(undefined);
@@ -104,6 +109,8 @@ export function FirmProvider({ children }: { children: ReactNode }) {
 
   // Check if current user is the owner
   const isOwner = members.some(m => m.userId === user?.uid && m.role === 'owner');
+  const isAdmin = members.some(m => m.userId === user?.uid && m.role === 'admin');
+  const canEditBranding = isOwner || isAdmin;
 
   // Check if user is eligible for trial
   const checkEligibility = async (): Promise<boolean> => {
@@ -282,6 +289,21 @@ export function FirmProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateBranding = async (branding: Partial<FirmBranding>) => {
+    if (!firm || !user) throw new Error('Must be signed in with a firm');
+    if (!canEditBranding) throw new Error('Only owners and admins can edit branding');
+
+    setError(null);
+    try {
+      await updateFirmBranding(firm.id, branding, user.uid);
+      await refreshFirm();
+    } catch (err) {
+      console.error('Error updating branding:', err);
+      setError('Failed to update branding. Please try again.');
+      throw err;
+    }
+  };
+
   return (
     <FirmContext.Provider
       value={{
@@ -302,6 +324,9 @@ export function FirmProvider({ children }: { children: ReactNode }) {
         refreshInvites,
         checkEligibility,
         isOwner,
+        isAdmin,
+        canEditBranding,
+        updateBranding,
       }}
     >
       {children}

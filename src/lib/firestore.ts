@@ -9,6 +9,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
   Timestamp,
   onSnapshot,
@@ -17,10 +18,12 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Firm, FirmMember, FirmInvite, FirestoreReportMetadata } from '@/types/firebase';
+import { FirmBranding } from '@/types/branding';
 import { SavedReport, ReportFormData } from '@/types/report';
 import { TrialRecord, Subscription, TRIAL_LIMIT, MAX_DEVICES_PER_ACCOUNT } from '@/types/subscription';
 import { updateUserFirmId, clearUserFirmId } from './auth';
 import { arrayUnion, increment } from 'firebase/firestore';
+import { deleteReportPhotos } from './photo-storage';
 
 // ============ FIRM FUNCTIONS ============
 
@@ -73,6 +76,32 @@ export async function getFirmMembers(firmId: string): Promise<FirmMember[]> {
     userId: doc.id,
     ...doc.data(),
   })) as FirmMember[];
+}
+
+// ============ BRANDING FUNCTIONS ============
+
+export async function updateFirmBranding(
+  firmId: string,
+  branding: Partial<FirmBranding>,
+  userId: string
+): Promise<void> {
+  const firmRef = doc(db, 'firms', firmId);
+  await updateDoc(firmRef, {
+    branding: {
+      ...branding,
+      updatedAt: serverTimestamp(),
+      updatedBy: userId,
+    },
+  });
+}
+
+export async function getFirmBranding(firmId: string): Promise<FirmBranding | null> {
+  const firmRef = doc(db, 'firms', firmId);
+  const firmSnap = await getDoc(firmRef);
+  if (firmSnap.exists()) {
+    return (firmSnap.data().branding as FirmBranding) || null;
+  }
+  return null;
 }
 
 // ============ INVITE FUNCTIONS ============
@@ -538,7 +567,7 @@ export async function saveReport(
     .filter(Boolean)
     .join(', ');
 
-  // Separate photos from formData (photos are stored in Storage, URLs in photoUrls)
+  // Separate photos from formData — photos are URLs stored in photoUrls field
   const { photos, ...formDataWithoutPhotos } = report.formData;
 
   await setDoc(
@@ -552,7 +581,7 @@ export async function saveReport(
         lastModifiedBy: userId,
       },
       formData: formDataWithoutPhotos,
-      // Keep existing photoUrls - they're managed separately by storage functions
+      photoUrls: photos, // Save photo Storage URLs (small strings, not base64)
     },
     { merge: true }
   );
@@ -568,6 +597,13 @@ export async function updateReportPhotoUrls(
 }
 
 export async function deleteReport(firmId: string, reportId: string): Promise<void> {
+  // Clean up photos from Firebase Storage before deleting the document
+  try {
+    await deleteReportPhotos(firmId, reportId);
+  } catch (e) {
+    console.error('Failed to clean up report photos from Storage:', e);
+  }
+
   const reportRef = doc(db, 'firms', firmId, 'reports', reportId);
   await deleteDoc(reportRef);
 }
@@ -602,10 +638,11 @@ export async function duplicateReport(
 
 export function subscribeToReports(
   firmId: string,
-  callback: (reports: SavedReport[]) => void
+  callback: (reports: SavedReport[]) => void,
+  maxReports: number = 50
 ): () => void {
   const reportsRef = collection(db, 'firms', firmId, 'reports');
-  const q = query(reportsRef, orderBy('metadata.updatedAt', 'desc'));
+  const q = query(reportsRef, orderBy('metadata.updatedAt', 'desc'), limit(maxReports));
 
   return onSnapshot(q, (snapshot) => {
     const reports = snapshot.docs.map((doc) => {
@@ -642,16 +679,22 @@ export async function getTrialByDevice(deviceId: string): Promise<TrialRecord | 
 export async function createOrUpdateTrialRecord(
   deviceId: string,
   userId: string
-): Promise<void> {
+): Promise<TrialRecord | null> {
   const trialRef = doc(db, 'trials', deviceId);
   const trialSnap = await getDoc(trialRef);
 
   if (trialSnap.exists()) {
-    // Update existing record
-    await updateDoc(trialRef, {
-      linkedGoogleIds: arrayUnion(userId),
-      lastUsedAt: serverTimestamp(),
-    });
+    const data = trialSnap.data() as TrialRecord;
+    // Only add userId if not already present and array isn't at max capacity
+    const updates: Record<string, unknown> = { lastUsedAt: serverTimestamp() };
+    if (
+      !data.linkedGoogleIds?.includes(userId) &&
+      (data.linkedGoogleIds?.length || 0) < MAX_DEVICES_PER_ACCOUNT
+    ) {
+      updates.linkedGoogleIds = arrayUnion(userId);
+    }
+    await updateDoc(trialRef, updates);
+    return data;
   } else {
     // Create new record
     await setDoc(trialRef, {
@@ -661,6 +704,7 @@ export async function createOrUpdateTrialRecord(
       createdAt: serverTimestamp(),
       lastUsedAt: serverTimestamp(),
     });
+    return null;
   }
 }
 
@@ -694,11 +738,13 @@ export async function incrementTrialUsage(
       });
     }
 
-    // Increment user trial count
-    transaction.update(userRef, {
-      trialReportsUsed: increment(1),
-      linkedDevices: arrayUnion(deviceId),
-    });
+    // Increment user trial count, cap linkedDevices array
+    const userUpdates: Record<string, unknown> = { trialReportsUsed: increment(1) };
+    const existingDevices = userSnap.exists() ? (userSnap.data().linkedDevices || []) : [];
+    if (!existingDevices.includes(deviceId) && existingDevices.length < MAX_DEVICES_PER_ACCOUNT) {
+      userUpdates.linkedDevices = arrayUnion(deviceId);
+    }
+    transaction.update(userRef, userUpdates);
 
     return { success: true, remaining: TRIAL_LIMIT - maxCount - 1 };
   });
@@ -736,9 +782,13 @@ export async function linkDeviceToUser(
   deviceId: string
 ): Promise<void> {
   const userRef = doc(db, 'users', userId);
-  await updateDoc(userRef, {
-    linkedDevices: arrayUnion(deviceId),
-  });
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    const data = userSnap.data();
+    if (data?.linkedDevices?.includes(deviceId)) return; // Already linked
+    if ((data?.linkedDevices?.length || 0) >= MAX_DEVICES_PER_ACCOUNT) return; // At capacity
+  }
+  await updateDoc(userRef, { linkedDevices: arrayUnion(deviceId) });
 }
 
 // ============ SUBSCRIPTION FUNCTIONS ============

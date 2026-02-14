@@ -5,6 +5,8 @@ import chromium from '@sparticuz/chromium';
 import { ValuationReport } from '@/types/valuation';
 import { verifyAuth, adminDb, verifySession } from '@/lib/firebase-admin';
 import { TRIAL_LIMIT } from '@/types/subscription';
+import { FirmBranding, ValuerInfo } from '@/types/branding';
+import { getTemplateCSS, renderHeader, renderFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
 
 // Configure for serverless - allow up to 5 minutes for PDF generation
 export const maxDuration = 300;
@@ -79,21 +81,31 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data();
     const firmId = userData?.firmId;
     let canGenerate = false;
+    let firmBranding: FirmBranding = mergeBrandingWithDefaults(null);
 
-    // Check subscription status if user has a firm
+    // Fetch firm data in parallel: subscription + firm doc (branding) in one batch
     if (firmId) {
-      const subscriptionDoc = await adminDb.collection('subscriptions').doc(firmId).get();
+      const [subscriptionDoc, firmDoc] = await Promise.all([
+        adminDb.collection('subscriptions').doc(firmId).get(),
+        adminDb.collection('firms').doc(firmId).get(),
+      ]);
+
+      // Check subscription
       if (subscriptionDoc.exists) {
         const subscription = subscriptionDoc.data();
         if (subscription?.status === 'active' && subscription?.currentPeriodEnd) {
           const periodEnd = subscription.currentPeriodEnd.toDate();
           const now = new Date();
-          // Add 1 day grace period for webhook delays
           const gracePeriodEnd = new Date(periodEnd.getTime() + 24 * 60 * 60 * 1000);
           if (now <= gracePeriodEnd) {
             canGenerate = true;
           }
         }
+      }
+
+      // Extract branding from firm doc (already fetched)
+      if (firmDoc.exists && firmDoc.data()?.branding) {
+        firmBranding = mergeBrandingWithDefaults(firmDoc.data()!.branding);
       }
     }
 
@@ -112,10 +124,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fetch firm branding configuration
+    let logoBase64: string | null = null;
+
+    if (firmId) {
+      // Convert logo URL to base64 for PDF embedding
+      if (firmBranding.logoUrl) {
+        try {
+          const logoResponse = await fetch(firmBranding.logoUrl);
+          if (logoResponse.ok) {
+            const logoBuffer = await logoResponse.arrayBuffer();
+            const mimeType = logoResponse.headers.get('content-type') || 'image/png';
+            logoBase64 = `data:${mimeType};base64,${Buffer.from(logoBuffer).toString('base64')}`;
+          }
+        } catch (e) {
+          console.error('Failed to fetch logo for PDF:', e);
+        }
+      }
+    }
+
     const data: ValuationReport = await request.json();
 
+    // Convert photo URLs to base64 for PDF embedding (Puppeteer can't reliably access Firebase Storage URLs)
+    if (data.photos && data.photos.length > 0) {
+      const base64Photos = await Promise.all(
+        data.photos.map(async (photoUrl) => {
+          if (photoUrl.startsWith('data:')) return photoUrl; // Already base64
+          try {
+            const response = await fetch(photoUrl);
+            if (!response.ok) return null;
+            const buffer = await response.arrayBuffer();
+            const mimeType = response.headers.get('content-type') || 'image/jpeg';
+            return `data:${mimeType};base64,${Buffer.from(buffer).toString('base64')}`;
+          } catch {
+            return null;
+          }
+        })
+      );
+      data.photos = base64Photos.filter(Boolean) as string[];
+    }
+
     // Generate HTML content for PDF
-    const htmlContent = generateHTML(data);
+    const htmlContent = generateHTML(data, firmBranding, logoBase64);
 
     // Generate PDF using Puppeteer
     const browser = await getBrowser();
@@ -194,13 +244,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateHTML(data: ValuationReport): string {
+function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64: string | null): string {
   const {
-    companyName,
-    companySubtitle,
-    companyAddress,
-    companyContact,
-    companyEmail,
     valuerName,
     valuerQualification,
     valuerDesignation,
@@ -220,6 +265,13 @@ function generateHTML(data: ValuationReport): string {
     location,
   } = data;
 
+  const valuerInfo: ValuerInfo = {
+    name: valuerName,
+    qualification: valuerQualification,
+    designation: valuerDesignation,
+    categoryNo: valuerCategoryNo,
+  };
+
   const currentOwnersText = currentOwners.map(o => `${o.name} -${o.share} Share`).join('<br>');
   const currentOwnersShort = currentOwners.map(o => o.name).join(' & ');
   const fullAddressUpper = propertyAddress.fullAddress.toUpperCase();
@@ -228,246 +280,22 @@ function generateHTML(data: ValuationReport): string {
   const formatCurrency = (num: number) => `Rs${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}/-`;
   const formatNumber = (num: number, decimals = 2) => num.toFixed(decimals);
 
+  const headerHtml = renderHeader(branding, valuerInfo, logoBase64);
+  const footerHtml = renderFooter(branding);
+
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Times New Roman', Times, serif;
-      font-size: 11pt;
-      line-height: 1.4;
-      color: #000;
-    }
-    .page {
-      page-break-after: always;
-      padding: 10mm;
-    }
-    .page:last-child {
-      page-break-after: auto;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 2px solid #000;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-    }
-    .header-left {
-      color: #1a5276;
-    }
-    .header-left h1 {
-      font-size: 16pt;
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-    .header-left p {
-      font-size: 10pt;
-      margin: 1px 0;
-    }
-    .header-right {
-      text-align: right;
-    }
-    .header-right p {
-      font-size: 10pt;
-      margin: 1px 0;
-    }
-    .title {
-      text-align: center;
-      font-weight: bold;
-      margin: 20px 0;
-      font-size: 12pt;
-    }
-    .owners {
-      margin: 15px 0;
-    }
-    .ref-date {
-      display: flex;
-      justify-content: space-between;
-      margin: 20px 0;
-      font-weight: bold;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 15px 0;
-    }
-    th, td {
-      border: 1px solid #000;
-      padding: 6px 8px;
-      text-align: left;
-      vertical-align: top;
-      font-size: 10pt;
-    }
-    th {
-      background-color: #f0f0f0;
-      font-weight: bold;
-    }
-    .section-title {
-      font-weight: bold;
-      font-size: 12pt;
-      margin: 20px 0 10px 0;
-      text-decoration: underline;
-      page-break-after: avoid;
-    }
-
-    /* Prevent orphaned headings and awkward page breaks */
-    h1, h2, h3, h4, h5, h6, .section-title, .part-title, strong {
-      page-break-after: avoid;
-      orphans: 3;
-      widows: 3;
-    }
-
-    table {
-      page-break-inside: avoid;
-    }
-
-    tr {
-      page-break-inside: avoid;
-    }
-
-    .keep-together {
-      page-break-inside: avoid;
-    }
-
-    .section-block {
-      page-break-inside: avoid;
-    }
-
-    .part-header {
-      page-break-after: avoid;
-      page-break-inside: avoid;
-    }
-
-    p + table, .section-title + table, strong + table {
-      page-break-before: avoid;
-    }
-
-    /* Ensure parts start cleanly */
-    .new-section {
-      page-break-before: always;
-    }
-
-    /* Keep section title with following content */
-    .section-title + table,
-    .section-title + .specs-list,
-    .section-title + .calculation-box,
-    .section-title + p {
-      page-break-before: avoid;
-    }
-
-    /* Prevent awkward breaks inside calculation boxes */
-    .calculation-box {
-      page-break-inside: avoid;
-    }
-
-    .specs-list {
-      page-break-inside: avoid;
-    }
-
-    .declaration {
-      page-break-inside: avoid;
-    }
-    .calculation-box {
-      margin: 15px 0;
-      padding: 10px;
-    }
-    .calculation-line {
-      margin: 5px 0;
-    }
-    .final-value {
-      font-weight: bold;
-      font-size: 14pt;
-      text-align: center;
-      margin: 20px 0;
-      padding: 10px;
-      border: 2px solid #000;
-    }
-    .value-words {
-      text-align: center;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-    .declaration {
-      margin-top: 30px;
-    }
-    .signature {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 50px;
-    }
-    .photo-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      gap: 12px;
-      margin: 15px 0;
-      height: calc(100% - 60px);
-    }
-    .photo-item {
-      aspect-ratio: 1;
-      overflow: hidden;
-      border: 2px solid #333;
-      border-radius: 8px;
-    }
-    .photo-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .photo-caption {
-      text-align: center;
-      font-weight: bold;
-      font-size: 11pt;
-      margin: 10px 0;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #ccc;
-    }
-    .photo-page {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    .cover-photo {
-      text-align: center;
-      margin: 30px 0;
-    }
-    .cover-photo img {
-      max-width: 80%;
-      max-height: 400px;
-      object-fit: contain;
-    }
-    .specs-list {
-      margin: 15px 0;
-    }
-    .specs-list p {
-      margin: 8px 0;
-    }
+    ${getTemplateCSS(branding)}
   </style>
 </head>
 <body>
   <!-- Page 1: Cover Page -->
   <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <h1>${companyName}</h1>
-        <p>${companySubtitle}</p>
-        <p>${companyAddress}</p>
-        <p>${companyContact} ${companyEmail}</p>
-      </div>
-      <div class="header-right">
-        <p><strong>${valuerName}</strong></p>
-        <p>${valuerQualification}</p>
-        <p>${valuerDesignation}</p>
-        <p>${valuerCategoryNo}</p>
-      </div>
-    </div>
+    ${headerHtml}
 
     <div class="title">
       VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
@@ -496,24 +324,12 @@ function generateHTML(data: ValuationReport): string {
       <span>Ref : ${valuationInputs.referenceNo}</span>
       <span>Date :- ${valuationInputs.valuationDate}</span>
     </div>
+    ${footerHtml}
   </div>
 
   <!-- Page 2: General Details -->
   <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <h1>${companyName}</h1>
-        <p>${companySubtitle}</p>
-        <p>${companyAddress}</p>
-        <p>${companyContact} ${companyEmail}</p>
-      </div>
-      <div class="header-right">
-        <p><strong>${valuerName}</strong></p>
-        <p>${valuerQualification}</p>
-        <p>${valuerDesignation}</p>
-        <p>${valuerCategoryNo}</p>
-      </div>
-    </div>
+    ${headerHtml}
 
     <div class="title">
       VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
@@ -544,6 +360,7 @@ function generateHTML(data: ValuationReport): string {
       <tr><td>10</td><td>Proximity to civic amenities</td><td>${generalDetails.proximityToCivicAmenities}</td></tr>
       <tr><td>11</td><td>Means and proximity to surface communication by which the locality is served</td><td>${generalDetails.surfaceCommunication}</td></tr>
     </table>
+    ${footerHtml}
   </div>
 
   <!-- Page 3: Land & Improvements -->
@@ -575,6 +392,7 @@ function generateHTML(data: ValuationReport): string {
       <tr><td>26</td><td>(I) Name of tenant/ leases/ licenses etc.<br>(ii) Portion in their occupation.<br>(iii) Monthly or annual rent/ compensation.<br>(iv) Gross amount received for the whole property</td><td>N/A<br>N/A<br>N/A<br>N/A</td></tr>
       <tr><td>27</td><td>Are any of the occupants related to, or close business associates of the owner?</td><td>N/A</td></tr>
     </table>
+    ${footerHtml}
   </div>
 
   <!-- Page 4: More Details -->
@@ -606,6 +424,7 @@ function generateHTML(data: ValuationReport): string {
       <tr><td>43</td><td>For item of work done on contract, produce copies of agreement.</td><td>Not Available</td></tr>
       <tr><td>44</td><td>For item of work done by engaging labour directly, give detail rate of materials and labour supported by documentary proof.</td><td>Not available</td></tr>
     </table>
+    ${footerHtml}
   </div>
 
   <!-- Page 5: Building Technical Details -->
@@ -633,6 +452,7 @@ function generateHTML(data: ValuationReport): string {
       <tr><td>18</td><td>Underground pump – capacity & type of construction</td><td>${technicalDetails.undergroundPump}</td></tr>
       <tr><td>19</td><td>Overhead water tank – type and capacity</td><td>${technicalDetails.overheadTank}</td></tr>
     </table>
+    ${footerHtml}
   </div>
 
   <!-- Page 6: More Technical & Declaration -->
@@ -654,24 +474,12 @@ function generateHTML(data: ValuationReport): string {
         <span>Signature of Govt. Registered Valuer</span>
       </div>
     </div>
+    ${footerHtml}
   </div>
 
   <!-- Page 7: Valuation Calculation -->
   <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <h1>${companyName}</h1>
-        <p>${companySubtitle}</p>
-        <p>${companyAddress}</p>
-        <p>${companyContact} ${companyEmail}</p>
-      </div>
-      <div class="header-right">
-        <p><strong>${valuerName}</strong></p>
-        <p>${valuerQualification}</p>
-        <p>${valuerDesignation}</p>
-        <p>${valuerCategoryNo}</p>
-      </div>
-    </div>
+    ${headerHtml}
 
     <div class="ref-date">
       <span>Ref : ${valuationInputs.referenceNo}</span>
@@ -701,6 +509,7 @@ function generateHTML(data: ValuationReport): string {
     </div>
 
     <p>On the basis of above specification. I assess the cost of construction on covered area basis.</p>
+    ${footerHtml}
   </div>
 
   <!-- Page 8: Calculations -->
@@ -763,6 +572,7 @@ function generateHTML(data: ValuationReport): string {
       <p class="calculation-line" style="margin-left: 100px;">(L and DO RATES for the comparable region)</p>
       <p class="calculation-line" style="margin-left: 100px;">(${valuationInputs.landRateSource})</p>
     </div>
+    ${footerHtml}
   </div>
 
   <!-- Page 9: Final Calculations -->
@@ -790,6 +600,7 @@ function generateHTML(data: ValuationReport): string {
     <div class="value-words">
       [ ${calculatedValues.valueInWords} ]
     </div>
+    ${footerHtml}
   </div>
 
   <!-- Photo Pages - 6 photos per page in 2x3 grid -->
@@ -814,6 +625,7 @@ function generateHTML(data: ValuationReport): string {
             `).join('')}
           </div>
         </div>
+        ${footerHtml}
       </div>
       `;
     }
@@ -824,20 +636,7 @@ function generateHTML(data: ValuationReport): string {
   <!-- Location Map Page -->
   ${location ? `
   <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <h1>${companyName}</h1>
-        <p>${companySubtitle}</p>
-        <p>${companyAddress}</p>
-        <p>${companyContact} ${companyEmail}</p>
-      </div>
-      <div class="header-right">
-        <p><strong>${valuerName}</strong></p>
-        <p>${valuerQualification}</p>
-        <p>${valuerDesignation}</p>
-        <p>${valuerCategoryNo}</p>
-      </div>
-    </div>
+    ${headerHtml}
 
     <p class="section-title" style="text-align: center; text-decoration: none;">LOCATION MAP</p>
     <p style="text-align: center; margin-bottom: 20px; font-size: 10pt;">
@@ -870,6 +669,7 @@ function generateHTML(data: ValuationReport): string {
         Map data © Google Maps
       </p>
     </div>
+    ${footerHtml}
   </div>
   ` : ''}
 

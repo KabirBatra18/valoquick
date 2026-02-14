@@ -9,6 +9,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import TrialBanner from './TrialBanner';
 import PricingSection from './PricingSection';
 import TeamManagement from './TeamManagement';
+import BrandingSettings from './BrandingSettings';
 
 interface DashboardProps {
   onOpenReport: (reportId: string) => void;
@@ -16,7 +17,7 @@ interface DashboardProps {
 
 export default function Dashboard({ onOpenReport }: DashboardProps) {
   const { user, logout } = useAuth();
-  const { firm } = useFirm();
+  const { firm, canEditBranding } = useFirm();
   const firmId = firm?.id || null;
   const userId = user?.uid || null;
 
@@ -38,6 +39,7 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
+  const [showBranding, setShowBranding] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -153,6 +155,9 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
       {/* Team Management Modal */}
       {showTeam && <TeamManagement onClose={() => setShowTeam(false)} />}
 
+      {/* Branding Settings Modal */}
+      {showBranding && <BrandingSettings onClose={() => setShowBranding(false)} />}
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
@@ -165,6 +170,19 @@ export default function Dashboard({ onOpenReport }: DashboardProps) {
 
             {/* Actions */}
             <div className="flex items-center gap-1.5 sm:gap-3">
+              {/* Branding Button */}
+              <button
+                onClick={() => canEditBranding && setShowBranding(true)}
+                className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-surface-100 border border-surface-200 transition-all duration-300 ${
+                  canEditBranding ? 'hover:bg-surface-200 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                }`}
+                title={canEditBranding ? 'Branding Settings' : 'Only owners and admins can edit branding'}
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+              </button>
+
               {/* Team Button */}
               <button
                 onClick={() => setShowTeam(true)}

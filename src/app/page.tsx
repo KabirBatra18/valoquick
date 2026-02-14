@@ -229,29 +229,6 @@ export default function Home() {
     setFormData(prev => ({ ...prev, ...newData }));
   }, []);
 
-  const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = () => resolve(base64);
-      img.src = base64;
-    });
-  };
-
   const handleGenerate = async (data: ValuationReport) => {
     setIsGenerating(true);
     setGenerationStep(0);
@@ -284,18 +261,9 @@ export default function Home() {
       setGenerationProgress(10);
       await new Promise(resolve => setTimeout(resolve, 300));
 
+      // Photos are already compressed and uploaded to Storage — URLs are small
       setGenerationStep(1);
-      setGenerationProgress(20);
-
-      const compressedPhotos: string[] = [];
-      for (let i = 0; i < data.photos.length; i++) {
-        const compressed = await compressImage(data.photos[i]);
-        compressedPhotos.push(compressed);
-        const imageProgress = 20 + ((i + 1) / data.photos.length) * 30;
-        setGenerationProgress(imageProgress);
-      }
-
-      const optimizedData = { ...data, photos: compressedPhotos };
+      setGenerationProgress(50);
 
       setGenerationStep(2);
       setGenerationProgress(55);
@@ -309,7 +277,7 @@ export default function Home() {
 
       const response = await authenticatedFetch('/api/generate', {
         method: 'POST',
-        body: JSON.stringify(optimizedData),
+        body: JSON.stringify(data),
       });
 
       clearInterval(progressInterval);
@@ -628,6 +596,7 @@ export default function Home() {
             setActiveSection={setActiveStep}
             initialData={formData}
             onDataChange={handleFormDataChange}
+            reportId={currentReportId || undefined}
           />
 
           <div className="nav-footer hidden lg:flex">

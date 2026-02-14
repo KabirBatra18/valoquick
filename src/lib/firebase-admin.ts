@@ -183,6 +183,22 @@ export async function verifyFirmOwner(userId: string, firmId: string): Promise<b
   }
 }
 
+// Verify user is an owner or admin of the firm
+export async function verifyFirmAdmin(userId: string, firmId: string): Promise<boolean> {
+  try {
+    const db = getAdminDb();
+    const memberDoc = await db.collection('firms').doc(firmId)
+      .collection('members').doc(userId).get();
+
+    if (!memberDoc.exists) return false;
+    const role = memberDoc.data()?.role;
+    return role === 'owner' || role === 'admin';
+  } catch (error) {
+    console.error('Firm admin verification error:', error);
+    return false;
+  }
+}
+
 // Session validation result type
 export interface SessionResult {
   valid: boolean;

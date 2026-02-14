@@ -4,14 +4,17 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
 import { clearAccessRevokedFlag } from '@/lib/auth';
+import { TemplateStyle } from '@/types/branding';
+import TemplateSelector from './branding/TemplateSelector';
 
 export default function OnboardingFlow() {
   const { user, userDoc, logout, refreshUserDoc } = useAuth();
-  const { pendingInvites, createNewFirm, acceptFirmInvite, loading, error, trialBlocked } = useFirm();
-  const [step, setStep] = useState<'choice' | 'create' | 'invites' | 'revoked' | 'blocked'>(() =>
+  const { pendingInvites, createNewFirm, acceptFirmInvite, updateBranding, loading, error, trialBlocked } = useFirm();
+  const [step, setStep] = useState<'choice' | 'create' | 'template' | 'invites' | 'revoked' | 'blocked'>(() =>
     userDoc?.accessRevoked ? 'revoked' : 'choice'
   );
   const [firmName, setFirmName] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateStyle>('classic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -29,18 +32,32 @@ export default function OnboardingFlow() {
     }
   };
 
-  const handleCreateFirm = async (e: React.FormEvent) => {
+  const handleContinueToTemplate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firmName.trim()) {
       setLocalError('Please enter a firm name');
       return;
     }
+    setLocalError(null);
+    setStep('template');
+  };
 
+  const handleCreateFirm = async () => {
     setIsSubmitting(true);
     setLocalError(null);
 
     try {
       await createNewFirm(firmName.trim());
+      // After firm is created, save template choice as branding
+      try {
+        await updateBranding({
+          templateStyle: selectedTemplate,
+          firmName: firmName.trim(),
+        });
+      } catch {
+        // Non-critical - branding can be set later
+        console.error('Failed to save initial branding');
+      }
     } catch (err) {
       if (err instanceof Error && err.message === 'TRIAL_BLOCKED') {
         setStep('blocked');
@@ -181,7 +198,7 @@ export default function OnboardingFlow() {
               This will be the name of your organization. You can invite team members after setup.
             </p>
 
-            <form onSubmit={handleCreateFirm}>
+            <form onSubmit={handleContinueToTemplate}>
               <div className="mb-6">
                 <label htmlFor="firmName" className="block text-sm font-medium text-gray-300 mb-2">
                   Firm Name
@@ -199,8 +216,43 @@ export default function OnboardingFlow() {
 
               <button
                 type="submit"
-                disabled={isSubmitting || !firmName.trim()}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={!firmName.trim()}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Continue
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Template Selection Step */}
+        {step === 'template' && (
+          <div className="bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-700">
+            <button
+              onClick={() => setStep('create')}
+              className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+
+            <h2 className="text-xl font-semibold text-white mb-2">Choose a report template</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              This sets the style for your valuation report headers and footers. You can change it anytime from settings.
+            </p>
+
+            <TemplateSelector
+              selected={selectedTemplate}
+              onSelect={setSelectedTemplate}
+            />
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleCreateFirm}
+                disabled={isSubmitting}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -211,7 +263,18 @@ export default function OnboardingFlow() {
                   'Create Firm'
                 )}
               </button>
-            </form>
+            </div>
+
+            <button
+              onClick={async () => {
+                setSelectedTemplate('classic');
+                await handleCreateFirm();
+              }}
+              disabled={isSubmitting}
+              className="w-full mt-2 py-2 text-gray-400 hover:text-white text-sm transition-colors"
+            >
+              Skip for now (use Classic)
+            </button>
           </div>
         )}
 

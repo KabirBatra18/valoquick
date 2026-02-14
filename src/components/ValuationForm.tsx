@@ -10,6 +10,8 @@ import {
   calculateValues,
 } from '@/types/valuation';
 import { ReportFormData } from '@/types/report';
+import { useFirm } from '@/contexts/FirmContext';
+import { uploadReportPhoto } from '@/lib/photo-storage';
 import SwipeableField from './SwipeableField';
 import SwipeHint from './SwipeHint';
 import HiddenFieldsModal from './HiddenFieldsModal';
@@ -21,6 +23,7 @@ interface ValuationFormProps {
   setActiveSection: (section: number) => void;
   initialData?: ReportFormData;
   onDataChange?: (data: ReportFormData) => void;
+  reportId?: string;
 }
 
 // Reusable Input Component
@@ -809,7 +812,10 @@ const EXTERIOR_OPTIONS = [
   { value: 'Weather coat paint', label: 'Weather Coat Paint' },
 ];
 
-export default function ValuationForm({ onGenerate, activeSection, initialData, onDataChange }: ValuationFormProps) {
+export default function ValuationForm({ onGenerate, activeSection, initialData, onDataChange, reportId }: ValuationFormProps) {
+  const { firm } = useFirm();
+  const firmId = firm?.id;
+
   // Property Address
   const [propertyNo, setPropertyNo] = useState(initialData?.propertyNo || '');
   const [block, setBlock] = useState(initialData?.block || '');
@@ -997,9 +1003,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [valuationMethodology, setValuationMethodology] = useState(initialData?.valuationMethodology || '');
   const [variationJustification, setVariationJustification] = useState(initialData?.variationJustification || '');
 
-  // Photos
+  // Photos (stored as Firebase Storage URLs)
   const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
   const [photoPage, setPhotoPage] = useState(0);
+  const [uploadingPhotos, setUploadingPhotos] = useState(0);
   const PHOTOS_PER_PAGE = 6;
 
   // Location
@@ -1278,37 +1285,19 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     hiddenFields, onDataChange
   ]);
 
-  // Crop image to square
-  const cropToSquare = (imageSrc: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const size = Math.min(img.width, img.height);
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const offsetX = (img.width - size) / 2;
-          const offsetY = (img.height - size) / 2;
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
-          resolve(canvas.toDataURL('image/jpeg', 0.9));
-        } else {
-          resolve(imageSrc);
-        }
-      };
-      img.src = imageSrc;
-    });
-  };
-
+  // Upload photo to Firebase Storage (compressed + cropped server-side)
   const processAndAddPhoto = useCallback(async (file: File) => {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const croppedImage = await cropToSquare(reader.result as string);
-      setPhotos((prev) => [...prev, croppedImage]);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+    if (!firmId || !reportId) return;
+    setUploadingPhotos((prev) => prev + 1);
+    try {
+      const url = await uploadReportPhoto(firmId, reportId, file);
+      setPhotos((prev) => [...prev, url]);
+    } catch (err) {
+      console.error('Failed to upload photo:', err);
+    } finally {
+      setUploadingPhotos((prev) => prev - 1);
+    }
+  }, [firmId, reportId]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach((file) => {
@@ -1365,8 +1354,22 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     };
     const calculatedValues = calculateValues(valuationInputs, floorArea);
 
+    // Use firm branding if available, fall back to defaults
+    const branding = firm?.branding;
+    const companyDetails = branding?.firmName ? {
+      companyName: branding.firmName,
+      companySubtitle: branding.subtitle || '',
+      companyAddress: branding.address || '',
+      companyContact: branding.contact || '',
+      companyEmail: branding.email || '',
+      valuerName: DEFAULT_COMPANY_DETAILS.valuerName,
+      valuerQualification: DEFAULT_COMPANY_DETAILS.valuerQualification,
+      valuerDesignation: DEFAULT_COMPANY_DETAILS.valuerDesignation,
+      valuerCategoryNo: DEFAULT_COMPANY_DETAILS.valuerCategoryNo,
+    } : DEFAULT_COMPANY_DETAILS;
+
     const reportData: ValuationReport = {
-      ...DEFAULT_COMPANY_DETAILS,
+      ...companyDetails,
       propertyAddress: { propertyNo, block, area, city, fullAddress },
       boundaries: {
         north: northBoundary, south: southBoundary, east: eastBoundary, west: westBoundary,
@@ -2703,6 +2706,19 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               </div>
             </div>
 
+            {/* Upload progress indicator */}
+            {uploadingPhotos > 0 && (
+              <div className="flex items-center gap-2 mt-3 p-2.5 rounded-lg bg-brand/10 border border-brand/20">
+                <svg className="animate-spin w-4 h-4 text-brand flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-xs text-brand font-medium">
+                  Uploading {uploadingPhotos} photo{uploadingPhotos !== 1 ? 's' : ''}...
+                </span>
+              </div>
+            )}
+
             {/* Photo Grid - 2x3 layout */}
             {photos.length > 0 && (
               <div className="mt-4 lg:mt-6">
@@ -2793,7 +2809,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
                 {/* Info text */}
                 <p className="text-[10px] lg:text-xs text-text-tertiary text-center mt-3 lg:mt-4">
-                  Photos auto-cropped to square. 6 per page in report.
+                  Photos compressed and uploaded to cloud. 6 per page in report.
                 </p>
               </div>
             )}

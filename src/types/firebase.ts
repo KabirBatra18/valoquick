@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { FirmBranding } from './branding';
 
 export interface FirebaseUser {
   uid: string;
@@ -29,6 +30,7 @@ export interface Firm {
   name: string;
   createdAt: Timestamp;
   createdBy: string;
+  branding?: FirmBranding;
 }
 
 export interface FirmMember {
