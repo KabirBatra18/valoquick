@@ -2,7 +2,6 @@
 
 import { getDeviceFingerprint } from './fingerprint';
 import {
-  getTrialByDevice,
   createOrUpdateTrialRecord,
   incrementTrialUsage,
   getUserTrialCount,
@@ -62,11 +61,8 @@ export async function checkTrialStatus(
   // User without a firm: fallback to device/user-based trial
   const deviceId = await getDeviceFingerprint();
 
-  // Ensure device is linked to user
-  await createOrUpdateTrialRecord(deviceId, userId);
-
-  // Check device trial limit
-  const deviceTrial = await getTrialByDevice(deviceId);
+  // Ensure device is linked to user (returns current trial data, avoids extra read)
+  const deviceTrial = await createOrUpdateTrialRecord(deviceId, userId);
   if (deviceTrial && deviceTrial.reportsGenerated >= TRIAL_LIMIT) {
     return {
       allowed: false,
