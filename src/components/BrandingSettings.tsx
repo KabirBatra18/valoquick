@@ -131,12 +131,12 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-surface-200 px-4 lg:px-6 overflow-x-auto">
+        <div className="flex border-b border-surface-200 px-4 lg:px-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
+              className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-brand text-brand'
                   : 'border-transparent text-text-secondary hover:text-text-primary'
