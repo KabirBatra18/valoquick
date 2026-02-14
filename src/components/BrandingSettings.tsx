@@ -14,7 +14,7 @@ interface BrandingSettingsProps {
   onClose: () => void;
 }
 
-type Tab = 'details' | 'header' | 'footer';
+type Tab = 'details' | 'design' | 'header' | 'footer';
 
 export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
   const { firm, updateBranding } = useFirm();
@@ -115,6 +115,7 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'details', label: 'Firm Details' },
+    { id: 'design', label: 'Design' },
     { id: 'header', label: 'Header' },
     { id: 'footer', label: 'Footer' },
   ];
@@ -133,28 +134,6 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-        </div>
-
-        {/* Template + Color — always visible, outside tabs */}
-        <div className="px-4 lg:px-6 py-4 border-b border-surface-200">
-          <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-            <div className="flex-1 min-w-0">
-              <label className="block text-xs font-medium text-text-secondary mb-2">Template</label>
-              <TemplateSelector
-                selected={formData.templateStyle}
-                onSelect={(style) => updateField('templateStyle', style)}
-                primaryColor={formData.header.primaryColor}
-                compact
-              />
-            </div>
-            <div className="lg:w-52 flex-shrink-0">
-              <label className="block text-xs font-medium text-text-secondary mb-2">Brand Color</label>
-              <BrandingColorPicker
-                color={formData.header.primaryColor}
-                onChange={(c) => updateHeader('primaryColor', c)}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Message */}
@@ -257,6 +236,35 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                     placeholder="e.g., info@yourfirm.com"
                   />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Design Tab */}
+          {activeTab === 'design' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary mb-1">Report Template</h3>
+                <p className="text-text-tertiary text-xs mb-3">
+                  Choose the visual style for your report headers and footers
+                </p>
+                <TemplateSelector
+                  selected={formData.templateStyle}
+                  onSelect={(style) => updateField('templateStyle', style)}
+                  primaryColor={formData.header.primaryColor}
+                  compact
+                />
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary mb-1">Brand Color</h3>
+                <p className="text-text-tertiary text-xs mb-3">
+                  Used for header accents, borders, and highlights
+                </p>
+                <BrandingColorPicker
+                  color={formData.header.primaryColor}
+                  onChange={(c) => updateHeader('primaryColor', c)}
+                />
               </div>
             </div>
           )}

@@ -99,7 +99,10 @@ export default function LogoUploader({ logoUrl, onLogoSelected, onLogoRemove, is
             {isDragActive ? 'Drop your logo here' : 'Click or drag to upload logo'}
           </p>
           <p className="text-text-tertiary text-xs">
-            PNG, JPG, WebP, or SVG (max 2MB)
+            PNG, JPG, WebP, or SVG — max 2MB
+          </p>
+          <p className="text-text-tertiary text-[10px]">
+            Recommended: 400×120px or wider. Displays at max 180×60px in reports.
           </p>
         </div>
       )}
