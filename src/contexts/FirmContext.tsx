@@ -18,6 +18,7 @@ import {
   updateFirmBranding,
 } from '@/lib/firestore';
 import { getDeviceFingerprint, getPersistentId } from '@/lib/fingerprint';
+import { authenticatedFetch } from '@/lib/api-client';
 
 // Trial eligibility check response
 interface TrialEligibility {
@@ -27,16 +28,14 @@ interface TrialEligibility {
 
 // Check trial eligibility via server-side API (captures real IP)
 async function checkTrialEligibility(
-  userId: string,
   deviceId: string,
   persistentDeviceId: string,
   firmId?: string | null
 ): Promise<TrialEligibility> {
   try {
-    const response = await fetch('/api/trial/check-eligibility', {
+    const response = await authenticatedFetch('/api/trial/check-eligibility', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, deviceId, persistentDeviceId, firmId }),
+      body: JSON.stringify({ deviceId, persistentDeviceId, firmId }),
     });
 
     if (!response.ok) {
@@ -55,16 +54,14 @@ async function checkTrialEligibility(
 
 // Record trial activation after firm is created
 async function recordTrialActivation(
-  userId: string,
   deviceId: string,
   persistentDeviceId: string,
   firmId: string
 ): Promise<void> {
   try {
-    await fetch('/api/trial/check-eligibility', {
+    await authenticatedFetch('/api/trial/check-eligibility', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, deviceId, persistentDeviceId, firmId }),
+      body: JSON.stringify({ deviceId, persistentDeviceId, firmId }),
     });
   } catch (error) {
     console.error('Failed to record trial activation:', error);
@@ -119,7 +116,7 @@ export function FirmProvider({ children }: { children: ReactNode }) {
     try {
       const deviceId = await getDeviceFingerprint();
       const persistentId = await getPersistentId();
-      const eligibility = await checkTrialEligibility(user.uid, deviceId, persistentId, userDoc?.firmId);
+      const eligibility = await checkTrialEligibility(deviceId, persistentId, userDoc?.firmId);
 
       setTrialBlocked(!eligibility.eligible);
       return eligibility.eligible;
@@ -190,7 +187,7 @@ export function FirmProvider({ children }: { children: ReactNode }) {
     // Check eligibility before creating firm
     const deviceId = await getDeviceFingerprint();
     const persistentId = await getPersistentId();
-    const eligibility = await checkTrialEligibility(user.uid, deviceId, persistentId, userDoc?.firmId);
+    const eligibility = await checkTrialEligibility(deviceId, persistentId, userDoc?.firmId);
 
     if (!eligibility.eligible) {
       setTrialBlocked(true);
@@ -202,7 +199,7 @@ export function FirmProvider({ children }: { children: ReactNode }) {
       const firmId = await createFirm(name, user.uid, user.email || '', user.displayName || '');
 
       // Record trial activation (links device + IP to this firm)
-      await recordTrialActivation(user.uid, deviceId, persistentId, firmId);
+      await recordTrialActivation(deviceId, persistentId, firmId);
 
       await refreshUserDoc();
       await refreshFirm();

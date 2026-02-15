@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, verifyAuth } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { notifyAbuseAlert, notifyNewFirm } from '@/lib/email';
 
@@ -71,10 +71,20 @@ function getClientIp(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, deviceId, persistentDeviceId, firmId } = body;
+    // Verify the caller is authenticated
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated || !authResult.user) {
+      return NextResponse.json(
+        { error: authResult.error || 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
-    if (!userId || !deviceId) {
+    const body = await request.json();
+    const { deviceId, persistentDeviceId, firmId } = body;
+    const userId = authResult.user.uid; // Use authenticated user's ID, not from body
+
+    if (!deviceId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -167,10 +177,20 @@ export async function POST(request: NextRequest) {
 // Record that a trial was activated (called when firm is created)
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, deviceId, persistentDeviceId, firmId } = body;
+    // Verify the caller is authenticated
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated || !authResult.user) {
+      return NextResponse.json(
+        { error: authResult.error || 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
-    if (!userId || !deviceId || !firmId) {
+    const body = await request.json();
+    const { deviceId, persistentDeviceId, firmId } = body;
+    const userId = authResult.user.uid; // Use authenticated user's ID, not from body
+
+    if (!deviceId || !firmId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, verifyAuth, verifyFirmOwner } from '@/lib/firebase-admin';
+import { adminDb, verifyAuth, verifySession, verifyFirmOwner } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
@@ -9,6 +9,16 @@ export async function POST(req: NextRequest) {
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json(
         { error: authResult.error || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Session check
+    const sessionId = req.headers.get('x-session-id');
+    const sessionResult = await verifySession(authResult.user.uid, sessionId);
+    if (!sessionResult.valid) {
+      return NextResponse.json(
+        { error: sessionResult.error || 'Session expired' },
         { status: 401 }
       );
     }

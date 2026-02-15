@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAuth, verifyFirmAdmin, getAdminDb } from '@/lib/firebase-admin';
+import { verifyAuth, verifyFirmAdmin, verifySession, getAdminDb } from '@/lib/firebase-admin';
 import { FirmBranding } from '@/types/branding';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -14,6 +14,17 @@ export async function PUT(request: NextRequest) {
     }
 
     const userId = authResult.user.uid;
+
+    // Session check
+    const sessionId = request.headers.get('x-session-id');
+    const sessionResult = await verifySession(userId, sessionId);
+    if (!sessionResult.valid) {
+      return NextResponse.json(
+        { error: sessionResult.error || 'Session expired' },
+        { status: 401 }
+      );
+    }
+
     const { firmId, branding } = (await request.json()) as {
       firmId: string;
       branding: Partial<FirmBranding>;

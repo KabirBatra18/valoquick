@@ -12,6 +12,7 @@ import { useFirm } from '@/contexts/FirmContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useReports } from '@/hooks/useReports';
 import { updateReportStatus as updateReportStatusFirestore } from '@/lib/firestore';
+import ReportEditor from '@/components/ReportEditor';
 import { authenticatedFetch } from '@/lib/api-client';
 import { recordTrialUsage } from '@/lib/trial';
 
@@ -28,7 +29,7 @@ const steps = [
 const generationSteps = [
   { id: 0, label: 'Preparing data', description: 'Validating and organizing report data...' },
   { id: 1, label: 'Processing images', description: 'Optimizing photos for the report...' },
-  { id: 2, label: 'Generating PDF', description: 'Creating your valuation report...' },
+  { id: 2, label: 'Building report', description: 'Generating your report preview...' },
   { id: 3, label: 'Finalizing', description: 'Almost done...' },
 ];
 
@@ -41,8 +42,8 @@ const GeneratingOverlay = ({ currentStep, progress }: { currentStep: number; pro
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <h3 className="text-lg font-bold text-text-primary">Generating Report</h3>
-        <p className="text-sm text-text-tertiary mt-1">Please wait while we create your PDF</p>
+        <h3 className="text-lg font-bold text-text-primary">Preparing Preview</h3>
+        <p className="text-sm text-text-tertiary mt-1">Please wait while we build your report</p>
       </div>
 
       <div className="mb-6">
@@ -137,6 +138,8 @@ export default function Home() {
   const [generatedFiles, setGeneratedFiles] = useState<{ pdf?: string; docx?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -275,7 +278,7 @@ export default function Home() {
         });
       }, 500);
 
-      const response = await authenticatedFetch('/api/generate', {
+      const response = await authenticatedFetch('/api/generate?preview=true', {
         method: 'POST',
         body: JSON.stringify(data),
       });
@@ -295,7 +298,52 @@ export default function Home() {
       setGenerationProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      setGeneratedFiles(result);
+      // Open the preview editor with the generated HTML
+      setPreviewHtml(result.html);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsGenerating(false);
+      setGenerationStep(0);
+      setGenerationProgress(0);
+    }
+  };
+
+  const handleExportPdf = async (editedHtml: string) => {
+    setIsExporting(true);
+    try {
+      const response = await authenticatedFetch('/api/export-pdf', {
+        method: 'POST',
+        body: JSON.stringify({ html: editedHtml }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to export PDF');
+      }
+
+      const result = await response.json();
+
+      // Trigger immediate download
+      const byteCharacters = atob(result.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'Valuation_Report.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Store for re-download from sidebar
+      setGeneratedFiles({ pdf: result.pdf });
+
+      // Close editor
+      setPreviewHtml(null);
 
       // Mark report as concluded
       if (currentReportId && firmId) {
@@ -306,7 +354,7 @@ export default function Home() {
         }
       }
 
-      // Record trial usage after successful PDF generation (if not subscribed)
+      // Record trial usage (if not subscribed)
       if (!isSubscribed && userId) {
         try {
           await recordTrialUsage(userId, firmId);
@@ -316,12 +364,15 @@ export default function Home() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Failed to export PDF');
+      setPreviewHtml(null);
     } finally {
-      setIsGenerating(false);
-      setGenerationStep(0);
-      setGenerationProgress(0);
+      setIsExporting(false);
     }
+  };
+
+  const handleBackFromEditor = () => {
+    setPreviewHtml(null);
   };
 
   const downloadFile = (base64Data: string, filename: string, mimeType: string) => {
@@ -376,6 +427,15 @@ export default function Home() {
     <div className="flex min-h-screen bg-surface-50 text-text-primary">
       {isGenerating && (
         <GeneratingOverlay currentStep={generationStep} progress={generationProgress} />
+      )}
+
+      {previewHtml && (
+        <ReportEditor
+          html={previewHtml}
+          onExportPdf={handleExportPdf}
+          onBack={handleBackFromEditor}
+          isExporting={isExporting}
+        />
       )}
 
       <aside className="w-80 border-r border-surface-200 bg-surface-100 flex flex-col fixed inset-y-0 z-50 h-screen hidden lg:flex">
@@ -470,7 +530,7 @@ export default function Home() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <span>Generate Report</span>
+                <span>Preview Report</span>
               </>
             )}
           </button>

@@ -224,8 +224,8 @@ export async function verifySession(userId: string, sessionId: string | null): P
     const storedSessionId = userData?.currentSessionId;
 
     if (!storedSessionId) {
-      // User has no session stored - might be old account, allow access
-      return { valid: true };
+      // No session stored — force re-login to establish a session
+      return { valid: false, error: 'No active session. Please sign in again.' };
     }
 
     if (storedSessionId !== sessionId) {
@@ -235,7 +235,7 @@ export async function verifySession(userId: string, sessionId: string | null): P
     return { valid: true };
   } catch (error) {
     console.error('Session verification error:', error);
-    // On error, allow access to avoid blocking legitimate users
-    return { valid: true };
+    // Fail closed — deny access when we can't verify
+    return { valid: false, error: 'Session verification unavailable. Please try again.' };
   }
 }
