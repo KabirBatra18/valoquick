@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useMotionValue, useTransform, useAnimation } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useCallback, useState, useEffect, useRef } from 'react';
 
 interface SwipeableFieldProps {
@@ -21,7 +21,6 @@ export default function SwipeableField({
   children,
 }: SwipeableFieldProps) {
   const x = useMotionValue(0);
-  const controls = useAnimation();
   const [isMobile, setIsMobile] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,12 +96,8 @@ export default function SwipeableField({
         onRestoreRef.current(fieldNameRef.current);
       }
 
-      // Snap back
-      controls.start({
-        x: 0,
-        transition: { type: 'spring', stiffness: 600, damping: 35, mass: 0.6 },
-      });
-      x.set(0);
+      // Spring back — animate the motionValue directly for butter-smooth result
+      animate(x, 0, { type: 'spring', stiffness: 600, damping: 35, mass: 0.6 });
       isSwiping.current = false;
     };
 
@@ -115,7 +110,7 @@ export default function SwipeableField({
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
     };
-  }, [isMobile, x, controls]);
+  }, [isMobile, x]);
 
   const handleDesktopHide = useCallback(
     (e: React.MouseEvent) => {
@@ -171,7 +166,6 @@ export default function SwipeableField({
       )}
 
       <motion.div
-        animate={controls}
         style={{ x, willChange: 'transform' }}
         className="relative z-10"
       >
