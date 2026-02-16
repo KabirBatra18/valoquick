@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SavedReport } from '@/types/report';
+import { SavedReport, REPORT_TEMPLATES, ReportTemplateId } from '@/types/report';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
 import { useReports } from '@/hooks/useReports';
@@ -16,7 +16,7 @@ import LanguageToggle from './LanguageToggle';
 import ReferralCard from './ReferralCard';
 
 interface DashboardProps {
-  onOpenReport: (reportId: string) => void;
+  onOpenReport: (reportId: string, templateId?: ReportTemplateId) => void;
   onRedownloadPdf?: (reportId: string) => void;
   redownloadingId?: string | null;
 }
@@ -50,6 +50,7 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showTemplateSelect, setShowTemplateSelect] = useState(false);
   const [referralDismissed, setReferralDismissed] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('valoquick_referral_dismissed') === 'true';
@@ -74,18 +75,20 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
     localStorage.setItem('valoquick_theme', newTheme);
   };
 
-  const handleCreateNew = async () => {
-    // Check if user can generate reports (either subscribed or has trial remaining)
+  const handleCreateNew = () => {
     if (!canGenerateReport) {
       setShowPricing(true);
       return;
     }
+    setShowTemplateSelect(true);
+  };
 
+  const handleTemplateSelect = async (templateId: ReportTemplateId) => {
+    setShowTemplateSelect(false);
     setIsCreating(true);
     try {
       const reportId = await createNewReport();
-      // Trial usage is now recorded after successful PDF generation in page.tsx
-      onOpenReport(reportId);
+      onOpenReport(reportId, templateId);
     } catch (err) {
       console.error('Error creating report:', err);
     } finally {
@@ -172,6 +175,44 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
 
       {/* Branding Settings Modal */}
       {showBranding && <BrandingSettings onClose={() => setShowBranding(false)} />}
+
+      {/* Template Selection Modal */}
+      {showTemplateSelect && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowTemplateSelect(false)}>
+          <div className="bg-surface-100 sm:rounded-2xl rounded-t-2xl w-full sm:max-w-lg max-h-[85vh] overflow-hidden border-t sm:border border-surface-200" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-surface-200">
+              <h2 className="text-lg font-bold text-text-primary">New Report</h2>
+              <p className="text-sm text-text-tertiary mt-1">Choose a template to get started</p>
+            </div>
+            <div className="overflow-y-auto p-3 space-y-2 max-h-[60vh]">
+              {REPORT_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  onClick={() => handleTemplateSelect(tmpl.id)}
+                  className="w-full flex items-start gap-3 p-4 rounded-xl bg-surface-200/50 hover:bg-surface-200 border border-transparent hover:border-brand/30 transition-all text-left"
+                >
+                  <span className="text-2xl mt-0.5">{tmpl.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-text-primary">{tmpl.name}</p>
+                    <p className="text-xs text-text-tertiary mt-0.5">{tmpl.subtitle}</p>
+                    {tmpl.bankName && (
+                      <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 bg-brand/10 text-brand rounded-full font-medium">
+                        {tmpl.bankName}
+                      </span>
+                    )}
+                  </div>
+                  <svg className="w-5 h-5 text-text-tertiary mt-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+            <div className="p-4 border-t border-surface-200">
+              <button onClick={() => setShowTemplateSelect(false)} className="w-full btn btn-secondary py-2.5 text-sm">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">

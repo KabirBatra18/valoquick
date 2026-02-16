@@ -323,6 +323,7 @@ export async function createReport(
   const reportId = reportRef.id;
 
   const defaultFormData: ReportFormData = {
+    templateId: 'custom',
     propertyAddress: '',
     nearbyLandmark: '',
     landType: '',

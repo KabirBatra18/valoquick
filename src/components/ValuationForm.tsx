@@ -1177,6 +1177,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   useEffect(() => {
     if (onDataChange) {
       onDataChange({
+        templateId: initialData?.templateId || 'custom',
         propertyAddress,
         nearbyLandmark,
         landType,

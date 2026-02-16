@@ -6,7 +6,7 @@ import ValuationForm from '@/components/ValuationForm';
 import LandingPage from '@/components/LandingPage';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import { ValuationReport } from '@/types/valuation';
-import { ReportFormData, DEFAULT_FORM_DATA, prefillFromReport } from '@/types/report';
+import { ReportFormData, DEFAULT_FORM_DATA, prefillFromReport, REPORT_TEMPLATES, ReportTemplateId } from '@/types/report';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -292,7 +292,7 @@ export default function Home() {
     setError(null);
   }, [currentReportId, formData, firmId, userId, saveCurrentReport]);
 
-  const handleOpenReport = useCallback(async (reportId: string) => {
+  const handleOpenReport = useCallback(async (reportId: string, templateId?: ReportTemplateId) => {
     if (!firmId) return;
 
     const report = await fetchReport(reportId);
@@ -309,6 +309,20 @@ export default function Home() {
         if (source) {
           data = { ...data, ...prefillFromReport(source.formData) };
         }
+      }
+
+      // Apply template prefills if a template was selected
+      if (templateId && templateId !== 'custom') {
+        const template = REPORT_TEMPLATES.find(t => t.id === templateId);
+        if (template) {
+          data = { ...data, templateId };
+          if (template.purpose) data = { ...data, purpose: template.purpose };
+          if (template.bankName) data = { ...data, bankName: template.bankName };
+          if (template.prefill) data = { ...data, ...template.prefill };
+          if (template.hiddenFields) data = { ...data, hiddenFields: template.hiddenFields };
+        }
+      } else if (templateId === 'custom') {
+        data = { ...data, templateId: 'custom' };
       }
 
       setCurrentReportId(reportId);

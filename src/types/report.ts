@@ -1,3 +1,110 @@
+// Report template definitions
+export type ReportTemplateId = 'custom' | 'sbi' | 'uco' | 'axis' | 'income-tax' | 'hdfc' | 'pnb';
+
+export interface ReportTemplate {
+  id: ReportTemplateId;
+  name: string;
+  subtitle: string;
+  icon: string; // emoji
+  /** Purpose field pre-fill */
+  purpose?: string;
+  /** Bank name pre-fill */
+  bankName?: string;
+  /** Fields to hide by default for this template */
+  hiddenFields?: string[];
+  /** Fields to pre-fill */
+  prefill?: Partial<ReportFormData>;
+}
+
+export const REPORT_TEMPLATES: ReportTemplate[] = [
+  {
+    id: 'custom',
+    name: 'Custom Report',
+    subtitle: 'Blank template — configure everything yourself',
+    icon: '📋',
+  },
+  {
+    id: 'sbi',
+    name: 'SBI Format',
+    subtitle: 'State Bank of India — standard valuation format',
+    icon: '🏦',
+    bankName: 'State Bank of India',
+    purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose',
+    prefill: {
+      landRateSource: 'State PWD rates',
+      sarfaesiCompliant: 'Yes',
+      valuationMethodology: 'Cost Approach + Market Comparison',
+    },
+  },
+  {
+    id: 'pnb',
+    name: 'PNB Format',
+    subtitle: 'Punjab National Bank — valuation for loan',
+    icon: '🏦',
+    bankName: 'Punjab National Bank',
+    purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose',
+    prefill: {
+      landRateSource: 'State PWD rates',
+      sarfaesiCompliant: 'Yes',
+      valuationMethodology: 'Cost Approach + Market Comparison',
+    },
+  },
+  {
+    id: 'uco',
+    name: 'UCO Bank Format',
+    subtitle: 'UCO Bank — valuation for loan with SARFAESI',
+    icon: '🏦',
+    bankName: 'UCO Bank',
+    purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose',
+    prefill: {
+      landRateSource: 'State PWD rates',
+      sarfaesiCompliant: 'Yes',
+      valuationMethodology: 'Cost Approach + Market Comparison',
+    },
+  },
+  {
+    id: 'axis',
+    name: 'Axis Bank Format',
+    subtitle: 'Axis Bank — private bank valuation format',
+    icon: '🏦',
+    bankName: 'Axis Bank',
+    purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose',
+    prefill: {
+      landRateSource: 'Circle Rate / Ready Reckoner',
+      sarfaesiCompliant: 'Yes',
+      valuationMethodology: 'Cost Approach + Market Comparison',
+    },
+  },
+  {
+    id: 'hdfc',
+    name: 'HDFC Bank Format',
+    subtitle: 'HDFC Bank — housing loan valuation',
+    icon: '🏠',
+    bankName: 'HDFC Bank',
+    purpose: 'To assess Fair Market Value of the property for housing loan',
+    prefill: {
+      landRateSource: 'Circle Rate / Ready Reckoner',
+      sarfaesiCompliant: 'Yes',
+      valuationMethodology: 'Cost Approach + Market Comparison',
+    },
+  },
+  {
+    id: 'income-tax',
+    name: 'Income Tax / Capital Gains',
+    subtitle: 'FMV for Section 50C / 56(2)(x) — capital gains tax',
+    icon: '📑',
+    purpose: 'To assess Fair Market Value as on 01-04-2001 for income tax purpose',
+    prefill: {
+      landRateSource: 'Circle Rate / Ready Reckoner',
+      valuationMethodology: 'Cost Approach + Market Comparison',
+    },
+    hiddenFields: [
+      'bankName', 'sarfaesiCompliant', 'encumbrances', 'buildingPlanSanction',
+      'farFsiPermitted', 'farFsiConsumed', 'groundCoverage',
+    ],
+  },
+];
+
 // Report metadata and storage types
 
 export interface ReportMetadata {
@@ -16,6 +123,9 @@ export interface SavedReport {
 }
 
 export interface ReportFormData {
+  // Template used for this report
+  templateId: ReportTemplateId;
+
   // Property Address (single free-form field — no standard format in India)
   propertyAddress: string;
   nearbyLandmark: string;
@@ -203,6 +313,7 @@ export interface ReportFormData {
 
 // Default empty form data
 export const DEFAULT_FORM_DATA: ReportFormData = {
+  templateId: 'custom',
   propertyAddress: '',
   nearbyLandmark: '',
   landType: '',
