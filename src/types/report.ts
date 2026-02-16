@@ -26,7 +26,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
   {
     id: 'sbi',
     name: 'SBI Format',
-    subtitle: 'State Bank of India — standard valuation format',
+    subtitle: 'State Bank of India — most comprehensive format',
     icon: '🏦',
     bankName: 'State Bank of India',
     purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose',
@@ -35,6 +35,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
       sarfaesiCompliant: 'Yes',
       valuationMethodology: 'Cost Approach + Market Comparison',
     },
+    // SBI requires the most comprehensive report — no fields hidden
   },
   {
     id: 'pnb',
@@ -48,24 +49,34 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
       sarfaesiCompliant: 'Yes',
       valuationMethodology: 'Cost Approach + Market Comparison',
     },
+    hiddenFields: [
+      // Environmental & architectural not required by PNB
+      'greenBuildingFeatures', 'rainWaterHarvesting', 'solarProvision',
+      'architecturalStyle', 'heritageValue', 'landscapeElements',
+    ],
   },
   {
     id: 'uco',
     name: 'UCO Bank Format',
-    subtitle: 'UCO Bank — valuation for loan with SARFAESI',
+    subtitle: 'UCO Bank — SARFAESI compliant valuation',
     icon: '🏦',
     bankName: 'UCO Bank',
-    purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose',
+    purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose under SARFAESI Act',
     prefill: {
       landRateSource: 'State PWD rates',
       sarfaesiCompliant: 'Yes',
       valuationMethodology: 'Cost Approach + Market Comparison',
     },
+    hiddenFields: [
+      // Environmental & architectural not required for SARFAESI
+      'greenBuildingFeatures', 'rainWaterHarvesting', 'solarProvision',
+      'architecturalStyle', 'heritageValue', 'landscapeElements',
+    ],
   },
   {
     id: 'axis',
     name: 'Axis Bank Format',
-    subtitle: 'Axis Bank — private bank valuation format',
+    subtitle: 'Axis Bank — streamlined private bank format',
     icon: '🏦',
     bankName: 'Axis Bank',
     purpose: 'To assess Fair Market Value of the property for mortgage/loan purpose',
@@ -74,6 +85,18 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
       sarfaesiCompliant: 'Yes',
       valuationMethodology: 'Cost Approach + Market Comparison',
     },
+    hiddenFields: [
+      // FSI/FAR, ground coverage less emphasized by private banks
+      'farFsiPermitted', 'farFsiConsumed', 'groundCoverage',
+      // Environmental not required
+      'greenBuildingFeatures', 'rainWaterHarvesting', 'solarProvision',
+      // Safety — only structural safety matters
+      'earthquakeResistance', 'firefightingProvision',
+      // Architectural not required
+      'architecturalStyle', 'heritageValue', 'landscapeElements',
+      // Insurance value & variation justification optional
+      'insuranceValue', 'variationJustification',
+    ],
   },
   {
     id: 'hdfc',
@@ -87,6 +110,18 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
       sarfaesiCompliant: 'Yes',
       valuationMethodology: 'Cost Approach + Market Comparison',
     },
+    hiddenFields: [
+      // FSI/FAR, ground coverage less emphasized
+      'farFsiPermitted', 'farFsiConsumed', 'groundCoverage',
+      // Environmental not required
+      'greenBuildingFeatures', 'rainWaterHarvesting', 'solarProvision',
+      // Safety — only structural safety matters
+      'earthquakeResistance', 'firefightingProvision',
+      // Architectural not required
+      'architecturalStyle', 'heritageValue', 'landscapeElements',
+      // Variation justification optional for HDFC
+      'variationJustification',
+    ],
   },
   {
     id: 'income-tax',
@@ -99,8 +134,26 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
       valuationMethodology: 'Cost Approach + Market Comparison',
     },
     hiddenFields: [
-      'bankName', 'sarfaesiCompliant', 'encumbrances', 'buildingPlanSanction',
+      // No bank involved
+      'bankName', 'referenceNo', 'sarfaesiCompliant',
+      // Legal/regulatory — not needed for IT FMV
+      'encumbrances', 'buildingPlanSanction', 'approvalAuthority',
       'farFsiPermitted', 'farFsiConsumed', 'groundCoverage',
+      'planningZone', 'zoningRegulations',
+      // Forced sale & insurance irrelevant
+      'forcedSaleValue', 'insuranceValue',
+      // Rental/tenancy not needed
+      'isOccupiedByTenant', 'numberOfTenants', 'tenancyDuration',
+      'tenancyStatus', 'monthlyRent', 'reasonableLettingValue',
+      // Environmental not needed
+      'greenBuildingFeatures', 'rainWaterHarvesting', 'solarProvision',
+      'environmentalPollution',
+      // Safety not needed
+      'structuralSafety', 'earthquakeResistance', 'firefightingProvision',
+      // Architectural not needed
+      'architecturalStyle', 'heritageValue', 'landscapeElements',
+      // Developer not relevant for FMV
+      'developerName',
     ],
   },
 ];
