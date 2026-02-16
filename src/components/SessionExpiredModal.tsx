@@ -1,36 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SessionExpiredModal() {
   const { sessionExpired, signIn } = useAuth();
-  const [countdown, setCountdown] = useState(10);
-
-  const handleSignIn = useCallback(() => {
-    signIn();
-  }, [signIn]);
-
-  useEffect(() => {
-    if (!sessionExpired) {
-      setCountdown(10);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSignIn();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [sessionExpired, handleSignIn]);
 
   if (!sessionExpired) return null;
 
@@ -57,25 +31,25 @@ export default function SessionExpiredModal() {
 
           {/* Title */}
           <h2 className="text-xl sm:text-2xl font-bold text-text-primary mb-2">
-            Logged Out
+            Session Active Elsewhere
           </h2>
 
           {/* Message */}
           <p className="text-sm sm:text-base text-text-secondary mb-6">
-            You have been logged out because your account was signed in on another device.
-            Each account can only be used on one device at a time.
+            Your account is signed in on another device.
+            Each account can only be active on one device at a time.
           </p>
 
           {/* Sign In Button */}
           <button
-            onClick={handleSignIn}
+            onClick={() => signIn()}
             className="w-full btn btn-primary py-3 rounded-xl font-semibold"
           >
-            Sign In Again
+            Sign In on This Device
           </button>
 
           <p className="text-xs text-text-tertiary mt-4">
-            Redirecting in {countdown} seconds... If this was not you, please change your password.
+            This will sign you out of the other device automatically.
           </p>
         </motion.div>
       </motion.div>
