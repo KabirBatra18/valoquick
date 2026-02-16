@@ -647,24 +647,6 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
 };
 
 // Dropdown Options
-const CITY_OPTIONS = [
-  { value: 'NEW DELHI', label: 'New Delhi' },
-  { value: 'MUMBAI', label: 'Mumbai' },
-  { value: 'BANGALORE', label: 'Bangalore' },
-  { value: 'CHENNAI', label: 'Chennai' },
-  { value: 'KOLKATA', label: 'Kolkata' },
-  { value: 'HYDERABAD', label: 'Hyderabad' },
-  { value: 'PUNE', label: 'Pune' },
-  { value: 'AHMEDABAD', label: 'Ahmedabad' },
-  { value: 'JAIPUR', label: 'Jaipur' },
-  { value: 'LUCKNOW', label: 'Lucknow' },
-  { value: 'CHANDIGARH', label: 'Chandigarh' },
-  { value: 'NOIDA', label: 'Noida' },
-  { value: 'GURGAON', label: 'Gurgaon' },
-  { value: 'GHAZIABAD', label: 'Ghaziabad' },
-  { value: 'FARIDABAD', label: 'Faridabad' },
-];
-
 const BOUNDARY_OPTIONS = [
   { value: '', label: 'Select...' },
   { value: 'Road', label: 'Road' },
@@ -899,11 +881,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const { t } = useLanguage();
   const firmId = firm?.id;
 
-  // Property Address
-  const [propertyNo, setPropertyNo] = useState(initialData?.propertyNo || '');
-  const [block, setBlock] = useState(initialData?.block || '');
-  const [area, setArea] = useState(initialData?.area || '');
-  const [city, setCity] = useState(initialData?.city || '');
+  // Property Address (single free-form field)
+  const [propertyAddress, setPropertyAddress] = useState(initialData?.propertyAddress || '');
 
   // Boundaries
   const [northBoundary, setNorthBoundary] = useState(initialData?.northBoundary || '');
@@ -1003,9 +982,6 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [civicAmenities, setCivicAmenities] = useState<string[]>(initialData?.civicAmenities || []);
 
   // Additional Property Details
-  const [wardVillageTaluka, setWardVillageTaluka] = useState(initialData?.wardVillageTaluka || '');
-  const [subRegistryBlock, setSubRegistryBlock] = useState(initialData?.subRegistryBlock || '');
-  const [district, setDistrict] = useState(initialData?.district || '');
   const [nearbyLandmark, setNearbyLandmark] = useState(initialData?.nearbyLandmark || '');
   const [landType, setLandType] = useState(initialData?.landType || '');
   const [accessApproach, setAccessApproach] = useState(initialData?.accessApproach || '');
@@ -1201,13 +1177,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   useEffect(() => {
     if (onDataChange) {
       onDataChange({
-        propertyNo,
-        block,
-        area,
-        city,
-        wardVillageTaluka,
-        subRegistryBlock,
-        district,
+        propertyAddress,
         nearbyLandmark,
         landType,
         accessApproach,
@@ -1360,7 +1330,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       });
     }
   }, [
-    propertyNo, block, area, city, wardVillageTaluka, subRegistryBlock, district, nearbyLandmark,
+    propertyAddress, nearbyLandmark,
     landType, accessApproach, abutingRoads, plinthArea, carpetArea, saleableArea,
     northBoundary, southBoundary, eastBoundary, westBoundary,
     northEastBoundary, northWestBoundary, southEastBoundary, southWestBoundary,
@@ -1463,7 +1433,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const fullAddress = `PROPERTY NO. ${propertyNo}, BLOCK-${block}, ${area}, ${city}`;
+    const fullAddress = propertyAddress.trim();
     const valuationInputs = {
       referenceNo, bankName, valuationDate, valuationForDate, purpose, plotArea, landRatePerSqm,
       landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
@@ -1488,7 +1458,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
     const reportData: ValuationReport = {
       ...companyDetails,
-      propertyAddress: { propertyNo, block, area, city, fullAddress },
+      propertyAddress: { fullAddress },
       boundaries: {
         north: northBoundary, south: southBoundary, east: eastBoundary, west: westBoundary,
         northEast: northEastBoundary, northWest: northWestBoundary, southEast: southEastBoundary, southWest: southWestBoundary
@@ -1538,27 +1508,19 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
             <h3 className="glass-card-title">{t('propertyAddress')}</h3>
-            <div className="grid-2">
-              <SwipeableField fieldName="propertyNo" isHidden={hiddenFields.includes('propertyNo')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Property No." value={propertyNo} onChange={(e) => setPropertyNo(e.target.value)} placeholder="e.g., D-44" required />
-              </SwipeableField>
-              <SwipeableField fieldName="block" isHidden={hiddenFields.includes('block')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Block" value={block} onChange={(e) => setBlock(e.target.value)} placeholder="e.g., F" required />
-              </SwipeableField>
-              <SwipeableField fieldName="area" isHidden={hiddenFields.includes('area')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Area / Colony" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g., TAGORE GARDEN" required />
-              </SwipeableField>
-              <SwipeableField fieldName="city" isHidden={hiddenFields.includes('city')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormSelectWithCustom label="City" options={CITY_OPTIONS} value={city} onChange={setCity} placeholder="Enter city name" />
-              </SwipeableField>
-              <SwipeableField fieldName="wardVillageTaluka" isHidden={hiddenFields.includes('wardVillageTaluka')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Ward / Village / Taluka" value={wardVillageTaluka} onChange={(e) => setWardVillageTaluka(e.target.value)} placeholder="e.g., Ward 45" />
-              </SwipeableField>
-              <SwipeableField fieldName="subRegistryBlock" isHidden={hiddenFields.includes('subRegistryBlock')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Sub-Registry / Block" value={subRegistryBlock} onChange={(e) => setSubRegistryBlock(e.target.value)} placeholder="e.g., Block-A" />
-              </SwipeableField>
-              <SwipeableField fieldName="district" isHidden={hiddenFields.includes('district')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="District" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g., West Delhi" />
+            <div className="space-y-4">
+              <SwipeableField fieldName="propertyAddress" isHidden={hiddenFields.includes('propertyAddress')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <div className="form-group">
+                  <label className="form-label">Property Address <span className="text-red-400">*</span></label>
+                  <textarea
+                    className="form-input min-h-[80px] resize-y"
+                    value={propertyAddress}
+                    onChange={(e) => setPropertyAddress(e.target.value)}
+                    placeholder="e.g., Property No. D-44, Block-F, Tagore Garden, New Delhi - 110027"
+                    rows={3}
+                    required
+                  />
+                </div>
               </SwipeableField>
               <SwipeableField fieldName="nearbyLandmark" isHidden={hiddenFields.includes('nearbyLandmark')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Nearby Landmark" value={nearbyLandmark} onChange={(e) => setNearbyLandmark(e.target.value)} placeholder="e.g., Near Metro Station" />

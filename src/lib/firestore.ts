@@ -288,10 +288,7 @@ export async function updateMemberRole(
 
 function calculateCompletionPercentage(formData: ReportFormData): number {
   const fieldsToCheck = [
-    formData.propertyNo,
-    formData.block,
-    formData.area,
-    formData.city,
+    formData.propertyAddress,
     formData.originalOwner,
     formData.originalOwnerYear,
     formData.referenceNo,
@@ -326,13 +323,7 @@ export async function createReport(
   const reportId = reportRef.id;
 
   const defaultFormData: ReportFormData = {
-    propertyNo: '',
-    block: '',
-    area: '',
-    city: '',
-    wardVillageTaluka: '',
-    subRegistryBlock: '',
-    district: '',
+    propertyAddress: '',
     nearbyLandmark: '',
     landType: '',
     accessApproach: '',
@@ -559,14 +550,7 @@ export async function saveReport(
 
   const completionPercentage = calculateCompletionPercentage(report.formData);
 
-  const propertyAddress = [
-    report.formData.propertyNo,
-    report.formData.block,
-    report.formData.area,
-    report.formData.city,
-  ]
-    .filter(Boolean)
-    .join(', ');
+  const propertyAddress = report.formData.propertyAddress || 'Untitled Property';
 
   // Separate photos from formData — photos are URLs stored in photoUrls field
   const { photos, ...formDataWithoutPhotos } = report.formData;

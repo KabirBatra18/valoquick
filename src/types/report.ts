@@ -16,14 +16,8 @@ export interface SavedReport {
 }
 
 export interface ReportFormData {
-  // Property Address
-  propertyNo: string;
-  block: string;
-  area: string;
-  city: string;
-  wardVillageTaluka: string;
-  subRegistryBlock: string;
-  district: string;
+  // Property Address (single free-form field — no standard format in India)
+  propertyAddress: string;
   nearbyLandmark: string;
 
   // Physical Characteristics
@@ -209,13 +203,7 @@ export interface ReportFormData {
 
 // Default empty form data
 export const DEFAULT_FORM_DATA: ReportFormData = {
-  propertyNo: '',
-  block: '',
-  area: '',
-  city: '',
-  wardVillageTaluka: '',
-  subRegistryBlock: '',
-  district: '',
+  propertyAddress: '',
   nearbyLandmark: '',
   landType: '',
   accessApproach: '',
@@ -369,7 +357,7 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
 /** Fields that carry over when creating a new report from a previous one.
  *  These are typically the same across reports for the same firm/area. */
 export const CARRYOVER_FIELDS: (keyof ReportFormData)[] = [
-  'city', 'district', 'purpose', 'bankName', 'landRateSource', 'costIndex',
+  'purpose', 'bankName', 'landRateSource', 'costIndex',
   'constructionType', 'foundationType', 'roofingTerracing',
   'waterSupply', 'sewerageSystem', 'stormDrainage', 'solidWasteManagement',
   'electricityStatus', 'publicTransportAccess',
@@ -392,10 +380,7 @@ export function prefillFromReport(source: ReportFormData): Partial<ReportFormDat
 // Calculate completion percentage
 export function calculateCompletionPercentage(data: ReportFormData): number {
   const fields = [
-    data.propertyNo,
-    data.block,
-    data.area,
-    data.city,
+    data.propertyAddress,
     data.originalOwner,
     data.originalOwnerYear,
     data.referenceNo,

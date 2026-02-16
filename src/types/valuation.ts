@@ -6,11 +6,7 @@ export interface Owner {
 }
 
 export interface PropertyAddress {
-  propertyNo: string;
-  block: string;
-  area: string;
-  city: string;
-  fullAddress: string; // Auto-generated
+  fullAddress: string;
 }
 
 export interface Boundaries {

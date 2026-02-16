@@ -31,7 +31,7 @@ const steps = [
 
 // Key fields per section to check completion
 const SECTION_KEY_FIELDS: Record<number, (keyof ReportFormData)[]> = {
-  0: ['area', 'city', 'district'],
+  0: ['propertyAddress'],
   1: ['originalOwner'],
   2: ['plotArea', 'landRatePerSqm', 'floorArea'],
   3: ['roof', 'flooring'],
@@ -300,11 +300,11 @@ export default function Home() {
       let data = report.formData;
 
       // Auto-fill from most recent report if this is a brand-new empty report
-      const isEmpty = !data.propertyNo && !data.area && !data.city && data.plotArea === 0;
+      const isEmpty = !data.propertyAddress && data.plotArea === 0;
       if (isEmpty && allReports.length > 0) {
         // Find the most recent non-empty report (prefer concluded)
         const source = allReports
-          .filter(r => r.metadata.id !== reportId && (r.formData.city || r.formData.district))
+          .filter(r => r.metadata.id !== reportId && r.formData.propertyAddress)
           .sort((a, b) => new Date(b.metadata.updatedAt).getTime() - new Date(a.metadata.updatedAt).getTime())[0];
         if (source) {
           data = { ...data, ...prefillFromReport(source.formData) };
@@ -422,7 +422,7 @@ export default function Home() {
 
       // Trigger immediate download
       const dateStr = new Date().toISOString().slice(0, 10);
-      const namePart = formData.area || formData.city || 'Report';
+      const namePart = formData.propertyAddress?.split(',')[0]?.trim() || 'Report';
       downloadFile(result.pdf, `Valuation_${namePart.replace(/\s+/g, '_')}_${dateStr}.pdf`, 'application/pdf');
 
       // Store for re-download from sidebar
@@ -497,7 +497,7 @@ export default function Home() {
       const result = await pdfResponse.json();
 
       // Download
-      const address = report.metadata.propertyAddress || report.formData.area || 'Report';
+      const address = report.metadata.propertyAddress || report.formData.propertyAddress || 'Report';
       downloadFile(result.pdf, `Valuation_${address.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, 'application/pdf');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to re-download PDF');
@@ -681,7 +681,7 @@ export default function Home() {
               </p>
               <div className="space-y-2">
                 <button
-                  onClick={() => downloadFile(generatedFiles.pdf!, `Valuation_${(formData.area || formData.city || 'Report').replace(/\s+/g, '_')}.pdf`, 'application/pdf')}
+                  onClick={() => downloadFile(generatedFiles.pdf!, `Valuation_${(formData.propertyAddress?.split(',')[0]?.trim() || 'Report').replace(/\s+/g, '_')}.pdf`, 'application/pdf')}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-100 border border-surface-200 text-xs font-medium text-text-secondary hover:border-red-500/30 hover:text-red-400 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -803,7 +803,7 @@ export default function Home() {
            {generatedFiles && (
              <div className="flex flex-col gap-2 animate-fade-in">
                <button
-                 onClick={() => downloadFile(generatedFiles.pdf!, `Valuation_${(formData.area || formData.city || 'Report').replace(/\s+/g, '_')}.pdf`, 'application/pdf')}
+                 onClick={() => downloadFile(generatedFiles.pdf!, `Valuation_${(formData.propertyAddress?.split(',')[0]?.trim() || 'Report').replace(/\s+/g, '_')}.pdf`, 'application/pdf')}
                  className="w-10 h-10 rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 flex items-center justify-center"
                >
                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

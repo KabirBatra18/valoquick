@@ -40,9 +40,7 @@ export function saveReport(report: SavedReport): void {
     // Update metadata
     report.metadata.updatedAt = new Date().toISOString();
     report.metadata.completionPercentage = calculateCompletionPercentage(report.formData);
-    report.metadata.propertyAddress = report.formData.propertyNo
-      ? `${report.formData.propertyNo}, ${report.formData.block}, ${report.formData.area}`
-      : 'Untitled Property';
+    report.metadata.propertyAddress = report.formData.propertyAddress || 'Untitled Property';
 
     if (existingIndex >= 0) {
       reports[existingIndex] = report;
