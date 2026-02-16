@@ -33,6 +33,7 @@ const FormInput = ({ label, ...props }: { label: string } & React.InputHTMLAttri
     <label className="form-label">{label}{props.required && <span className="text-red-400 ml-0.5">*</span>}</label>
     <input
       className="form-input"
+      placeholder=" "
       {...props}
       {...(props.type === 'number' ? { inputMode: 'decimal' as const } : {})}
     />
@@ -592,7 +593,7 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
       <div className="form-group" ref={containerRef}>
         <label className="form-label">{label}</label>
         <select
-          className="form-select"
+          className={`form-select ${value ? 'filled' : ''}`}
           value={value}
           onChange={(e) => onChange(e.target.value)}
         >
