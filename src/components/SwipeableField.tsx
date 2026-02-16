@@ -66,12 +66,20 @@ export default function SwipeableField({
     if (isSwiping.current) {
       // Prevent vertical scroll while swiping horizontally
       e.preventDefault();
+      // Stop propagation so page-level swipe navigation doesn't fire
+      e.stopPropagation();
       // Update the motion value for visual feedback
       x.set(deltaX * 0.5); // Dampen the movement
     }
   }, [x]);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    // If we were swiping a field, stop the event from reaching
+    // the page-level swipe handler that changes tabs
+    if (isSwiping.current) {
+      e.stopPropagation();
+    }
+
     const currentX = x.get();
 
     if (currentX < -SWIPE_THRESHOLD && !isHidden) {
