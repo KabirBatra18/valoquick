@@ -47,9 +47,13 @@ export async function signInWithGoogle(): Promise<User> {
 
     // Generate a new session ID for single-device restriction
     const sessionId = generateSessionId();
-    setLocalSessionId(sessionId);
 
-    // Create or update user document
+    // IMPORTANT: Write to Firestore BEFORE setting the local session ID.
+    // After signInWithPopup, Firebase auth state fires immediately which
+    // triggers onSnapshot on the user doc. If we set the local ID first,
+    // the snapshot still has the OLD session ID → mismatch → instant kick-out.
+    // By writing Firestore first and setting local ID after, the snapshot
+    // listener sees localSessionId as null and safely skips the check.
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -71,6 +75,10 @@ export async function signInWithGoogle(): Promise<User> {
         currentSessionId: sessionId,
       }, { merge: true });
     }
+
+    // Now that Firestore has the matching session ID, store it locally.
+    // Any subsequent onSnapshot will see matching IDs.
+    setLocalSessionId(sessionId);
 
     return user;
   } catch (error: unknown) {
