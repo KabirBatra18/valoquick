@@ -1,7 +1,7 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useCallback } from 'react';
+import { motion, useMotionValue, useTransform, useAnimation, PanInfo } from 'framer-motion';
+import { useCallback, useState, useEffect, useRef } from 'react';
 
 interface SwipeableFieldProps {
   fieldName: string;
@@ -11,6 +11,8 @@ interface SwipeableFieldProps {
   children: React.ReactNode;
 }
 
+const SWIPE_THRESHOLD = 60; // pixels to trigger hide/restore
+
 export default function SwipeableField({
   fieldName,
   isHidden,
@@ -18,56 +20,196 @@ export default function SwipeableField({
   onRestore,
   children,
 }: SwipeableFieldProps) {
-  const handleToggle = useCallback(
+  const x = useMotionValue(0);
+  const controls = useAnimation();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Touch tracking for manual swipe detection
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwiping = useRef(false);
+
+  // Check if mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Transform x motion to opacity for visual feedback
+  const hideIndicatorOpacity = useTransform(x, [-100, -30, 0], [0.35, 0.12, 0]);
+  const restoreIndicatorOpacity = useTransform(x, [0, 30, 100], [0, 0.12, 0.35]);
+
+  // Manual touch handlers for mobile - works over inputs
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+
+    // Only start tracking swipe if horizontal movement is greater than vertical
+    if (!isSwiping.current && Math.abs(deltaX) > 10) {
+      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        isSwiping.current = true;
+      }
+    }
+
+    if (isSwiping.current) {
+      // Prevent vertical scroll while swiping horizontally
+      e.preventDefault();
+      // Update the motion value for visual feedback
+      x.set(deltaX * 0.5); // Dampen the movement
+    }
+  }, [x]);
+
+  const handleTouchEnd = useCallback(() => {
+    const currentX = x.get();
+
+    if (currentX < -SWIPE_THRESHOLD && !isHidden) {
+      onHide(fieldName);
+    } else if (currentX > SWIPE_THRESHOLD && isHidden) {
+      onRestore(fieldName);
+    }
+
+    // Spring back
+    controls.start({
+      x: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 500,
+        damping: 30,
+        mass: 0.8,
+      },
+    });
+    x.set(0);
+    isSwiping.current = false;
+  }, [x, isHidden, onHide, onRestore, fieldName, controls]);
+
+  const handleDragEnd = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      const offset = info.offset.x;
+      const velocity = info.velocity.x;
+
+      // Use velocity to make it feel more natural
+      const effectiveOffset = offset + velocity * 0.1;
+
+      if (effectiveOffset < -SWIPE_THRESHOLD && !isHidden) {
+        onHide(fieldName);
+      } else if (effectiveOffset > SWIPE_THRESHOLD && isHidden) {
+        onRestore(fieldName);
+      }
+
+      // Spring back to center
+      controls.start({
+        x: 0,
+        transition: {
+          type: 'spring',
+          stiffness: 500,
+          damping: 30,
+          mass: 0.8,
+        },
+      });
+    },
+    [isHidden, onHide, onRestore, fieldName, controls]
+  );
+
+  const handleDesktopHide = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
-      if (isHidden) {
-        onRestore(fieldName);
-      } else {
-        onHide(fieldName);
-      }
+      onHide(fieldName);
     },
-    [isHidden, onHide, onRestore, fieldName]
+    [onHide, fieldName]
   );
 
-  return (
-    <div className="swipeable-field relative group">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={isHidden ? 'hidden' : 'visible'}
-          initial={{ opacity: 0.5, height: isHidden ? 'auto' : 'auto' }}
-          animate={{ opacity: isHidden ? 0.35 : 1, height: 'auto' }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-        >
-          <div className={`transition-all duration-200 ${isHidden ? 'field-content-hidden' : ''}`}>
-            {children}
-          </div>
-        </motion.div>
-      </AnimatePresence>
+  const handleDesktopRestore = useCallback(() => {
+    if (isHidden && !isMobile) {
+      onRestore(fieldName);
+    }
+  }, [isHidden, isMobile, onRestore, fieldName]);
 
-      {/* Toggle button — always visible at subtle opacity, prominent on hover/focus */}
-      <button
-        type="button"
-        onClick={handleToggle}
-        className={`absolute top-1/2 -translate-y-1/2 right-1 z-20 p-1.5 rounded-lg transition-all duration-200
-          ${isHidden
-            ? 'opacity-70 hover:opacity-100 text-emerald-400 hover:bg-emerald-500/10'
-            : 'opacity-30 group-hover:opacity-70 hover:!opacity-100 text-text-tertiary hover:bg-red-500/10 hover:text-red-400'
-          }`}
-        title={isHidden ? 'Show this field' : 'Hide this field'}
+  return (
+    <div
+      ref={containerRef}
+      className={`swipeable-field relative ${isHidden ? 'field-hidden' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={isMobile ? handleTouchStart : undefined}
+      onTouchMove={isMobile ? handleTouchMove : undefined}
+      onTouchEnd={isMobile ? handleTouchEnd : undefined}
+    >
+      {/* Desktop minus button - positioned on the LEFT to avoid dropdown conflict */}
+      {!isMobile && !isHidden && (
+        <button
+          type="button"
+          onClick={handleDesktopHide}
+          className={`field-hide-btn ${isHovered ? 'field-hide-btn-visible' : ''}`}
+          title="Hide this field"
+        >
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+          </svg>
+        </button>
+      )}
+
+      {/* Swipe indicators (mobile) */}
+      {isMobile && (
+        <>
+          {/* Hide indicator (red) - shows when swiping left */}
+          <motion.div
+            className="absolute inset-0 bg-red-500 rounded-xl pointer-events-none z-0"
+            style={{ opacity: hideIndicatorOpacity }}
+          />
+          {/* Restore indicator (green) - shows when swiping right on hidden field */}
+          {isHidden && (
+            <motion.div
+              className="absolute inset-0 bg-emerald-500 rounded-xl pointer-events-none z-0"
+              style={{ opacity: restoreIndicatorOpacity }}
+            />
+          )}
+        </>
+      )}
+
+      <motion.div
+        drag={false}
+        animate={controls}
+        style={{ x }}
+        className="relative z-10"
       >
-        {isHidden ? (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-          </svg>
-        )}
-      </button>
+        <div
+          className={`transition-all duration-300 ${
+            isHidden ? 'opacity-40 field-content-hidden' : ''
+          }`}
+          onClick={handleDesktopRestore}
+          style={{ cursor: isHidden && !isMobile ? 'pointer' : 'default' }}
+        >
+          {children}
+        </div>
+      </motion.div>
+
+      {/* Desktop restore hint */}
+      {!isMobile && isHidden && isHovered && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <span className="text-xs text-text-tertiary bg-surface-200/90 px-2 py-1 rounded-lg backdrop-blur-sm">
+            Click to restore
+          </span>
+        </div>
+      )}
     </div>
   );
 }
