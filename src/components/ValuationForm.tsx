@@ -1497,6 +1497,18 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         capturedAt: locationCapturedAt,
         mapUrl: locationMapUrl,
       } : undefined,
+      templateId: initialData?.templateId || 'custom',
+      extendedData: {
+        encumbrances, buildingPlanSanction, approvalAuthority, planViolations,
+        occupancyCertificateStatus, unauthorizedConstructions, sarfaesiCompliant,
+        farFsiPermitted, farFsiConsumed, groundCoverage,
+        isOccupiedByTenant, numberOfTenants, monthlyRent, tenancyDuration,
+        tenancyStatus, reasonableLettingValue,
+        locationAttributes, comparableSalePrices, demandSupplyComment,
+        lastTwoTransactions, marketRateTrend,
+        guidelineValueLand, guidelineValueBuilding, forcedSaleValue,
+        insuranceValue, variationJustification, valuationMethodology,
+      },
     };
     onGenerate(reportData);
   };

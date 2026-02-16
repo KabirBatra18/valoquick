@@ -157,6 +157,107 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function generateAddendumPages(
+  templateId: string | undefined,
+  ext: NonNullable<ValuationReport['extendedData']>,
+  calculatedValues: { roundedValue: number },
+  headerHtml: string,
+  footerHtml: string,
+  formatCurrency: (n: number) => string,
+  isBank: boolean,
+  isPSU: boolean,
+  isIT: boolean,
+): string {
+  if (!isBank && !isIT) return '';
+
+  let pages = '';
+
+  // LEGAL & REGULATORY COMPLIANCE (Bank templates only)
+  if (isBank) {
+    pages += `
+    <div class="page">
+      ${headerHtml}
+      <p class="section-title">LEGAL &amp; REGULATORY COMPLIANCE</p>
+      <table>
+        <tr><td style="width:40%">Encumbrances</td><td>${ext.encumbrances || 'Nil'}</td></tr>
+        <tr><td>Building Plan Sanction</td><td>${ext.buildingPlanSanction || 'N/A'}</td></tr>
+        <tr><td>Approval Authority</td><td>${ext.approvalAuthority || 'N/A'}</td></tr>
+        <tr><td>Plan Violations</td><td>${ext.planViolations || 'None observed'}</td></tr>
+        <tr><td>Occupancy Certificate</td><td>${ext.occupancyCertificateStatus || 'N/A'}</td></tr>
+        <tr><td>Unauthorized Constructions</td><td>${ext.unauthorizedConstructions || 'None observed'}</td></tr>
+        <tr><td>SARFAESI Compliant</td><td>${ext.sarfaesiCompliant || 'N/A'}</td></tr>
+        ${isPSU ? `
+        <tr><td>FAR/FSI Permitted</td><td>${ext.farFsiPermitted || 'N/A'}</td></tr>
+        <tr><td>FAR/FSI Consumed</td><td>${ext.farFsiConsumed || 'N/A'}</td></tr>
+        <tr><td>Ground Coverage</td><td>${ext.groundCoverage || 'N/A'}</td></tr>
+        ` : ''}
+      </table>
+
+      ${isPSU ? `
+      <p class="section-title" style="margin-top: 20px;">RENTAL &amp; TENANCY DETAILS</p>
+      <table>
+        <tr><td style="width:40%">Occupied by Tenant</td><td>${ext.isOccupiedByTenant ? 'Yes' : 'No'}</td></tr>
+        ${ext.isOccupiedByTenant ? `
+        <tr><td>Number of Tenants</td><td>${ext.numberOfTenants || 'N/A'}</td></tr>
+        <tr><td>Monthly Rent</td><td>${ext.monthlyRent ? formatCurrency(ext.monthlyRent) : 'N/A'}</td></tr>
+        <tr><td>Tenancy Duration</td><td>${ext.tenancyDuration || 'N/A'}</td></tr>
+        <tr><td>Tenancy Status</td><td>${ext.tenancyStatus || 'N/A'}</td></tr>
+        ` : ''}
+        <tr><td>Reasonable Letting Value</td><td>${ext.reasonableLettingValue ? formatCurrency(ext.reasonableLettingValue) : 'N/A'}</td></tr>
+      </table>
+      ` : ''}
+      ${footerHtml}
+    </div>`;
+
+    // MARKETABILITY ASSESSMENT + VALUATION SUMMARY (All bank templates)
+    pages += `
+    <div class="page">
+      ${headerHtml}
+      <p class="section-title">MARKETABILITY ASSESSMENT</p>
+      <table>
+        <tr><td style="width:40%">Location Attributes</td><td>${ext.locationAttributes || 'N/A'}</td></tr>
+        <tr><td>Comparable Sale Prices</td><td>${ext.comparableSalePrices || 'Not Available'}</td></tr>
+        <tr><td>Demand-Supply Assessment</td><td>${ext.demandSupplyComment || 'N/A'}</td></tr>
+        <tr><td>Last Two Transactions</td><td>${ext.lastTwoTransactions || 'Not Available'}</td></tr>
+        <tr><td>Market Rate Trend</td><td>${ext.marketRateTrend || 'N/A'}</td></tr>
+      </table>
+
+      <p class="section-title" style="margin-top: 20px;">VALUATION SUMMARY</p>
+      <table>
+        <tr><td style="width:40%">Guideline Value (Land)</td><td>${ext.guidelineValueLand ? formatCurrency(ext.guidelineValueLand) : 'N/A'}</td></tr>
+        <tr><td>Guideline Value (Building)</td><td>${ext.guidelineValueBuilding ? formatCurrency(ext.guidelineValueBuilding) : 'N/A'}</td></tr>
+        <tr><td><strong>Fair Market Value</strong></td><td><strong>${formatCurrency(calculatedValues.roundedValue)}</strong></td></tr>
+        <tr><td>Forced Sale Value</td><td>${ext.forcedSaleValue ? formatCurrency(ext.forcedSaleValue) : 'N/A'}</td></tr>
+        ${isPSU ? `
+        <tr><td>Insurance Value</td><td>${ext.insuranceValue ? formatCurrency(ext.insuranceValue) : 'N/A'}</td></tr>
+        <tr><td>Variation Justification</td><td>${ext.variationJustification || 'N/A'}</td></tr>
+        ` : ''}
+        <tr><td>Valuation Methodology</td><td>${ext.valuationMethodology || 'Cost Approach + Market Comparison'}</td></tr>
+      </table>
+      ${footerHtml}
+    </div>`;
+  }
+
+  // GUIDELINE VALUE COMPARISON — Section 50C (Income Tax only)
+  if (isIT) {
+    pages += `
+    <div class="page">
+      ${headerHtml}
+      <p class="section-title">GUIDELINE VALUE COMPARISON (Section 50C / 56(2)(x))</p>
+      <table>
+        <tr><td style="width:40%">Guideline Value (Land)</td><td>${ext.guidelineValueLand ? formatCurrency(ext.guidelineValueLand) : 'N/A'}</td></tr>
+        <tr><td>Guideline Value (Building)</td><td>${ext.guidelineValueBuilding ? formatCurrency(ext.guidelineValueBuilding) : 'N/A'}</td></tr>
+        <tr><td><strong>Fair Market Value (Assessed)</strong></td><td><strong>${formatCurrency(calculatedValues.roundedValue)}</strong></td></tr>
+        <tr><td>Variation Justification</td><td>${ext.variationJustification || 'N/A'}</td></tr>
+        <tr><td>Valuation Methodology</td><td>${ext.valuationMethodology || 'Cost Approach + Market Comparison'}</td></tr>
+      </table>
+      ${footerHtml}
+    </div>`;
+  }
+
+  return pages;
+}
+
 function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64: string | null): string {
   const {
     valuerName,
@@ -176,7 +277,18 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     calculatedValues,
     photos,
     location,
+    templateId,
+    extendedData,
   } = data;
+
+  // Template grouping for conditional PDF sections
+  const PSU_BANKS = ['sbi', 'pnb', 'uco'];
+  const PRIVATE_BANKS = ['axis', 'hdfc'];
+  const ALL_BANKS = [...PSU_BANKS, ...PRIVATE_BANKS];
+  const isBank = templateId ? ALL_BANKS.includes(templateId) : false;
+  const isPSU = templateId ? PSU_BANKS.includes(templateId) : false;
+  const isIT = templateId === 'income-tax';
+  const ext = extendedData || {};
 
   const valuerInfo: ValuerInfo = {
     name: valuerName,
@@ -221,7 +333,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
 
     <p><strong>ON BEHALF OF OWNERS</strong></p>
-    ${valuationInputs.bankName ? `<p style="margin-top: 8px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
+    ${(valuationInputs.bankName && !isIT) ? `<p style="margin-top: 8px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
 
     <div class="ref-date">
       <span>Ref : ${valuationInputs.referenceNo}</span>
@@ -516,6 +628,9 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
     ${footerHtml}
   </div>
+
+  <!-- Template-Specific Addendum Pages -->
+  ${generateAddendumPages(templateId, ext, calculatedValues, headerHtml, footerHtml, formatCurrency, isBank, isPSU, isIT)}
 
   <!-- Photo Pages - 6 photos per page in 2x3 grid -->
   ${(() => {

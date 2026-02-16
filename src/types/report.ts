@@ -136,8 +136,8 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     hiddenFields: [
       // No bank involved
       'bankName', 'referenceNo', 'sarfaesiCompliant',
-      // Legal/regulatory — not needed for IT FMV
-      'encumbrances', 'buildingPlanSanction', 'approvalAuthority',
+      // Legal/regulatory — not needed for IT FMV (encumbrances kept — affects FMV per Form O-1)
+      'buildingPlanSanction', 'approvalAuthority',
       'farFsiPermitted', 'farFsiConsumed', 'groundCoverage',
       'planningZone', 'zoningRegulations',
       // Forced sale & insurance irrelevant

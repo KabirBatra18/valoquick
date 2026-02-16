@@ -185,6 +185,44 @@ export interface ValuationReport {
     capturedAt: string;
     mapUrl: string;
   };
+
+  // Template identification
+  templateId?: 'custom' | 'sbi' | 'pnb' | 'uco' | 'axis' | 'hdfc' | 'income-tax';
+
+  // Extended data for template-specific PDF sections
+  extendedData?: {
+    // Legal & Regulatory
+    encumbrances?: string;
+    buildingPlanSanction?: string;
+    approvalAuthority?: string;
+    planViolations?: string;
+    occupancyCertificateStatus?: string;
+    unauthorizedConstructions?: string;
+    sarfaesiCompliant?: string;
+    farFsiPermitted?: string;
+    farFsiConsumed?: string;
+    groundCoverage?: string;
+    // Rental & Tenancy
+    isOccupiedByTenant?: boolean;
+    numberOfTenants?: number;
+    monthlyRent?: number;
+    tenancyDuration?: string;
+    tenancyStatus?: string;
+    reasonableLettingValue?: number;
+    // Marketability
+    locationAttributes?: string;
+    comparableSalePrices?: string;
+    demandSupplyComment?: string;
+    lastTwoTransactions?: string;
+    marketRateTrend?: string;
+    // Valuation Summary
+    guidelineValueLand?: number;
+    guidelineValueBuilding?: number;
+    forcedSaleValue?: number;
+    insuranceValue?: number;
+    variationJustification?: string;
+    valuationMethodology?: string;
+  };
 }
 
 // Default company details (fixed for Batra & Associates)
