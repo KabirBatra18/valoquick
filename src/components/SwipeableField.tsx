@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useMotionValue, useTransform, useAnimation, PanInfo } from 'framer-motion';
+import { motion, useMotionValue, useTransform, useAnimation } from 'framer-motion';
 import { useCallback, useState, useEffect, useRef } from 'react';
 
 interface SwipeableFieldProps {
@@ -11,7 +11,7 @@ interface SwipeableFieldProps {
   children: React.ReactNode;
 }
 
-const SWIPE_THRESHOLD = 60; // pixels to trigger hide/restore
+const SWIPE_THRESHOLD = 60;
 
 export default function SwipeableField({
   fieldName,
@@ -26,12 +26,20 @@ export default function SwipeableField({
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Touch tracking for manual swipe detection
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
 
-  // Check if mobile on mount
+  // Stable refs for callbacks used in native event listeners
+  const isHiddenRef = useRef(isHidden);
+  const onHideRef = useRef(onHide);
+  const onRestoreRef = useRef(onRestore);
+  const fieldNameRef = useRef(fieldName);
+  useEffect(() => { isHiddenRef.current = isHidden; }, [isHidden]);
+  useEffect(() => { onHideRef.current = onHide; }, [onHide]);
+  useEffect(() => { onRestoreRef.current = onRestore; }, [onRestore]);
+  useEffect(() => { fieldNameRef.current = fieldName; }, [fieldName]);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
@@ -45,90 +53,69 @@ export default function SwipeableField({
   const hideIndicatorOpacity = useTransform(x, [-100, -30, 0], [0.35, 0.12, 0]);
   const restoreIndicatorOpacity = useTransform(x, [0, 30, 100], [0, 0.12, 0.35]);
 
-  // Manual touch handlers for mobile - works over inputs
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    isSwiping.current = false;
-  }, []);
+  // Native DOM touch listeners — passive: false on touchmove allows
+  // preventDefault() to actually block scrolling during a swipe,
+  // which eliminates the stutter from scroll + transform fighting.
+  useEffect(() => {
+    if (!isMobile || !containerRef.current) return;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const deltaX = e.touches[0].clientX - touchStartX.current;
-    const deltaY = e.touches[0].clientY - touchStartY.current;
+    const el = containerRef.current;
 
-    // Only start tracking swipe if horizontal movement is greater than vertical
-    if (!isSwiping.current && Math.abs(deltaX) > 10) {
-      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-        isSwiping.current = true;
-      }
-    }
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+      isSwiping.current = false;
+    };
 
-    if (isSwiping.current) {
-      // Prevent vertical scroll while swiping horizontally
-      e.preventDefault();
-      // Stop propagation so page-level swipe navigation doesn't fire
-      e.stopPropagation();
-      // Update the motion value for visual feedback
-      x.set(deltaX * 0.5); // Dampen the movement
-    }
-  }, [x]);
+    const onTouchMove = (e: TouchEvent) => {
+      const deltaX = e.touches[0].clientX - touchStartX.current;
+      const deltaY = e.touches[0].clientY - touchStartY.current;
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    // If we were swiping a field, stop the event from reaching
-    // the page-level swipe handler that changes tabs
-    if (isSwiping.current) {
-      e.stopPropagation();
-    }
-
-    const currentX = x.get();
-
-    if (currentX < -SWIPE_THRESHOLD && !isHidden) {
-      onHide(fieldName);
-    } else if (currentX > SWIPE_THRESHOLD && isHidden) {
-      onRestore(fieldName);
-    }
-
-    // Spring back
-    controls.start({
-      x: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 500,
-        damping: 30,
-        mass: 0.8,
-      },
-    });
-    x.set(0);
-    isSwiping.current = false;
-  }, [x, isHidden, onHide, onRestore, fieldName, controls]);
-
-  const handleDragEnd = useCallback(
-    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      const offset = info.offset.x;
-      const velocity = info.velocity.x;
-
-      // Use velocity to make it feel more natural
-      const effectiveOffset = offset + velocity * 0.1;
-
-      if (effectiveOffset < -SWIPE_THRESHOLD && !isHidden) {
-        onHide(fieldName);
-      } else if (effectiveOffset > SWIPE_THRESHOLD && isHidden) {
-        onRestore(fieldName);
+      if (!isSwiping.current && Math.abs(deltaX) > 10) {
+        if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+          isSwiping.current = true;
+        }
       }
 
-      // Spring back to center
+      if (isSwiping.current) {
+        e.preventDefault();  // works because { passive: false }
+        e.stopPropagation(); // prevents page-level tab swipe
+        x.set(deltaX * 0.7);
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (isSwiping.current) {
+        e.stopPropagation();
+      }
+
+      const currentX = x.get();
+
+      if (currentX < -SWIPE_THRESHOLD && !isHiddenRef.current) {
+        onHideRef.current(fieldNameRef.current);
+      } else if (currentX > SWIPE_THRESHOLD && isHiddenRef.current) {
+        onRestoreRef.current(fieldNameRef.current);
+      }
+
+      // Snap back
       controls.start({
         x: 0,
-        transition: {
-          type: 'spring',
-          stiffness: 500,
-          damping: 30,
-          mass: 0.8,
-        },
+        transition: { type: 'spring', stiffness: 600, damping: 35, mass: 0.6 },
       });
-    },
-    [isHidden, onHide, onRestore, fieldName, controls]
-  );
+      x.set(0);
+      isSwiping.current = false;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isMobile, x, controls]);
 
   const handleDesktopHide = useCallback(
     (e: React.MouseEvent) => {
@@ -151,11 +138,9 @@ export default function SwipeableField({
       className={`swipeable-field relative ${isHidden ? 'field-hidden' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={isMobile ? handleTouchStart : undefined}
-      onTouchMove={isMobile ? handleTouchMove : undefined}
-      onTouchEnd={isMobile ? handleTouchEnd : undefined}
+      style={{ willChange: isMobile ? 'transform' : undefined }}
     >
-      {/* Desktop minus button - positioned on the LEFT to avoid dropdown conflict */}
+      {/* Desktop minus button */}
       {!isMobile && !isHidden && (
         <button
           type="button"
@@ -163,13 +148,7 @@ export default function SwipeableField({
           className={`field-hide-btn ${isHovered ? 'field-hide-btn-visible' : ''}`}
           title="Hide this field"
         >
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
-          >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
           </svg>
         </button>
@@ -178,12 +157,10 @@ export default function SwipeableField({
       {/* Swipe indicators (mobile) */}
       {isMobile && (
         <>
-          {/* Hide indicator (red) - shows when swiping left */}
           <motion.div
             className="absolute inset-0 bg-red-500 rounded-xl pointer-events-none z-0"
             style={{ opacity: hideIndicatorOpacity }}
           />
-          {/* Restore indicator (green) - shows when swiping right on hidden field */}
           {isHidden && (
             <motion.div
               className="absolute inset-0 bg-emerald-500 rounded-xl pointer-events-none z-0"
@@ -194,15 +171,12 @@ export default function SwipeableField({
       )}
 
       <motion.div
-        drag={false}
         animate={controls}
-        style={{ x }}
+        style={{ x, willChange: 'transform' }}
         className="relative z-10"
       >
         <div
-          className={`transition-all duration-300 ${
-            isHidden ? 'opacity-40 field-content-hidden' : ''
-          }`}
+          className={`transition-opacity duration-300 ${isHidden ? 'opacity-40 field-content-hidden' : ''}`}
           onClick={handleDesktopRestore}
           style={{ cursor: isHidden && !isMobile ? 'pointer' : 'default' }}
         >
