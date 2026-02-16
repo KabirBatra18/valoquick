@@ -53,6 +53,7 @@ export interface ReportFormData {
 
   // Valuation Inputs
   referenceNo: string;
+  bankName: string;
   inspectionDate: string;
   valuationDate: string;
   valuationForDate: string;
@@ -236,6 +237,7 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   currentOwners: [{ name: '', share: '' }],
   developerName: '',
   referenceNo: '',
+  bankName: '',
   inspectionDate: '',
   valuationDate: '',
   valuationForDate: '',
@@ -363,6 +365,29 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   locationMapUrl: '',
   hiddenFields: [],
 };
+
+/** Fields that carry over when creating a new report from a previous one.
+ *  These are typically the same across reports for the same firm/area. */
+export const CARRYOVER_FIELDS: (keyof ReportFormData)[] = [
+  'city', 'district', 'purpose', 'bankName', 'landRateSource', 'costIndex',
+  'constructionType', 'foundationType', 'roofingTerracing',
+  'waterSupply', 'sewerageSystem', 'stormDrainage', 'solidWasteManagement',
+  'electricityStatus', 'publicTransportAccess',
+  'sarfaesiCompliant', 'valuationMethodology',
+];
+
+/** Create form data pre-filled from a previous report's reusable fields */
+export function prefillFromReport(source: ReportFormData): Partial<ReportFormData> {
+  const prefilled: Partial<ReportFormData> = {};
+  for (const key of CARRYOVER_FIELDS) {
+    const value = source[key];
+    if (value !== '' && value !== 0 && value !== null && value !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (prefilled as any)[key] = value;
+    }
+  }
+  return prefilled;
+}
 
 // Calculate completion percentage
 export function calculateCompletionPercentage(data: ReportFormData): number {

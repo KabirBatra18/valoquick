@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, verifyAuth, verifySession, verifyFirmOwner } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(req, 'seats-reduce', RATE_LIMITS.payment);
+    if (rateLimited) return rateLimited;
+
     // Verify authentication
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {

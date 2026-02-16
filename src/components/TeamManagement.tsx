@@ -177,6 +177,17 @@ export default function TeamManagement({ onClose }: TeamManagementProps) {
             )}
           </div>
 
+          {/* Role Info (13.2) */}
+          <div className="p-3 bg-surface-200/30 rounded-xl text-xs text-text-tertiary flex items-start gap-2">
+            <svg className="w-4 h-4 shrink-0 mt-0.5 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>
+              <strong className="text-text-secondary">Members</strong> can create and edit reports.{' '}
+              <strong className="text-text-secondary">Admins</strong> can also manage team and branding settings.
+            </span>
+          </div>
+
           {/* Invite Form - For owners */}
           {isOwner && (
             <div className="p-4 bg-surface-200/50 rounded-xl">
@@ -208,13 +219,29 @@ export default function TeamManagement({ onClose }: TeamManagementProps) {
                         : 'No seats available - purchase more to invite'
                       }
                     </p>
-                    <button
-                      type="submit"
-                      disabled={isInviting || availableSeats <= 0}
-                      className="btn btn-primary text-sm disabled:opacity-50"
-                    >
-                      {isInviting ? 'Sending...' : 'Send Invite'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {firm?.id && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = `${window.location.origin}/join?firm=${firm.id}`;
+                            navigator.clipboard.writeText(link);
+                            setSuccess('Invite link copied!');
+                            setTimeout(() => setSuccess(null), 2000);
+                          }}
+                          className="text-xs text-brand hover:text-brand-light transition-colors"
+                        >
+                          Copy invite link
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={isInviting || availableSeats <= 0}
+                        className="btn btn-primary text-sm disabled:opacity-50"
+                      >
+                        {isInviting ? 'Sending...' : 'Send Invite'}
+                      </button>
+                    </div>
                   </div>
                 </form>
               ) : (

@@ -5,12 +5,17 @@ import { TRIAL_LIMIT } from '@/types/subscription';
 import { FirmBranding, ValuerInfo } from '@/types/branding';
 import { getTemplateCSS, renderHeader, renderFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
 import { htmlToPdfBase64 } from '@/lib/puppeteer';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // Configure for serverless - allow up to 5 minutes for PDF generation
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(request, 'generate', RATE_LIMITS.expensive);
+    if (rateLimited) return rateLimited;
+
     // Verify authentication - only authenticated users can generate reports
     const authResult = await verifyAuth(request);
     if (!authResult.authenticated || !authResult.user) {
@@ -216,6 +221,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
 
     <p><strong>ON BEHALF OF OWNERS</strong></p>
+    ${valuationInputs.bankName ? `<p style="margin-top: 8px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
 
     <div class="ref-date">
       <span>Ref : ${valuationInputs.referenceNo}</span>
@@ -256,7 +262,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
     <p class="section-title">GENERAL:</p>
     <table>
-      <tr><td>1</td><td>Purpose for which valuation is made</td><td>${valuationInputs.purpose}</td></tr>
+      <tr><td>1</td><td>Purpose for which valuation is made</td><td>${valuationInputs.purpose}${valuationInputs.bankName ? ` (${valuationInputs.bankName})` : ''}</td></tr>
       <tr><td>2</td><td>Date as on which valuation is made</td><td>${valuationInputs.valuationDate} for the date ${valuationInputs.valuationForDate}</td></tr>
       <tr><td>3</td><td>Name of owner/owners</td><td>IN ${originalOwnerYear}- ${originalOwner}<br>Current Owners-${currentOwnersShort}</td></tr>
       <tr><td>4</td><td>If the property is under joint ownership/co-ownership, share of each owner.</td><td>Joint Ownership<br>${currentOwnersText}</td></tr>

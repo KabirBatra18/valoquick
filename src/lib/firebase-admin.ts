@@ -13,28 +13,22 @@ function getFirebaseAdmin(): { app: App | null; db: Firestore | null; auth: Auth
 
   // If no credentials, return null (build-time safety)
   if (!serviceAccountKey) {
-    console.error('FIREBASE_SERVICE_ACCOUNT_KEY not set');
     return { app: null, db: null, auth: null };
   }
 
   if (!getApps().length) {
     try {
-      console.log('Parsing service account key, length:', serviceAccountKey.length);
       const serviceAccount = JSON.parse(serviceAccountKey);
-      console.log('Service account parsed, project_id:', serviceAccount.project_id);
 
       // Fix private key newlines - Railway may escape them as literal \n
       if (serviceAccount.private_key) {
-        const originalLength = serviceAccount.private_key.length;
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-        console.log('Private key processed, original length:', originalLength, 'new length:', serviceAccount.private_key.length);
       }
 
       app = initializeApp({
         credential: cert(serviceAccount),
         projectId,
       });
-      console.log('Firebase Admin initialized successfully for project:', projectId);
     } catch (error) {
       console.error('Failed to initialize Firebase Admin:', error);
       return { app: null, db: null, auth: null };
@@ -95,31 +89,23 @@ export async function verifyAuth(req: NextRequest): Promise<AuthResult> {
     }
 
     const authHeader = req.headers.get('authorization');
-    console.log('Auth header present:', !!authHeader);
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('Missing or invalid auth header. Header:', authHeader?.substring(0, 20));
       return { authenticated: false, error: 'Missing or invalid authorization header' };
     }
 
     const idToken = authHeader.split('Bearer ')[1];
 
     if (!idToken) {
-      console.error('No token after Bearer split');
       return { authenticated: false, error: 'No token provided' };
     }
 
-    console.log('Token length:', idToken.length, 'Token preview:', idToken.substring(0, 50) + '...');
-
     const auth = getAdminAuth();
     const decodedToken = await auth.verifyIdToken(idToken);
-    console.log('Token verified successfully for user:', decodedToken.uid);
 
     return { authenticated: true, user: decodedToken };
   } catch (error: unknown) {
-    console.error('Auth verification error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Full error message:', errorMessage);
 
     if (errorMessage.includes('Firebase ID token has expired')) {
       return { authenticated: false, error: 'Token expired. Please refresh the page.' };
@@ -169,14 +155,11 @@ export async function verifyFirmOwner(userId: string, firmId: string): Promise<b
       .collection('members').doc(userId).get();
 
     if (!memberDoc.exists) {
-      console.log('verifyFirmOwner: Member doc not found for user', userId, 'in firm', firmId);
       return false;
     }
 
     const memberData = memberDoc.data();
-    const isOwner = memberData?.role === 'owner';
-    console.log('verifyFirmOwner: User', userId, 'role is', memberData?.role, '- isOwner:', isOwner);
-    return isOwner;
+    return memberData?.role === 'owner';
   } catch (error) {
     console.error('Firm owner verification error:', error);
     return false;

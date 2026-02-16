@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, verifyAuth, verifyFirmMembership } from '@/lib/firebase-admin';
 import { SEAT_PRICING, PlanType } from '@/types/subscription';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(req, 'seats-calculate', RATE_LIMITS.standard);
+    if (rateLimited) return rateLimited;
+
     // Verify authentication
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {

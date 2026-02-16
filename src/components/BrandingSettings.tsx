@@ -14,11 +14,8 @@ interface BrandingSettingsProps {
   onClose: () => void;
 }
 
-type Tab = 'details' | 'design' | 'header' | 'footer';
-
 export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
   const { firm, updateBranding } = useFirm();
-  const [activeTab, setActiveTab] = useState<Tab>('details');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -113,13 +110,6 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
     }
   };
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'details', label: 'Firm Details' },
-    { id: 'design', label: 'Design' },
-    { id: 'header', label: 'Header' },
-    { id: 'footer', label: 'Footer' },
-  ];
-
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="relative bg-surface-100 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-surface-200">
@@ -149,102 +139,94 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex border-b border-surface-200 px-4 lg:px-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content — scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {/* Firm Details Tab */}
-          {activeTab === 'details' && (
-            <div className="space-y-5">
+        {/* Single scrollable content (14.1) */}
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-8">
+          {/* Section 1: Firm Info */}
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center">1</span>
+              Firm Details
+            </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-3">Firm Logo</h3>
-                <LogoUploader
-                  logoUrl={formData.logoUrl}
-                  onLogoSelected={handleLogoSelected}
-                  onLogoRemove={handleLogoRemove}
-                  isUploading={uploading}
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Firm Name</label>
+                <input
+                  type="text"
+                  value={formData.firmName}
+                  onChange={(e) => updateField('firmName', e.target.value)}
+                  className="form-input w-full"
+                  placeholder="e.g., Batra & Associates"
                 />
               </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1.5">Firm Name</label>
-                  <input
-                    type="text"
-                    value={formData.firmName}
-                    onChange={(e) => updateField('firmName', e.target.value)}
-                    className="form-input w-full"
-                    placeholder="e.g., Batra & Associates"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                    Subtitle / Tagline
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.subtitle}
-                    onChange={(e) => updateField('subtitle', e.target.value)}
-                    className="form-input w-full"
-                    placeholder="e.g., Architects, Engineers & Valuers"
-                  />
-                </div>
-                <div className="lg:col-span-2">
-                  <label className="block text-xs font-medium text-text-secondary mb-1.5">Address</label>
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => updateField('address', e.target.value)}
-                    className="form-input w-full"
-                    placeholder="e.g., 3/5 East Punjabi Bagh, New Delhi - 110026"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                    Contact Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.contact}
-                    onChange={(e) => updateField('contact', e.target.value)}
-                    className="form-input w-full"
-                    placeholder="e.g., Mob: 9811741187"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1.5">Email</label>
-                  <input
-                    type="text"
-                    value={formData.email}
-                    onChange={(e) => updateField('email', e.target.value)}
-                    className="form-input w-full"
-                    placeholder="e.g., info@yourfirm.com"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                  Subtitle / Tagline
+                </label>
+                <input
+                  type="text"
+                  value={formData.subtitle}
+                  onChange={(e) => updateField('subtitle', e.target.value)}
+                  className="form-input w-full"
+                  placeholder="e.g., Architects, Engineers & Valuers"
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Address</label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => updateField('address', e.target.value)}
+                  className="form-input w-full"
+                  placeholder="e.g., 3/5 East Punjabi Bagh, New Delhi - 110026"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                  Contact Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.contact}
+                  onChange={(e) => updateField('contact', e.target.value)}
+                  className="form-input w-full"
+                  placeholder="e.g., Mob: 9811741187"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Email</label>
+                <input
+                  type="text"
+                  value={formData.email}
+                  onChange={(e) => updateField('email', e.target.value)}
+                  className="form-input w-full"
+                  placeholder="e.g., info@yourfirm.com"
+                />
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Design Tab */}
-          {activeTab === 'design' && (
-            <div className="space-y-6">
+          {/* Section 2: Logo */}
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center">2</span>
+              Firm Logo
+            </h3>
+            <LogoUploader
+              logoUrl={formData.logoUrl}
+              onLogoSelected={handleLogoSelected}
+              onLogoRemove={handleLogoRemove}
+              isUploading={uploading}
+            />
+          </div>
+
+          {/* Section 3: Template & Colors */}
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center">3</span>
+              Template & Colors
+            </h3>
+            <div className="space-y-5">
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-1">Report Template</h3>
                 <p className="text-text-tertiary text-xs mb-3">
                   Choose the visual style for your report headers and footers
                 </p>
@@ -255,79 +237,70 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                   compact
                 />
               </div>
-
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-1">Brand Color</h3>
-                <p className="text-text-tertiary text-xs mb-3">
-                  Used for header accents, borders, and highlights
-                </p>
+                <label className="text-xs font-medium text-text-secondary mb-2 block">Brand Color</label>
                 <BrandingColorPicker
                   color={formData.header.primaryColor}
                   onChange={(c) => updateHeader('primaryColor', c)}
                 />
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Header Tab */}
-          {activeTab === 'header' && (
-            <div>
-              <h3 className="text-sm font-semibold text-text-primary mb-1">Header Sections</h3>
-              <p className="text-text-tertiary text-xs mb-4">
-                Toggle which sections appear in your report header
-              </p>
-              <div className="space-y-3">
-                {[
-                  { key: 'showLogo', label: 'Firm Logo', desc: 'Show your logo in the header' },
-                  { key: 'showFirmName', label: 'Firm Name', desc: 'Display your firm name prominently' },
-                  {
-                    key: 'showSubtitle',
-                    label: 'Subtitle / Tagline',
-                    desc: 'Show your firm description',
-                  },
-                  { key: 'showAddress', label: 'Address', desc: 'Include firm address' },
-                  { key: 'showContact', label: 'Contact Details', desc: 'Show phone and email' },
-                  {
-                    key: 'showValuerInfo',
-                    label: 'Valuer Information',
-                    desc: 'Display valuer name, qualification, and designation',
-                  },
-                ].map((item) => {
-                  const isOn = formData.header[item.key as keyof typeof formData.header] as boolean;
-                  return (
-                    <label
-                      key={item.key}
-                      className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
+          {/* Section 4: Header Toggles */}
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center">4</span>
+              Header Sections
+            </h3>
+            <p className="text-text-tertiary text-xs mb-3">Toggle which sections appear in your report header</p>
+            <div className="space-y-2">
+              {[
+                { key: 'showLogo', label: 'Firm Logo', desc: 'Show your logo in the header' },
+                { key: 'showFirmName', label: 'Firm Name', desc: 'Display your firm name prominently' },
+                { key: 'showSubtitle', label: 'Subtitle / Tagline', desc: 'Show your firm description' },
+                { key: 'showAddress', label: 'Address', desc: 'Include firm address' },
+                { key: 'showContact', label: 'Contact Details', desc: 'Show phone and email' },
+                { key: 'showValuerInfo', label: 'Valuer Information', desc: 'Display valuer name, qualification, and designation' },
+              ].map((item) => {
+                const isOn = formData.header[item.key as keyof typeof formData.header] as boolean;
+                return (
+                  <label
+                    key={item.key}
+                    className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl hover:bg-surface-200/50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-text-primary font-medium">{item.label}</span>
+                      <p className="text-text-tertiary text-xs">{item.desc}</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isOn}
+                      onClick={() => updateHeader(item.key, !isOn)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${
+                        isOn ? 'bg-brand' : 'bg-surface-300'
+                      }`}
                     >
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm text-text-primary font-medium">{item.label}</span>
-                        <p className="text-text-tertiary text-xs">{item.desc}</p>
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={isOn}
-                        onClick={() => updateHeader(item.key, !isOn)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${
-                          isOn ? 'bg-brand' : 'bg-surface-300'
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 translate-y-[2px] ${
+                          isOn ? 'translate-x-[22px]' : 'translate-x-[2px]'
                         }`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 translate-y-[2px] ${
-                            isOn ? 'translate-x-[22px]' : 'translate-x-[2px]'
-                          }`}
-                        />
-                      </button>
-                    </label>
-                  );
-                })}
-              </div>
+                      />
+                    </button>
+                  </label>
+                );
+              })}
             </div>
-          )}
+          </div>
 
-          {/* Footer Tab */}
-          {activeTab === 'footer' && (
-            <div className="space-y-5">
+          {/* Section 5: Footer */}
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-xs font-bold flex items-center justify-center">5</span>
+              Footer
+            </h3>
+            <div className="space-y-3">
               <label className="flex items-center justify-between gap-3 p-3 bg-surface-200/30 rounded-xl cursor-pointer">
                 <div className="flex-1 min-w-0">
                   <span className="text-sm text-text-primary font-semibold">Enable Footer</span>
@@ -351,23 +324,11 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
               </label>
 
               {formData.footer.enabled && (
-                <div className="space-y-3 pl-1">
+                <div className="space-y-2 pl-1">
                   {[
-                    {
-                      key: 'showPageNumbers',
-                      label: 'Page Numbers',
-                      desc: 'Show "Page X" on each page',
-                    },
-                    {
-                      key: 'showContactInfo',
-                      label: 'Contact Information',
-                      desc: 'Repeat firm name, phone, email in footer',
-                    },
-                    {
-                      key: 'showDisclaimer',
-                      label: 'Disclaimer Text',
-                      desc: 'Add a custom disclaimer note',
-                    },
+                    { key: 'showPageNumbers', label: 'Page Numbers', desc: 'Show "Page X" on each page' },
+                    { key: 'showContactInfo', label: 'Contact Information', desc: 'Repeat firm name, phone, email in footer' },
+                    { key: 'showDisclaimer', label: 'Disclaimer Text', desc: 'Add a custom disclaimer note' },
                   ].map((item) => {
                     const isOn = formData.footer[item.key as keyof typeof formData.footer] as boolean;
                     return (
@@ -414,19 +375,20 @@ export default function BrandingSettings({ onClose }: BrandingSettingsProps) {
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Live Preview — always visible */}
-        <div className="flex-shrink-0 border-t border-surface-200 px-4 lg:px-6 py-3">
-          <p className="text-[10px] uppercase tracking-wider font-medium text-text-tertiary mb-2">
-            Live Preview
-          </p>
-          {activeTab === 'footer' ? (
-            <FooterPreview branding={previewBranding} />
-          ) : (
+          {/* Live Preview */}
+          <div>
+            <p className="text-[10px] uppercase tracking-wider font-medium text-text-tertiary mb-2">
+              Live Preview
+            </p>
             <HeaderPreview branding={previewBranding} />
-          )}
+            {formData.footer.enabled && (
+              <div className="mt-3">
+                <FooterPreview branding={previewBranding} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Actions */}

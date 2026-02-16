@@ -6,6 +6,7 @@ import { useFirm } from '@/contexts/FirmContext';
 import { clearAccessRevokedFlag } from '@/lib/auth';
 import { TemplateStyle } from '@/types/branding';
 import TemplateSelector from './branding/TemplateSelector';
+import { lookupReferralCode, recordReferral } from '@/lib/referral';
 
 export default function OnboardingFlow() {
   const { user, userDoc, logout, refreshUserDoc } = useAuth();
@@ -14,6 +15,10 @@ export default function OnboardingFlow() {
     userDoc?.accessRevoked ? 'revoked' : 'choice'
   );
   const [firmName, setFirmName] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralInfo, setReferralInfo] = useState<{ firmId: string; firmName: string } | null>(null);
+  const [referralError, setReferralError] = useState<string | null>(null);
+  const [isCheckingReferral, setIsCheckingReferral] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateStyle>('classic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -32,6 +37,36 @@ export default function OnboardingFlow() {
     }
   };
 
+  const handleCheckReferral = async () => {
+    const code = referralCode.trim().toUpperCase();
+    if (!code) {
+      setReferralInfo(null);
+      setReferralError(null);
+      return;
+    }
+    if (code.length !== 6) {
+      setReferralError('Referral code must be 6 characters');
+      setReferralInfo(null);
+      return;
+    }
+    setIsCheckingReferral(true);
+    setReferralError(null);
+    try {
+      const result = await lookupReferralCode(code);
+      if (result) {
+        setReferralInfo(result);
+        setReferralError(null);
+      } else {
+        setReferralInfo(null);
+        setReferralError('Invalid referral code');
+      }
+    } catch {
+      setReferralError('Failed to verify code');
+    } finally {
+      setIsCheckingReferral(false);
+    }
+  };
+
   const handleContinueToTemplate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firmName.trim()) {
@@ -47,7 +82,7 @@ export default function OnboardingFlow() {
     setLocalError(null);
 
     try {
-      await createNewFirm(firmName.trim());
+      const newFirmId = await createNewFirm(firmName.trim());
       // After firm is created, save template choice as branding
       try {
         await updateBranding({
@@ -57,6 +92,14 @@ export default function OnboardingFlow() {
       } catch {
         // Non-critical - branding can be set later
         console.error('Failed to save initial branding');
+      }
+      // Record referral if a valid code was used
+      if (referralInfo && newFirmId && user?.uid) {
+        try {
+          await recordReferral(referralInfo.firmId, newFirmId, user.uid);
+        } catch {
+          // Non-critical - referral recording failure shouldn't block firm creation
+        }
       }
     } catch (err) {
       if (err instanceof Error && err.message === 'TRIAL_BLOCKED') {
@@ -135,8 +178,8 @@ export default function OnboardingFlow() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-white font-medium">Create a new firm</h3>
-                    <p className="text-gray-400 text-sm">Start fresh with your own organization</p>
+                    <h3 className="text-white font-medium">Start as Solo Valuer</h3>
+                    <p className="text-gray-400 text-sm">Set up your practice. Add team members later.</p>
                   </div>
                 </div>
               </button>
@@ -193,9 +236,16 @@ export default function OnboardingFlow() {
               Back
             </button>
 
-            <h2 className="text-xl font-semibold text-white mb-2">Create your firm</h2>
+            {/* Step indicator */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              <span className="w-2.5 h-2.5 rounded-full bg-gray-600" />
+              <span className="text-xs text-gray-500 ml-1">Step 1 of 2</span>
+            </div>
+
+            <h2 className="text-xl font-semibold text-white mb-2">Set up your firm</h2>
             <p className="text-gray-400 text-sm mb-6">
-              This will be the name of your organization. You can invite team members after setup.
+              Enter your firm name. You can invite team members after setup.
             </p>
 
             <form onSubmit={handleContinueToTemplate}>
@@ -212,6 +262,48 @@ export default function OnboardingFlow() {
                   className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={isSubmitting}
                 />
+              </div>
+
+              {/* Referral code moved to Dashboard settings for simpler onboarding */}
+              <div className="mb-6 hidden">
+                <label htmlFor="referralCode" className="block text-sm font-medium text-gray-300 mb-2">
+                  Referral Code <span className="text-gray-500">(optional)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="referralCode"
+                    value={referralCode}
+                    onChange={(e) => {
+                      setReferralCode(e.target.value.toUpperCase().slice(0, 6));
+                      setReferralInfo(null);
+                      setReferralError(null);
+                    }}
+                    placeholder="e.g., ABC123"
+                    maxLength={6}
+                    className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase tracking-widest font-mono"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCheckReferral}
+                    disabled={isCheckingReferral || referralCode.trim().length !== 6}
+                    className="px-4 py-3 bg-gray-600 hover:bg-gray-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCheckingReferral ? '...' : 'Apply'}
+                  </button>
+                </div>
+                {referralInfo && (
+                  <p className="mt-2 text-sm text-emerald-400 flex items-center gap-1.5">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Referred by {referralInfo.firmName} — both firms get 1 month bonus!
+                  </p>
+                )}
+                {referralError && (
+                  <p className="mt-2 text-sm text-red-400">{referralError}</p>
+                )}
               </div>
 
               <button
@@ -237,6 +329,13 @@ export default function OnboardingFlow() {
               </svg>
               Back
             </button>
+
+            {/* Step indicator */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500/40" />
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              <span className="text-xs text-gray-500 ml-1">Step 2 of 2</span>
+            </div>
 
             <h2 className="text-xl font-semibold text-white mb-2">Choose a report template</h2>
             <p className="text-gray-400 text-sm mb-6">
@@ -271,9 +370,9 @@ export default function OnboardingFlow() {
                 await handleCreateFirm();
               }}
               disabled={isSubmitting}
-              className="w-full mt-2 py-2 text-gray-400 hover:text-white text-sm transition-colors"
+              className="w-full mt-3 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
             >
-              Skip for now (use Classic)
+              Skip for now
             </button>
           </div>
         )}

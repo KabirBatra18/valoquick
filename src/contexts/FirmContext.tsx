@@ -77,7 +77,7 @@ interface FirmContextType {
   loading: boolean;
   error: string | null;
   trialBlocked: boolean; // Whether trial creation is blocked for this user
-  createNewFirm: (name: string) => Promise<void>;
+  createNewFirm: (name: string) => Promise<string | void>;
   acceptFirmInvite: (inviteId: string, firmId: string) => Promise<void>;
   inviteMember: (email: string, role: 'admin' | 'member') => Promise<void>;
   cancelInvite: (inviteId: string) => Promise<void>;
@@ -203,6 +203,7 @@ export function FirmProvider({ children }: { children: ReactNode }) {
 
       await refreshUserDoc();
       await refreshFirm();
+      return firmId;
     } catch (err) {
       console.error('Error creating firm:', err);
       setError('Failed to create firm. Please try again.');

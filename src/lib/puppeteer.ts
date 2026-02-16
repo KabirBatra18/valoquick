@@ -37,52 +37,55 @@ export async function getBrowser() {
 
 export async function htmlToPdfBase64(html: string): Promise<string> {
   const browser = await getBrowser();
-  const page = await browser.newPage();
+  try {
+    const page = await browser.newPage();
 
-  page.setDefaultTimeout(120000);
-  await page.setJavaScriptEnabled(false);
+    page.setDefaultTimeout(120000);
+    await page.setJavaScriptEnabled(false);
 
-  await page.setContent(html, {
-    waitUntil: 'domcontentloaded',
-    timeout: 60000,
-  });
-
-  // Wait for base64 images to finish rendering
-  await page.evaluate(() => {
-    return new Promise<void>((resolve) => {
-      const images = document.querySelectorAll('img');
-      let loadedCount = 0;
-      const totalImages = images.length;
-
-      if (totalImages === 0) {
-        resolve();
-        return;
-      }
-
-      const checkComplete = () => {
-        loadedCount++;
-        if (loadedCount >= totalImages) resolve();
-      };
-
-      images.forEach((img) => {
-        if (img.complete) {
-          checkComplete();
-        } else {
-          img.onload = checkComplete;
-          img.onerror = checkComplete;
-        }
-      });
-
-      setTimeout(resolve, 10000);
+    await page.setContent(html, {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
     });
-  });
 
-  const pdfBuffer = await page.pdf({
-    format: 'A4',
-    margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
-    printBackground: true,
-  });
+    // Wait for base64 images to finish rendering
+    await page.evaluate(() => {
+      return new Promise<void>((resolve) => {
+        const images = document.querySelectorAll('img');
+        let loadedCount = 0;
+        const totalImages = images.length;
 
-  await browser.close();
-  return Buffer.from(pdfBuffer).toString('base64');
+        if (totalImages === 0) {
+          resolve();
+          return;
+        }
+
+        const checkComplete = () => {
+          loadedCount++;
+          if (loadedCount >= totalImages) resolve();
+        };
+
+        images.forEach((img) => {
+          if (img.complete) {
+            checkComplete();
+          } else {
+            img.onload = checkComplete;
+            img.onerror = checkComplete;
+          }
+        });
+
+        setTimeout(resolve, 10000);
+      });
+    });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+      printBackground: true,
+    });
+
+    return Buffer.from(pdfBuffer).toString('base64');
+  } finally {
+    await browser.close();
+  }
 }

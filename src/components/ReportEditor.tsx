@@ -42,7 +42,7 @@ export default function ReportEditor({ html, onExportPdf, onBack, isExporting }:
       // Match the Tailwind padding on the inner wrapper: p-3 / sm:p-6 / lg:p-8
       const vw = el.clientWidth;
       const pad = vw < 640 ? 24 : vw < 1024 ? 48 : 64; // total horizontal padding (both sides)
-      setScale(Math.min(1, (vw - pad) / A4_WIDTH_PX));
+      setScale(Math.max(0.65, Math.min(1, (vw - pad) / A4_WIDTH_PX)));
     };
 
     update();
@@ -186,12 +186,25 @@ export default function ReportEditor({ html, onExportPdf, onBack, isExporting }:
           <span className="sm:hidden">Back</span>
         </button>
 
-        <div className="flex items-center gap-1.5 text-text-tertiary text-[11px] sm:text-sm">
-          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
-          <span className="hidden sm:inline">Click any text to edit</span>
-          <span className="sm:hidden">Tap to edit</span>
+        <div className="flex items-center gap-1.5">
+          {/* Undo button */}
+          <button
+            type="button"
+            onClick={() => iframeRef.current?.contentDocument?.execCommand('undo')}
+            className="p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-200 transition-colors"
+            title="Undo"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" />
+            </svg>
+          </button>
+          <div className="text-text-tertiary text-[11px] sm:text-sm flex items-center gap-1">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            <span className="hidden sm:inline">Click any text to edit</span>
+            <span className="sm:hidden">Tap to edit</span>
+          </div>
         </div>
 
         <button
@@ -202,14 +215,14 @@ export default function ReportEditor({ html, onExportPdf, onBack, isExporting }:
           {isExporting ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span className="hidden sm:inline">Exporting...</span>
+              <span>Exporting...</span>
             </>
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>Export</span>
+              <span>Export PDF</span>
             </>
           )}
         </button>
@@ -229,7 +242,7 @@ export default function ReportEditor({ html, onExportPdf, onBack, isExporting }:
       )}
 
       {/* Editor area — scrollable, with scaled A4 paper */}
-      <div ref={scrollAreaRef} className="flex-1 overflow-auto">
+      <div ref={scrollAreaRef} className="flex-1 overflow-auto" style={{ touchAction: 'manipulation' }}>
         <div className="p-3 sm:p-6 lg:p-8">
           {/* Sizer: correct visual dimensions for scrollable area */}
           <div

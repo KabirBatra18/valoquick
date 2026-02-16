@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { adminDb, verifyAuth, verifyFirmOwner, verifySession } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { PlanType } from '@/types/subscription';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // Idempotency: track processed payment IDs to prevent duplicate processing
 const processedPayments = new Map<string, { success: boolean; processedAt: number }>();
@@ -33,6 +34,10 @@ function calculatePeriodEnd(plan: PlanType): Date {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(req, 'verify-payment', RATE_LIMITS.payment);
+    if (rateLimited) return rateLimited;
+
     // Verify authentication
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
@@ -131,6 +136,58 @@ export async function POST(req: NextRequest) {
     };
 
     await adminDb.collection('subscriptions').doc(firmId).set(subscriptionData, { merge: true });
+
+    // Process referral rewards (first-time subscription only)
+    try {
+      const firmDoc = await adminDb.collection('firms').doc(firmId).get();
+      const referredBy = firmDoc.data()?.referredBy;
+      if (referredBy) {
+        // Check if referral reward was already given
+        const referralSnap = await adminDb.collection('referrals')
+          .where('refereeFirmId', '==', firmId)
+          .where('referrerFirmId', '==', referredBy)
+          .where('status', '==', 'pending')
+          .limit(1)
+          .get();
+
+        if (!referralSnap.empty) {
+          const referralDoc = referralSnap.docs[0];
+          const bonusDays = 30;
+          const bonusMs = bonusDays * 24 * 60 * 60 * 1000;
+
+          // Reward referrer: extend their subscription period
+          const referrerSub = await adminDb.collection('subscriptions').doc(referredBy).get();
+          if (referrerSub.exists) {
+            const currentEnd = referrerSub.data()?.currentPeriodEnd?.toDate() || new Date();
+            const newEnd = new Date(currentEnd.getTime() + bonusMs);
+            await adminDb.collection('subscriptions').doc(referredBy).update({
+              currentPeriodEnd: Timestamp.fromDate(newEnd),
+              updatedAt: Timestamp.now(),
+            });
+          }
+
+          // Reward referee: extend this subscription period
+          const refereeSub = await adminDb.collection('subscriptions').doc(firmId).get();
+          if (refereeSub.exists) {
+            const currentEnd = refereeSub.data()?.currentPeriodEnd?.toDate() || periodEnd;
+            const newEnd = new Date(currentEnd.getTime() + bonusMs);
+            await adminDb.collection('subscriptions').doc(firmId).update({
+              currentPeriodEnd: Timestamp.fromDate(newEnd),
+              updatedAt: Timestamp.now(),
+            });
+          }
+
+          // Mark referral as rewarded
+          await referralDoc.ref.update({
+            status: 'rewarded',
+            rewardedAt: Timestamp.now(),
+          });
+        }
+      }
+    } catch (referralError) {
+      // Referral processing failure should not block subscription
+      console.error('Referral reward error (non-critical):', referralError);
+    }
 
     // Mark as processed for idempotency
     processedPayments.set(idempotencyKey, { success: true, processedAt: Date.now() });

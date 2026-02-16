@@ -2,28 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { PlanType } from '@/types/subscription';
 import { verifyAuth, verifyFirmOwner, verifySession } from '@/lib/firebase-admin';
-
-// Rate limiting: track requests per user
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const RATE_LIMIT_MAX = 10; // Max 10 requests per minute
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const userLimit = rateLimitMap.get(userId);
-
-  if (!userLimit || now > userLimit.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (userLimit.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
-
-  userLimit.count++;
-  return true;
-}
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 function getRazorpayInstance() {
   const key_id = process.env.RAZORPAY_KEY_ID;
@@ -78,12 +57,8 @@ export async function POST(req: NextRequest) {
     const userId = authResult.user.uid;
 
     // Rate limiting
-    if (!checkRateLimit(userId)) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please wait a moment.' },
-        { status: 429 }
-      );
-    }
+    const rateLimited = rateLimit(req, 'create-order', RATE_LIMITS.payment);
+    if (rateLimited) return rateLimited;
 
     // Verify session is valid (single-device enforcement)
     const sessionId = req.headers.get('x-session-id');

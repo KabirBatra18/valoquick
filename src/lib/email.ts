@@ -24,7 +24,6 @@ interface EmailResult {
 async function sendAdminEmail(subject: string, html: string): Promise<EmailResult> {
   const client = getResend();
   if (!client) {
-    console.log('RESEND_API_KEY not set, skipping email');
     return { success: false, error: 'API key not configured' };
   }
 

@@ -159,8 +159,8 @@ export default function AddSeatsModal({ onClose }: AddSeatsModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface-primary rounded-2xl shadow-xl max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-surface-100 sm:rounded-2xl rounded-t-2xl shadow-xl max-w-md w-full p-6 border-t sm:border border-surface-200">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-text-primary">Add Team Seats</h2>
           <button

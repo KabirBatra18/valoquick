@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import PricingSection from './PricingSection';
 
 export default function LandingPage() {
   const { signIn } = useAuth();
@@ -198,7 +197,99 @@ export default function LandingPage() {
 
       {/* Pricing Section */}
       <section id="pricing" className="py-16 md:py-20 px-4 bg-surface-100/50">
-        <PricingSection onSelectPlan={handleTryFree} />
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-text-primary text-center mb-4">
+            Simple, Transparent Pricing
+          </h2>
+          <p className="text-lg text-text-secondary text-center mb-12">
+            Start free, upgrade when you&apos;re ready. No hidden fees.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Free Trial */}
+            <div className="glass-card p-6 md:p-8 flex flex-col">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-text-primary mb-1">Free Trial</h3>
+                <p className="text-sm text-text-tertiary">No credit card needed</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-text-primary">&#8377;0</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {['5 Free Reports', 'Full PDF Export', 'Photo Attachments', 'Preview & Edit Before Export'].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-text-secondary">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={handleTryFree} className="w-full btn btn-secondary py-3 rounded-xl font-semibold">
+                Start Free
+              </button>
+            </div>
+
+            {/* Yearly — Best Value */}
+            <div className="glass-card p-6 md:p-8 flex flex-col border-2 border-brand relative">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs bg-brand text-white px-4 py-1 rounded-full font-semibold">
+                BEST VALUE
+              </span>
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-text-primary mb-1">Yearly</h3>
+                <p className="text-sm text-text-tertiary">Billed annually</p>
+              </div>
+              <div className="mb-1">
+                <span className="text-4xl font-bold text-text-primary">&#8377;750</span>
+                <span className="text-text-tertiary">/month</span>
+              </div>
+              <p className="text-sm text-green-500 font-medium mb-6">&#8377;9,000/year — save &#8377;3,000</p>
+              <ul className="space-y-3 mb-8 flex-1">
+                {['Unlimited Reports', 'Team Collaboration', 'Custom Branding', 'Priority Support', 'Extra Members from &#8377;300/mo'].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-text-secondary">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span dangerouslySetInnerHTML={{ __html: f }} />
+                  </li>
+                ))}
+              </ul>
+              <button onClick={handleTryFree} className="w-full btn btn-primary py-3 rounded-xl font-semibold">
+                Get Started
+              </button>
+            </div>
+
+            {/* Monthly */}
+            <div className="glass-card p-6 md:p-8 flex flex-col">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-text-primary mb-1">Monthly</h3>
+                <p className="text-sm text-text-tertiary">Cancel anytime</p>
+              </div>
+              <div className="mb-1">
+                <span className="text-4xl font-bold text-text-primary">&#8377;1,000</span>
+                <span className="text-text-tertiary">/month</span>
+              </div>
+              <p className="text-sm text-text-tertiary mb-6">Flexible, no commitment</p>
+              <ul className="space-y-3 mb-8 flex-1">
+                {['Unlimited Reports', 'Team Collaboration', 'Custom Branding', 'Priority Support', 'Extra Members from &#8377;400/mo'].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-text-secondary">
+                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span dangerouslySetInnerHTML={{ __html: f }} />
+                  </li>
+                ))}
+              </ul>
+              <button onClick={handleTryFree} className="w-full btn btn-secondary py-3 rounded-xl font-semibold">
+                Get Started
+              </button>
+            </div>
+          </div>
+
+          <p className="text-center text-text-tertiary text-sm mt-8">
+            All plans include GST. Secure payment via Razorpay.
+          </p>
+        </div>
       </section>
 
       {/* Trust Section */}

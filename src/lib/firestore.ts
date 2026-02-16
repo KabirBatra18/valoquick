@@ -354,6 +354,7 @@ export async function createReport(
     currentOwners: [{ name: '', share: '' }],
     developerName: '',
     referenceNo: '',
+    bankName: '',
     inspectionDate: '',
     valuationDate: '',
     valuationForDate: '',

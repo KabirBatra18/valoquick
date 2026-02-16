@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, verifyFirmAdmin, verifySession, getAdminDb } from '@/lib/firebase-admin';
 import { FirmBranding } from '@/types/branding';
 import { FieldValue } from 'firebase-admin/firestore';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function PUT(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(request, 'branding', RATE_LIMITS.standard);
+    if (rateLimited) return rateLimited;
+
     const authResult = await verifyAuth(request);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json(

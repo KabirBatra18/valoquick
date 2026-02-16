@@ -25,7 +25,6 @@ function isSubscriptionValid(subscription: Subscription | null): boolean {
     const gracePeriodEnd = new Date(periodEnd.getTime() + 24 * 60 * 60 * 1000);
 
     if (now > gracePeriodEnd) {
-      console.log('Subscription period has expired:', periodEnd);
       return false;
     }
   }

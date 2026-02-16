@@ -184,9 +184,13 @@ export default function PricingSection({ onSelectPlan, showHeader = true }: Pric
                     </div>
                     <div className="text-right">
                       <div className="text-lg sm:text-xl font-bold text-text-primary">
-                        ₹{planDetails[plan].perMonth}
+                        ₹{planDetails[plan].perMonth}<span className="text-xs font-normal text-text-tertiary">/mo</span>
                       </div>
-                      <div className="text-xs text-text-tertiary">per month</div>
+                      {plan !== 'monthly' && (
+                        <div className="text-xs text-text-tertiary">
+                          billed {formatPrice(PRICING[plan].amount)} / {planDetails[plan].period}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {selectedPlan === plan && plan !== 'monthly' && PRICING[plan].savings && (

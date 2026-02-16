@@ -10,7 +10,6 @@ import { getLocalSessionId } from './auth';
 export async function getAuthToken(): Promise<string | null> {
   const user = auth?.currentUser;
   if (!user) {
-    console.warn('getAuthToken: No current user. Auth initialized:', !!auth);
     return null;
   }
 

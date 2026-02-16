@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Dashboard from '@/components/Dashboard';
 import ValuationForm from '@/components/ValuationForm';
 import LandingPage from '@/components/LandingPage';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import { ValuationReport } from '@/types/valuation';
-import { ReportFormData, DEFAULT_FORM_DATA } from '@/types/report';
+import { ReportFormData, DEFAULT_FORM_DATA, prefillFromReport } from '@/types/report';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -15,16 +15,42 @@ import { updateReportStatus as updateReportStatusFirestore } from '@/lib/firesto
 import ReportEditor from '@/components/ReportEditor';
 import { authenticatedFetch } from '@/lib/api-client';
 import { recordTrialUsage } from '@/lib/trial';
+import { useLanguage } from '@/contexts/LanguageContext';
+import LanguageToggle from '@/components/LanguageToggle';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 const steps = [
-  { id: 0, name: 'Property', fullName: 'Property Details', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-  { id: 1, name: 'Owners', fullName: 'Owner Information', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
-  { id: 2, name: 'Valuation', fullName: 'Valuation Parameters', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' },
-  { id: 3, name: 'Building', fullName: 'Building Specs', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-  { id: 4, name: 'Technical', fullName: 'Technical Details', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
-  { id: 5, name: 'Photos', fullName: 'Property Photos', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { id: 6, name: 'Location', fullName: 'Property Location', icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
+  { id: 0, name: 'Property', fullName: 'Property Details', i18nKey: 'stepPropertyFull' as const, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+  { id: 1, name: 'Owners', fullName: 'Owner Information', i18nKey: 'currentOwners' as const, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
+  { id: 2, name: 'Valuation', fullName: 'Valuation Parameters', i18nKey: 'stepValuationFull' as const, icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' },
+  { id: 3, name: 'Building', fullName: 'Building Specs', i18nKey: 'stepSpecsFull' as const, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+  { id: 4, name: 'Technical', fullName: 'Technical Details', i18nKey: 'stepLegalFull' as const, icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+  { id: 5, name: 'Photos', fullName: 'Property Photos', i18nKey: 'stepPhotosFull' as const, icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { id: 6, name: 'Location', fullName: 'Property Location', i18nKey: 'propertyLocation' as const, icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
 ];
+
+// Key fields per section to check completion
+const SECTION_KEY_FIELDS: Record<number, (keyof ReportFormData)[]> = {
+  0: ['area', 'city', 'district'],
+  1: ['originalOwner'],
+  2: ['plotArea', 'landRatePerSqm', 'floorArea'],
+  3: ['roof', 'flooring'],
+  4: ['constructionType', 'roofingTerracing'],
+  5: ['photos'],
+  6: ['locationLat', 'locationLng'],
+};
+
+function isSectionStarted(formData: ReportFormData, sectionId: number): boolean {
+  const fields = SECTION_KEY_FIELDS[sectionId];
+  if (!fields) return false;
+  return fields.some(f => {
+    const val = formData[f];
+    if (val === null || val === undefined) return false;
+    if (Array.isArray(val)) return val.length > 0;
+    if (typeof val === 'number') return val !== 0;
+    return !!val;
+  });
+}
 
 const generationSteps = [
   { id: 0, label: 'Preparing data', description: 'Validating and organizing report data...' },
@@ -122,12 +148,13 @@ function debounce<T extends (...args: Parameters<T>) => void>(
 export default function Home() {
   const { user, userDoc, loading: authLoading } = useAuth();
   const { firm, loading: firmLoading } = useFirm();
-  const { isSubscribed, refreshSubscription } = useSubscription();
+  const { isSubscribed, canGenerateReport, refreshSubscription } = useSubscription();
+  const { t } = useLanguage();
 
   const firmId = userDoc?.firmId || null;
   const userId = user?.uid || null;
 
-  const { fetchReport, saveCurrentReport } = useReports(firmId, userId);
+  const { reports: allReports, fetchReport, saveCurrentReport } = useReports(firmId, userId);
 
   const [view, setView] = useState<'dashboard' | 'editor'>('dashboard');
   const [currentReportId, setCurrentReportId] = useState<string | null>(null);
@@ -142,6 +169,28 @@ export default function Home() {
   const [isExporting, setIsExporting] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [redownloadingId, setRedownloadingId] = useState<string | null>(null);
+  const [showTrialExhausted, setShowTrialExhausted] = useState(false);
+
+  // Swipe gesture for section navigation on mobile
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, []);
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    // Only trigger on horizontal swipes (not vertical scroll)
+    if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0 && activeStep < steps.length - 1) {
+        setActiveStep(prev => prev + 1);
+      } else if (dx > 0 && activeStep > 0) {
+        setActiveStep(prev => prev - 1);
+      }
+    }
+    touchStartRef.current = null;
+  }, [activeStep]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -152,7 +201,32 @@ export default function Home() {
     }
   }, []);
 
-  // Debounced save function
+  // Offline sync - saves locally when offline, syncs when back online
+  const handleSyncItem = useCallback(
+    async (reportId: string, data: ReportFormData) => {
+      await saveCurrentReport({
+        metadata: {
+          id: reportId,
+          title: 'Valuation Report',
+          propertyAddress: '',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          completionPercentage: 0,
+        },
+        formData: data,
+      });
+    },
+    [saveCurrentReport]
+  );
+
+  const { isOnline, isSyncing, pendingCount, saveWithOfflineFallback } = useOfflineSync({
+    reportId: currentReportId,
+    firmId,
+    onSyncItem: handleSyncItem,
+  });
+
+  // Debounced save function (with offline fallback)
   const debouncedSave = useMemo(
     () =>
       debounce(async (reportId: string, data: ReportFormData) => {
@@ -160,17 +234,19 @@ export default function Home() {
 
         setIsSaving(true);
         try {
-          await saveCurrentReport({
-            metadata: {
-              id: reportId,
-              title: 'Valuation Report',
-              propertyAddress: '',
-              status: 'active',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              completionPercentage: 0,
-            },
-            formData: data,
+          await saveWithOfflineFallback(data, async () => {
+            await saveCurrentReport({
+              metadata: {
+                id: reportId,
+                title: 'Valuation Report',
+                propertyAddress: '',
+                status: 'active',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                completionPercentage: 0,
+              },
+              formData: data,
+            });
           });
           setLastSaved(new Date());
         } catch (err) {
@@ -179,7 +255,7 @@ export default function Home() {
           setIsSaving(false);
         }
       }, 2000),
-    [firmId, userId, saveCurrentReport]
+    [firmId, userId, saveCurrentReport, saveWithOfflineFallback]
   );
 
   // Auto-save when form data changes
@@ -221,18 +297,38 @@ export default function Home() {
 
     const report = await fetchReport(reportId);
     if (report) {
+      let data = report.formData;
+
+      // Auto-fill from most recent report if this is a brand-new empty report
+      const isEmpty = !data.propertyNo && !data.area && !data.city && data.plotArea === 0;
+      if (isEmpty && allReports.length > 0) {
+        // Find the most recent non-empty report (prefer concluded)
+        const source = allReports
+          .filter(r => r.metadata.id !== reportId && (r.formData.city || r.formData.district))
+          .sort((a, b) => new Date(b.metadata.updatedAt).getTime() - new Date(a.metadata.updatedAt).getTime())[0];
+        if (source) {
+          data = { ...data, ...prefillFromReport(source.formData) };
+        }
+      }
+
       setCurrentReportId(reportId);
-      setFormData(report.formData);
+      setFormData(data);
       setView('editor');
       setActiveStep(0);
     }
-  }, [firmId, fetchReport]);
+  }, [firmId, fetchReport, allReports]);
 
   const handleFormDataChange = useCallback((newData: Partial<ReportFormData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
   }, []);
 
   const handleGenerate = async (data: ValuationReport) => {
+    // Pre-check trial limit before generating (17.5)
+    if (!canGenerateReport) {
+      setShowTrialExhausted(true);
+      return;
+    }
+
     setIsGenerating(true);
     setGenerationStep(0);
     setGenerationProgress(0);
@@ -325,19 +421,9 @@ export default function Home() {
       const result = await response.json();
 
       // Trigger immediate download
-      const byteCharacters = atob(result.pdf);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'Valuation_Report.pdf';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const namePart = formData.area || formData.city || 'Report';
+      downloadFile(result.pdf, `Valuation_${namePart.replace(/\s+/g, '_')}_${dateStr}.pdf`, 'application/pdf');
 
       // Store for re-download from sidebar
       setGeneratedFiles({ pdf: result.pdf });
@@ -375,6 +461,51 @@ export default function Home() {
     setPreviewHtml(null);
   };
 
+  const handleRedownloadPdf = useCallback(async (reportId: string) => {
+    if (!firmId) return;
+    setRedownloadingId(reportId);
+    try {
+      // Fetch the report data
+      const report = await fetchReport(reportId);
+      if (!report) throw new Error('Report not found');
+
+      // Build the ValuationReport payload from saved form data
+      const data = {
+        ...report.formData,
+      };
+
+      // Generate HTML preview
+      const genResponse = await authenticatedFetch('/api/generate?preview=true', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      if (!genResponse.ok) {
+        const errData = await genResponse.json();
+        throw new Error(errData.error || 'Failed to generate report');
+      }
+      const { html } = await genResponse.json();
+
+      // Export to PDF
+      const pdfResponse = await authenticatedFetch('/api/export-pdf', {
+        method: 'POST',
+        body: JSON.stringify({ html }),
+      });
+      if (!pdfResponse.ok) {
+        const errData = await pdfResponse.json();
+        throw new Error(errData.error || 'Failed to export PDF');
+      }
+      const result = await pdfResponse.json();
+
+      // Download
+      const address = report.metadata.propertyAddress || report.formData.area || 'Report';
+      downloadFile(result.pdf, `Valuation_${address.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, 'application/pdf');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to re-download PDF');
+    } finally {
+      setRedownloadingId(null);
+    }
+  }, [firmId, fetchReport]);
+
   const downloadFile = (base64Data: string, filename: string, mimeType: string) => {
     const byteCharacters = atob(base64Data);
     const byteNumbers = new Array(byteCharacters.length);
@@ -383,12 +514,14 @@ export default function Home() {
     }
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: mimeType });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Loading state
@@ -418,6 +551,8 @@ export default function Home() {
     return (
       <Dashboard
         onOpenReport={handleOpenReport}
+        onRedownloadPdf={handleRedownloadPdf}
+        redownloadingId={redownloadingId}
       />
     );
   }
@@ -425,6 +560,36 @@ export default function Home() {
   // Show Editor
   return (
     <div className="flex min-h-screen bg-surface-50 text-text-primary">
+      {/* Trial exhausted overlay (17.5) */}
+      {showTrialExhausted && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-surface-100 rounded-2xl p-6 max-w-sm w-full text-center border border-surface-200">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <svg className="w-7 h-7 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-text-primary mb-2">Free Trial Exhausted</h3>
+            <p className="text-sm text-text-secondary mb-1">You have used all your free reports.</p>
+            <p className="text-xs text-text-tertiary mb-5">Your existing reports are always accessible. Subscribe to generate new PDFs.</p>
+            <div className="space-y-2">
+              <button
+                onClick={() => { setShowTrialExhausted(false); handleBackToDashboard(); }}
+                className="w-full btn btn-primary py-3 rounded-xl font-semibold"
+              >
+                View Pricing
+              </button>
+              <button
+                onClick={() => setShowTrialExhausted(false)}
+                className="w-full py-2 text-sm text-text-tertiary hover:text-text-primary transition-colors"
+              >
+                Continue Editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isGenerating && (
         <GeneratingOverlay currentStep={generationStep} progress={generationProgress} />
       )}
@@ -447,7 +612,7 @@ export default function Home() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span className="text-sm font-medium">Back to Dashboard</span>
+            <span className="text-sm font-medium">{t('backToDashboard')}</span>
           </button>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand to-brand-dark flex items-center justify-center text-white shadow-lg shadow-brand/20">
@@ -456,16 +621,25 @@ export default function Home() {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-text-primary tracking-tight">Valuation Report</h1>
-              <p className="text-xs text-text-tertiary">
-                {isSaving ? 'Saving...' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Auto-saving...'}
+              <h1 className="text-lg font-bold text-text-primary tracking-tight">{t('valuationReport')}</h1>
+              <p className="text-xs text-text-tertiary flex items-center gap-1.5">
+                {!isOnline && (
+                  <span className="inline-flex items-center gap-1 text-amber-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Offline
+                  </span>
+                )}
+                {isSyncing ? 'Syncing...' : isSaving ? t('saving') : lastSaved ? `${t('saved')} ${lastSaved.toLocaleTimeString()}` : t('autoSaving')}
+                {pendingCount > 0 && isOnline && !isSyncing && (
+                  <span className="text-amber-400">({pendingCount} changes waiting to sync)</span>
+                )}
               </p>
             </div>
           </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider px-3 mb-3 mt-2">Report Sections</p>
+          <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider px-3 mb-3 mt-2">{t('reportSections')}</p>
           {steps.map((step) => (
             <button
               key={step.id}
@@ -483,12 +657,22 @@ export default function Home() {
                    <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
                 </svg>
               </span>
-              <span>{step.fullName}</span>
+              <span className="flex-1">{t(step.i18nKey)}</span>
+              {isSectionStarted(formData, step.id) ? (
+                <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <span className="w-3 h-3 rounded-full border-2 border-surface-300" />
+              )}
             </button>
           ))}
         </nav>
 
         <div className="p-4 border-t border-surface-200 space-y-3 bg-surface-100/50 backdrop-blur-md">
+          <div className="flex justify-end mb-1">
+            <LanguageToggle />
+          </div>
           {generatedFiles && (
             <div className="p-4 rounded-xl bg-surface-200/50 border border-surface-200 mb-4">
               <p className="text-xs font-semibold text-text-secondary mb-3 uppercase flex items-center gap-2">
@@ -497,7 +681,7 @@ export default function Home() {
               </p>
               <div className="space-y-2">
                 <button
-                  onClick={() => downloadFile(generatedFiles.pdf!, 'Valuation_Report.pdf', 'application/pdf')}
+                  onClick={() => downloadFile(generatedFiles.pdf!, `Valuation_${(formData.area || formData.city || 'Report').replace(/\s+/g, '_')}.pdf`, 'application/pdf')}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-100 border border-surface-200 text-xs font-medium text-text-secondary hover:border-red-500/30 hover:text-red-400 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -530,7 +714,7 @@ export default function Home() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <span>Preview Report</span>
+                <span>{t('previewReport')}</span>
               </>
             )}
           </button>
@@ -541,7 +725,7 @@ export default function Home() {
         <header className="hidden lg:block sticky top-0 z-40 bg-surface-50/80 backdrop-blur-xl border-b border-surface-200">
           <div className="px-8 py-5 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-text-primary tracking-tight">{steps[activeStep].fullName}</h2>
+              <h2 className="text-xl font-bold text-text-primary tracking-tight">{t(steps[activeStep].i18nKey)}</h2>
               <p className="text-sm text-text-tertiary mt-1">Step {activeStep + 1} of {steps.length}</p>
             </div>
 
@@ -565,46 +749,61 @@ export default function Home() {
                </svg>
              </button>
              <div className="text-center">
-                <h1 className="text-sm font-semibold text-text-primary">{steps[activeStep].fullName}</h1>
+                <h1 className="text-sm font-semibold text-text-primary">{t(steps[activeStep].i18nKey)}</h1>
                 <p className="text-[10px] text-text-tertiary">Step {activeStep + 1}/{steps.length}</p>
              </div>
-             {generatedFiles ? (
-               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
-                 <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
-                 Ready
-               </span>
-             ) : (
-               <div className="w-8" />
-             )}
+             <div className="flex items-center gap-1.5">
+               {/* Save status icon (9.1) */}
+               {isSaving ? (
+                 <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+               ) : lastSaved ? (
+                 <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                 </svg>
+               ) : null}
+               {generatedFiles && (
+                 <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">
+                   <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                   Ready
+                 </span>
+               )}
+             </div>
            </div>
          </div>
 
          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-100/95 backdrop-blur-xl border-t border-surface-200 safe-area-bottom">
-           <div className="grid grid-cols-7 h-12">
+           <div className="flex overflow-x-auto h-14 scrollbar-hide">
              {steps.map((step) => (
                <button
                  key={step.id}
                  onClick={() => setActiveStep(step.id)}
-                 className={`flex flex-col items-center justify-center gap-0.5 transition-all ${
+                 className={`relative flex flex-col items-center justify-center gap-0.5 transition-all min-w-[52px] flex-1 ${
                    activeStep === step.id
                      ? 'text-brand'
                      : 'text-text-tertiary'
                  }`}
                >
-                 <svg className={`w-4 h-4 ${activeStep === step.id ? 'scale-110' : ''} transition-transform`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeStep === step.id ? 2.5 : 1.5}>
-                   <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
-                 </svg>
-                 <span className={`text-[9px] font-medium ${activeStep === step.id ? 'text-brand' : ''}`}>{step.name}</span>
+                 <div className="relative">
+                   <svg className={`w-6 h-6 ${activeStep === step.id ? 'scale-110' : ''} transition-transform`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeStep === step.id ? 2.5 : 1.5}>
+                     <path strokeLinecap="round" strokeLinejoin="round" d={step.icon} />
+                   </svg>
+                   {isSectionStarted(formData, step.id) && (
+                     <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500" />
+                   )}
+                 </div>
+                 {activeStep === step.id && (
+                   <span className="text-[9px] font-semibold text-brand">{step.name}</span>
+                 )}
                </button>
              ))}
            </div>
          </nav>
 
-         <div className="lg:hidden fixed bottom-16 right-3 z-50 flex flex-col items-end gap-2">
+         <div className="lg:hidden fixed bottom-[60px] right-3 z-50 flex flex-col items-end gap-2">
            {generatedFiles && (
              <div className="flex flex-col gap-2 animate-fade-in">
                <button
-                 onClick={() => downloadFile(generatedFiles.pdf!, 'Valuation_Report.pdf', 'application/pdf')}
+                 onClick={() => downloadFile(generatedFiles.pdf!, `Valuation_${(formData.area || formData.city || 'Report').replace(/\s+/g, '_')}.pdf`, 'application/pdf')}
                  className="w-10 h-10 rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 flex items-center justify-center"
                >
                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -634,7 +833,16 @@ export default function Home() {
            </button>
          </div>
 
-        <div className="p-3 lg:p-8 pb-32 lg:pb-8 max-w-5xl mx-auto">
+        <div className="p-3 lg:p-8 pb-32 lg:pb-8 max-w-5xl mx-auto" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+          {/* Offline banner (9.2) */}
+          {!isOnline && (
+            <div className="mb-3 lg:mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-sm text-amber-400">
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728m-3.536-3.536a4 4 0 010-5.656" />
+              </svg>
+              <span>You&apos;re offline. Changes saved locally.</span>
+            </div>
+          )}
           {error && (
             <div className="mb-4 lg:mb-6 p-3 lg:p-4 rounded-lg lg:rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3 lg:gap-4">
               <div className="p-1.5 lg:p-2 rounded-lg bg-red-500/20 text-red-500">
@@ -642,9 +850,31 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-xs lg:text-sm font-bold text-red-400">Error Generating Report</h3>
-                <p className="text-xs lg:text-sm text-red-300/80 mt-0.5 lg:mt-1">{error}</p>
+              <div className="flex-1">
+                <h3 className="text-xs lg:text-sm font-bold text-red-400">Something went wrong</h3>
+                <p className="text-xs lg:text-sm text-red-300/80 mt-0.5 lg:mt-1">
+                  {(() => {
+                    const e = error.toLowerCase();
+                    if (e.includes('failed to generate')) return 'Could not generate report. Check your internet and try again.';
+                    if (e.includes('failed to export')) return 'Could not export PDF. Please try again.';
+                    if (e.includes('timed out') || e.includes('timeout')) return 'The request took too long. Try reducing the number of photos and retry.';
+                    if (e.includes('too large') || e.includes('size')) return 'Report data is too large. Try removing some photos and retry.';
+                    return error;
+                  })()}
+                </p>
+                <button
+                  onClick={() => {
+                    setError(null);
+                    if (!isGenerating) {
+                      const form = document.querySelector('form');
+                      if (form) form.requestSubmit();
+                    }
+                  }}
+                  disabled={isGenerating}
+                  className="mt-2 px-3 py-1.5 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Try Again
+                </button>
               </div>
             </div>
           )}
@@ -664,7 +894,7 @@ export default function Home() {
               type="button"
               onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
               disabled={activeStep === 0}
-              className="btn btn-ghost disabled:opacity-30 flex items-center gap-2"
+              className="btn btn-ghost disabled:opacity-30 flex items-center gap-2 py-3 px-4"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -687,7 +917,7 @@ export default function Home() {
               type="button"
               onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
               disabled={activeStep === steps.length - 1}
-              className="btn btn-ghost disabled:opacity-30 flex items-center gap-2"
+              className="btn btn-ghost disabled:opacity-30 flex items-center gap-2 py-3 px-4"
             >
               Next Step
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

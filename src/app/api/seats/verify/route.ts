@@ -4,6 +4,7 @@ import Razorpay from 'razorpay';
 import { adminDb, verifyAuth, verifyFirmOwner } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { PlanType } from '@/types/subscription';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 function getRazorpayInstance() {
   const key_id = process.env.RAZORPAY_KEY_ID;
@@ -31,6 +32,10 @@ function getSeatPlanId(plan: PlanType): string | null {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(req, 'seats-verify', RATE_LIMITS.payment);
+    if (rateLimited) return rateLimited;
+
     // Verify authentication
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {

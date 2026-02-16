@@ -13,7 +13,9 @@ const PRESET_COLORS = [
   { hex: '#2c3e50', name: 'Charcoal' },
   { hex: '#7b2d26', name: 'Maroon' },
   { hex: '#1a6b3c', name: 'Forest' },
+  { hex: '#117a65', name: 'Teal' },
   { hex: '#5b2c6f', name: 'Purple' },
+  { hex: '#d35400', name: 'Orange' },
   { hex: '#b7950b', name: 'Gold' },
   { hex: '#000000', name: 'Black' },
 ];

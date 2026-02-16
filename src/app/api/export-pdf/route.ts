@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, adminDb, verifySession } from '@/lib/firebase-admin';
 import { TRIAL_LIMIT } from '@/types/subscription';
 import { htmlToPdfBase64 } from '@/lib/puppeteer';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(request, 'export-pdf', RATE_LIMITS.expensive);
+    if (rateLimited) return rateLimited;
+
     // Auth
     const authResult = await verifyAuth(request);
     if (!authResult.authenticated || !authResult.user) {
@@ -71,6 +76,11 @@ export async function POST(request: NextRequest) {
 
     if (!html || typeof html !== 'string') {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
+    }
+
+    // Limit payload size to 10MB to prevent memory abuse
+    if (html.length > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'HTML content too large' }, { status: 413 });
     }
 
     // Convert HTML to PDF

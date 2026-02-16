@@ -34,7 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Handle session invalidation (logged in from another device)
   const handleSessionInvalid = useCallback(async () => {
-    console.log('Session invalidated - logged in from another device');
     setSessionExpired(true);
     clearLocalSessionId();
     await signOut();

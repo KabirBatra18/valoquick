@@ -37,7 +37,7 @@ export default function TrialBanner({ onUpgrade }: TrialBannerProps) {
             <p className="text-text-secondary">
               {trialStatus.reason === 'SUSPICIOUS_ACTIVITY'
                 ? 'Your trial access has been restricted. Please contact support.'
-                : `You've used all ${TRIAL_LIMIT} free reports. Upgrade to continue creating reports.`}
+                : `You've used all ${TRIAL_LIMIT} free reports. Your existing reports are always accessible. Subscribe to create more.`}
             </p>
           </div>
           {trialStatus.reason !== 'SUSPICIOUS_ACTIVITY' && onUpgrade && (

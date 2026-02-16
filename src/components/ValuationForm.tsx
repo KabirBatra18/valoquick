@@ -11,9 +11,10 @@ import {
 } from '@/types/valuation';
 import { ReportFormData } from '@/types/report';
 import { useFirm } from '@/contexts/FirmContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { uploadReportPhoto } from '@/lib/photo-storage';
 import SwipeableField from './SwipeableField';
-import SwipeHint from './SwipeHint';
+// SwipeHint removed — fields now use toggle icon instead of swipe
 import HiddenFieldsModal from './HiddenFieldsModal';
 
 interface ValuationFormProps {
@@ -29,8 +30,12 @@ interface ValuationFormProps {
 // Reusable Input Component
 const FormInput = ({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) => (
   <div className="form-group">
-    <label className="form-label">{label}</label>
-    <input className="form-input" {...props} />
+    <label className="form-label">{label}{props.required && <span className="text-red-400 ml-0.5">*</span>}</label>
+    <input
+      className="form-input"
+      {...props}
+      {...(props.type === 'number' ? { inputMode: 'decimal' as const } : {})}
+    />
   </div>
 );
 
@@ -285,16 +290,16 @@ const FormDatePicker = ({ label, value, onChange, required }: {
       </div>
 
       {/* Days grid */}
-      <div className="grid grid-cols-7 px-2 pb-2 gap-1">
+      <div className="grid grid-cols-7 px-2 pb-2 gap-0.5">
         {emptyDays.map((_, i) => (
-          <div key={`empty-${i}`} className="w-8 h-8" />
+          <div key={`empty-${i}`} className="min-w-[36px] min-h-[36px]" />
         ))}
         {days.map((day) => (
           <button
             key={day}
             type="button"
             onClick={() => handleSelectDate(day)}
-            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+            className={`min-w-[36px] min-h-[36px] rounded-lg text-sm font-medium transition-all ${
               isSelectedDay(day)
                 ? 'bg-brand text-white shadow-lg shadow-brand/30'
                 : isToday(day)
@@ -335,42 +340,71 @@ const FormDatePicker = ({ label, value, onChange, required }: {
     </div>
   );
 
+  // Use native date picker on mobile touch devices
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 768;
+
+  const handleNativeDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nativeValue = e.target.value; // YYYY-MM-DD
+    if (nativeValue) {
+      const [y, m, d] = nativeValue.split('-');
+      onChange(`${d}-${m}-${y}`);
+    }
+  };
+
+  // Convert DD-MM-YYYY to YYYY-MM-DD for native input
+  const nativeDateValue = (() => {
+    if (!value) return '';
+    const parts = value.split('-');
+    if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    return '';
+  })();
+
   return (
     <div className="form-group" ref={containerRef}>
-      <label className="form-label">{label}</label>
+      <label className="form-label">{label}{required && <span className="text-red-400 ml-0.5">*</span>}</label>
       <div ref={inputRef}>
-        <div className="flex gap-2">
+        {isTouchDevice ? (
           <input
-            className="form-input flex-1"
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="DD-MM-YYYY"
+            className="form-input"
+            type="date"
+            value={nativeDateValue}
+            onChange={handleNativeDateChange}
             required={required}
           />
-          <button
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-            className={`px-3 rounded-xl transition-all duration-200 flex items-center justify-center ${
-              theme === 'light'
-                ? 'bg-neutral-100 border border-neutral-300 hover:bg-neutral-200'
-                : 'bg-surface-200 border border-surface-300 hover:bg-surface-300'
-            }`}
-            title="Open calendar"
-          >
-            <svg
-              className={`w-5 h-5 ${
-                theme === 'light' ? 'text-neutral-600' : 'text-text-secondary'
+        ) : (
+          <div className="flex gap-2">
+            <input
+              className="form-input flex-1"
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="DD-MM-YYYY"
+              required={required}
+            />
+            <button
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              className={`px-3 rounded-xl transition-all duration-200 flex items-center justify-center ${
+                theme === 'light'
+                  ? 'bg-neutral-100 border border-neutral-300 hover:bg-neutral-200'
+                  : 'bg-surface-200 border border-surface-300 hover:bg-surface-300'
               }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
+              title="Open calendar"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-            </svg>
-          </button>
-        </div>
+              <svg
+                className={`w-5 h-5 ${
+                  theme === 'light' ? 'text-neutral-600' : 'text-text-secondary'
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
       {mounted && calendarContent && createPortal(calendarContent, document.body)}
     </div>
@@ -383,7 +417,7 @@ const FormSelect = ({ label, options, ...props }: {
   options: { value: string; label: string }[]
 } & React.SelectHTMLAttributes<HTMLSelectElement>) => (
   <div className="form-group">
-    <label className="form-label">{label}</label>
+    <label className="form-label">{label}{props.required && <span className="text-red-400 ml-0.5">*</span>}</label>
     <select className="form-select" {...props}>
       {options.map(opt => (
         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -433,8 +467,11 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
     const updatePosition = () => {
       if (isOpen && inputWrapperRef.current) {
         const rect = inputWrapperRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const dropdownHeight = 240; // max-h-60 = 240px
+        const flipUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
         setPosition({
-          top: rect.bottom + 4,
+          top: flipUp ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
           left: rect.left,
           width: rect.width,
         });
@@ -535,8 +572,10 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
     setSearchQuery('');
   };
 
-  // Check if mobile device
+  // Check if mobile touch device — use native select for better UX
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const useNativeSelect = isMobile && isTouchDevice && options.length <= 15;
 
   const handleArrowClick = () => {
     setIsOpen(!isOpen);
@@ -547,6 +586,24 @@ const FormSelectWithCustom = ({ label, options, value, onChange, placeholder }: 
       input?.blur();
     }
   };
+
+  if (useNativeSelect) {
+    return (
+      <div className="form-group" ref={containerRef}>
+        <label className="form-label">{label}</label>
+        <select
+          className="form-select"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          <option value="">{placeholder || `Select ${label.toLowerCase()}`}</option>
+          {options.filter(opt => opt.value).map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
 
   return (
     <div className="form-group" ref={containerRef}>
@@ -637,6 +694,31 @@ const PURPOSE_OPTIONS = [
   { value: 'For sale/purchase transaction', label: 'Sale/Purchase' },
   { value: 'For stamp duty and registration purpose', label: 'Stamp Duty/Registration' },
   { value: 'For wealth tax assessment', label: 'Wealth Tax' },
+];
+
+const BANK_OPTIONS = [
+  { value: 'State Bank of India', label: 'SBI' },
+  { value: 'Punjab National Bank', label: 'PNB' },
+  { value: 'Bank of Baroda', label: 'Bank of Baroda' },
+  { value: 'Canara Bank', label: 'Canara Bank' },
+  { value: 'Union Bank of India', label: 'Union Bank' },
+  { value: 'Bank of India', label: 'Bank of India' },
+  { value: 'Indian Bank', label: 'Indian Bank' },
+  { value: 'Central Bank of India', label: 'Central Bank' },
+  { value: 'Indian Overseas Bank', label: 'IOB' },
+  { value: 'UCO Bank', label: 'UCO Bank' },
+  { value: 'HDFC Bank', label: 'HDFC Bank' },
+  { value: 'ICICI Bank', label: 'ICICI Bank' },
+  { value: 'Axis Bank', label: 'Axis Bank' },
+  { value: 'Kotak Mahindra Bank', label: 'Kotak Mahindra' },
+  { value: 'Yes Bank', label: 'Yes Bank' },
+  { value: 'IDFC First Bank', label: 'IDFC First' },
+  { value: 'Bandhan Bank', label: 'Bandhan Bank' },
+  { value: 'Federal Bank', label: 'Federal Bank' },
+  { value: 'LIC Housing Finance', label: 'LIC HFL' },
+  { value: 'HDFC Ltd', label: 'HDFC Ltd' },
+  { value: 'PNB Housing Finance', label: 'PNB Housing' },
+  { value: 'Bajaj Housing Finance', label: 'Bajaj Housing' },
 ];
 
 const LAND_RATE_SOURCE_OPTIONS = [
@@ -814,6 +896,7 @@ const EXTERIOR_OPTIONS = [
 
 export default function ValuationForm({ onGenerate, activeSection, initialData, onDataChange, reportId }: ValuationFormProps) {
   const { firm } = useFirm();
+  const { t } = useLanguage();
   const firmId = firm?.id;
 
   // Property Address
@@ -847,6 +930,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   // Valuation Inputs
   const [referenceNo, setReferenceNo] = useState(initialData?.referenceNo || '');
+  const [bankName, setBankName] = useState(initialData?.bankName || '');
   const [valuationDate, setValuationDate] = useState(initialData?.valuationDate || formatDateDDMMYYYY(new Date()));
   const [valuationForDate, setValuationForDate] = useState(initialData?.valuationForDate || '');
   const [purpose, setPurpose] = useState(initialData?.purpose || '');
@@ -858,6 +942,19 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [locationIncreasePercent, setLocationIncreasePercent] = useState<number>(initialData?.locationIncreasePercent || 0);
   const [landShareFraction, setLandShareFraction] = useState(initialData?.landShareFraction || '');
   const [landShareDecimal, setLandShareDecimal] = useState<number>(initialData?.landShareDecimal || 0);
+
+  // Auto-compute landShareDecimal when fraction matches X/Y pattern
+  useEffect(() => {
+    const match = landShareFraction.match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);
+    if (match) {
+      const numerator = parseFloat(match[1]);
+      const denominator = parseFloat(match[2]);
+      if (denominator !== 0) {
+        const decimal = parseFloat((numerator / denominator).toFixed(6));
+        setLandShareDecimal(decimal);
+      }
+    }
+  }, [landShareFraction]);
 
   // Construction Details
   const [floorArea, setFloorArea] = useState<number>(initialData?.floorArea || 0);
@@ -1007,6 +1104,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
   const [photoPage, setPhotoPage] = useState(0);
   const [uploadingPhotos, setUploadingPhotos] = useState(0);
+  const [failedPhotos, setFailedPhotos] = useState<File[]>([]);
   const PHOTOS_PER_PAGE = 6;
 
   // Location
@@ -1017,13 +1115,21 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Hidden fields state (for swipe-to-hide feature)
+  // Hidden fields state (for toggle-to-hide feature)
   const [hiddenFields, setHiddenFields] = useState<string[]>(initialData?.hiddenFields || []);
   const [showHiddenFieldsModal, setShowHiddenFieldsModal] = useState(false);
+  const [hideToast, setHideToast] = useState<{ fieldName: string; visible: boolean } | null>(null);
+  const hideToastTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Hidden field handlers
   const handleHideField = useCallback((fieldName: string) => {
     setHiddenFields(prev => [...prev, fieldName]);
+    // Show toast with undo
+    if (hideToastTimeoutRef.current) clearTimeout(hideToastTimeoutRef.current);
+    setHideToast({ fieldName, visible: true });
+    hideToastTimeoutRef.current = setTimeout(() => {
+      setHideToast(null);
+    }, 4000);
   }, []);
 
   const handleRestoreField = useCallback((fieldName: string) => {
@@ -1123,6 +1229,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         currentOwners,
         developerName,
         referenceNo,
+        bankName,
         inspectionDate,
         valuationDate,
         valuationForDate,
@@ -1258,7 +1365,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     northBoundary, southBoundary, eastBoundary, westBoundary,
     northEastBoundary, northWestBoundary, southEastBoundary, southWestBoundary,
     originalOwner, originalOwnerYear, ownerPhone, currentOwners, developerName,
-    referenceNo, inspectionDate, valuationDate, valuationForDate, purpose,
+    referenceNo, bankName, inspectionDate, valuationDate, valuationForDate, purpose,
     plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
     floorArea, plinthAreaRate, costIndex, specificationIncreasePercent,
     yearOfConstruction, estimatedLifeYears, ageAtValuation,
@@ -1292,8 +1399,11 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     try {
       const url = await uploadReportPhoto(firmId, reportId, file);
       setPhotos((prev) => [...prev, url]);
+      // Remove from failed list if it was a retry
+      setFailedPhotos((prev) => prev.filter((f) => f !== file));
     } catch (err) {
       console.error('Failed to upload photo:', err);
+      setFailedPhotos((prev) => prev.some(f => f === file) ? prev : [...prev, file]);
     } finally {
       setUploadingPhotos((prev) => prev - 1);
     }
@@ -1343,11 +1453,19 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   const removePhoto = (index: number) => setPhotos(photos.filter((_, i) => i !== index));
 
+  const movePhoto = (index: number, direction: -1 | 1) => {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= photos.length) return;
+    const newPhotos = [...photos];
+    [newPhotos[index], newPhotos[newIndex]] = [newPhotos[newIndex], newPhotos[index]];
+    setPhotos(newPhotos);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const fullAddress = `PROPERTY NO. ${propertyNo}, BLOCK-${block}, ${area}, ${city}`;
     const valuationInputs = {
-      referenceNo, valuationDate, valuationForDate, purpose, plotArea, landRatePerSqm,
+      referenceNo, bankName, valuationDate, valuationForDate, purpose, plotArea, landRatePerSqm,
       landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
       plinthAreaRate, costIndex, specificationIncreasePercent, yearOfConstruction,
       estimatedLifeYears, ageAtValuation,
@@ -1419,7 +1537,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       {activeSection === 0 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
-            <h3 className="glass-card-title">Property Address</h3>
+            <h3 className="glass-card-title">{t('propertyAddress')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="propertyNo" isHidden={hiddenFields.includes('propertyNo')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Property No." value={propertyNo} onChange={(e) => setPropertyNo(e.target.value)} placeholder="e.g., D-44" required />
@@ -1449,7 +1567,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Physical Characteristics</h3>
+            <h3 className="glass-card-title">{t('physicalCharacteristics')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="landType" isHidden={hiddenFields.includes('landType')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom
@@ -1484,26 +1602,26 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <SwipeableField fieldName="plinthArea" isHidden={hiddenFields.includes('plinthArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Plinth Area (sq.m.)</label>
-                  <input type="number" className="form-input" value={plinthArea || ''} onChange={(e) => setPlinthArea(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={plinthArea || ''} onChange={(e) => setPlinthArea(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="carpetArea" isHidden={hiddenFields.includes('carpetArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Carpet Area (sq.m.)</label>
-                  <input type="number" className="form-input" value={carpetArea || ''} onChange={(e) => setCarpetArea(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={carpetArea || ''} onChange={(e) => setCarpetArea(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="saleableArea" isHidden={hiddenFields.includes('saleableArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Saleable Area (sq.m.)</label>
-                  <input type="number" className="form-input" value={saleableArea || ''} onChange={(e) => setSaleableArea(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={saleableArea || ''} onChange={(e) => setSaleableArea(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
             </div>
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Property Boundaries</h3>
+            <h3 className="glass-card-title">{t('propertyBoundaries')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="northBoundary" isHidden={hiddenFields.includes('northBoundary')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom label="North" options={BOUNDARY_OPTIONS} value={northBoundary} onChange={setNorthBoundary} placeholder="e.g., Plot No 43" />
@@ -1533,7 +1651,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Property Classification</h3>
+            <h3 className="glass-card-title">{t('propertyClassification')}</h3>
             <div className="grid-3">
               <SwipeableField fieldName="propertyType" isHidden={hiddenFields.includes('propertyType')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom
@@ -1609,7 +1727,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Nearby Civic Amenities</h3>
+            <h3 className="glass-card-title">{t('nearbyCivicAmenities')}</h3>
             <p className="text-xs lg:text-sm text-text-tertiary mb-2 lg:mb-4">Select all amenities available near the property</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-3">
               {[
@@ -1659,7 +1777,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       {activeSection === 1 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
-            <h3 className="glass-card-title">Original Owner</h3>
+            <h3 className="glass-card-title">{t('originalOwner')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="originalOwner" isHidden={hiddenFields.includes('originalOwner')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Owner Name" value={originalOwner} onChange={(e) => setOriginalOwner(e.target.value)} placeholder="e.g., SMT RAJ KHURANA" required />
@@ -1677,7 +1795,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Current Owners</h3>
+            <h3 className="glass-card-title">{t('currentOwners')}</h3>
             <div className="space-y-4">
               {currentOwners.map((owner, index) => (
                 <div key={index} className="owner-card">
@@ -1731,10 +1849,13 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       {activeSection === 2 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
-            <h3 className="glass-card-title">Reference Details</h3>
+            <h3 className="glass-card-title">{t('referenceDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="referenceNo" isHidden={hiddenFields.includes('referenceNo')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Reference No." value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="e.g., 19/2025" required />
+              </SwipeableField>
+              <SwipeableField fieldName="bankName" isHidden={hiddenFields.includes('bankName')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom label="Bank / Institution Name" options={BANK_OPTIONS} value={bankName} onChange={setBankName} placeholder="Enter bank name" />
               </SwipeableField>
               <SwipeableField fieldName="inspectionDate" isHidden={hiddenFields.includes('inspectionDate')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormDatePicker
@@ -1768,7 +1889,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Land Details</h3>
+            <h3 className="glass-card-title">{t('landDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="plotArea" isHidden={hiddenFields.includes('plotArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Plot Area (Sqm)" type="number" step="0.0001" value={plotArea || ''} onChange={(e) => setPlotArea(parseFloat(e.target.value) || 0)} required />
@@ -1792,7 +1913,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Construction Details</h3>
+            <h3 className="glass-card-title">{t('constructionDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="floorArea" isHidden={hiddenFields.includes('floorArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Floor Area (Sqm)" type="number" step="0.001" value={floorArea || ''} onChange={(e) => setFloorArea(parseFloat(e.target.value) || 0)} required />
@@ -1810,7 +1931,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Depreciation</h3>
+            <h3 className="glass-card-title">{t('depreciation')}</h3>
             <div className="grid-3">
               <SwipeableField fieldName="yearOfConstruction" isHidden={hiddenFields.includes('yearOfConstruction')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Year of Construction" value={yearOfConstruction} onChange={(e) => setYearOfConstruction(e.target.value)} placeholder="e.g., 1968-69" required />
@@ -1827,10 +1948,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           {/* Live Calculation Preview */}
           {plotArea > 0 && floorArea > 0 && landRatePerSqm > 0 && (
             <div className="calc-preview">
-              <h3 className="glass-card-title text-brand">Live Calculation Preview</h3>
+              <h3 className="glass-card-title text-brand">{t('liveCalcPreview')}</h3>
               {(() => {
                 const calc = calculateValues(
-                  { referenceNo, valuationDate, valuationForDate, purpose, plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal, plinthAreaRate, costIndex, specificationIncreasePercent, yearOfConstruction, estimatedLifeYears, ageAtValuation },
+                  { referenceNo, bankName, valuationDate, valuationForDate, purpose, plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal, plinthAreaRate, costIndex, specificationIncreasePercent, yearOfConstruction, estimatedLifeYears, ageAtValuation },
                   floorArea
                 );
                 return (
@@ -1862,7 +1983,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           )}
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Marketability Assessment</h3>
+            <h3 className="glass-card-title">{t('marketabilityAssessment')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="locationAttributes" isHidden={hiddenFields.includes('locationAttributes')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom
@@ -1933,18 +2054,18 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Valuation Summary</h3>
+            <h3 className="glass-card-title">{t('valuationSummary')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="guidelineValueLand" isHidden={hiddenFields.includes('guidelineValueLand')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Guideline Value - Land (Rs)</label>
-                  <input type="number" className="form-input" value={guidelineValueLand || ''} onChange={(e) => setGuidelineValueLand(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={guidelineValueLand || ''} onChange={(e) => setGuidelineValueLand(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="guidelineValueBuilding" isHidden={hiddenFields.includes('guidelineValueBuilding')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Guideline Value - Building (Rs)</label>
-                  <input type="number" className="form-input" value={guidelineValueBuilding || ''} onChange={(e) => setGuidelineValueBuilding(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={guidelineValueBuilding || ''} onChange={(e) => setGuidelineValueBuilding(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="marketRateTrend" isHidden={hiddenFields.includes('marketRateTrend')} onHide={handleHideField} onRestore={handleRestoreField}>
@@ -1966,13 +2087,13 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <SwipeableField fieldName="forcedSaleValue" isHidden={hiddenFields.includes('forcedSaleValue')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Forced/Distress Sale Value (Rs)</label>
-                  <input type="number" className="form-input" value={forcedSaleValue || ''} onChange={(e) => setForcedSaleValue(Number(e.target.value))} placeholder="75% of market value" />
+                  <input type="number" inputMode="decimal" className="form-input" value={forcedSaleValue || ''} onChange={(e) => setForcedSaleValue(Number(e.target.value))} placeholder="75% of market value" />
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="insuranceValue" isHidden={hiddenFields.includes('insuranceValue')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Insurance Value (Rs)</label>
-                  <input type="number" className="form-input" value={insuranceValue || ''} onChange={(e) => setInsuranceValue(Number(e.target.value))} placeholder="Construction cost" />
+                  <input type="number" inputMode="decimal" className="form-input" value={insuranceValue || ''} onChange={(e) => setInsuranceValue(Number(e.target.value))} placeholder="Construction cost" />
                 </div>
               </SwipeableField>
             </div>
@@ -2017,7 +2138,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       {activeSection === 3 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
-            <h3 className="glass-card-title">Building Specifications</h3>
+            <h3 className="glass-card-title">{t('buildingSpecifications')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="roof" isHidden={hiddenFields.includes('roof')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom label="Roof" options={ROOF_OPTIONS} value={roof} onChange={setRoof} placeholder="Enter roof type" />
@@ -2057,7 +2178,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       {activeSection === 4 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
-            <h3 className="glass-card-title">Construction Details</h3>
+            <h3 className="glass-card-title">{t('constructionDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="floorHeight" isHidden={hiddenFields.includes('floorHeight')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom label="Floor Height" options={FLOOR_HEIGHT_OPTIONS} value={floorHeight} onChange={setFloorHeight} placeholder="e.g., 10 feet 6 inches" />
@@ -2092,7 +2213,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Sanitary & Utilities</h3>
+            <h3 className="glass-card-title">{t('sanitaryUtilities')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="noOfWaterClosets" isHidden={hiddenFields.includes('noOfWaterClosets')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="No. of Water Closets" type="number" value={noOfWaterClosets} onChange={(e) => setNoOfWaterClosets(parseInt(e.target.value) || 0)} />
@@ -2122,7 +2243,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Compound Wall</h3>
+            <h3 className="glass-card-title">{t('compoundWall')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="compoundWallHeight" isHidden={hiddenFields.includes('compoundWallHeight')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom label="Height" options={COMPOUND_WALL_HEIGHT_OPTIONS} value={compoundWallHeight} onChange={setCompoundWallHeight} placeholder="e.g., 5 ft" />
@@ -2134,7 +2255,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Legal & Regulatory</h3>
+            <h3 className="glass-card-title">{t('legalRegulatory')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="ownershipDocType" isHidden={hiddenFields.includes('ownershipDocType')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom
@@ -2224,7 +2345,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Infrastructure & Utilities</h3>
+            <h3 className="glass-card-title">{t('infrastructureUtilities')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="waterSupply" isHidden={hiddenFields.includes('waterSupply')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom
@@ -2332,7 +2453,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Environmental & Safety</h3>
+            <h3 className="glass-card-title">{t('environmentalSafety')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="rainWaterHarvesting" isHidden={hiddenFields.includes('rainWaterHarvesting')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom
@@ -2515,12 +2636,12 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </div>
 
           <div className="glass-card">
-            <h3 className="glass-card-title">Economic & Rental Details</h3>
+            <h3 className="glass-card-title">{t('economicRentalDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="reasonableLettingValue" isHidden={hiddenFields.includes('reasonableLettingValue')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Reasonable Letting Value (Rs/month)</label>
-                  <input type="number" className="form-input" value={reasonableLettingValue || ''} onChange={(e) => setReasonableLettingValue(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={reasonableLettingValue || ''} onChange={(e) => setReasonableLettingValue(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="isOccupiedByTenant" isHidden={hiddenFields.includes('isOccupiedByTenant')} onHide={handleHideField} onRestore={handleRestoreField}>
@@ -2540,7 +2661,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   <SwipeableField fieldName="numberOfTenants" isHidden={hiddenFields.includes('numberOfTenants')} onHide={handleHideField} onRestore={handleRestoreField}>
                     <div className="form-group">
                       <label className="form-label">Number of Tenants</label>
-                      <input type="number" className="form-input" value={numberOfTenants || ''} onChange={(e) => setNumberOfTenants(Number(e.target.value))} placeholder="0" />
+                      <input type="number" inputMode="decimal" className="form-input" value={numberOfTenants || ''} onChange={(e) => setNumberOfTenants(Number(e.target.value))} placeholder="0" />
                     </div>
                   </SwipeableField>
                   <SwipeableField fieldName="tenancyDuration" isHidden={hiddenFields.includes('tenancyDuration')} onHide={handleHideField} onRestore={handleRestoreField}>
@@ -2578,7 +2699,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   <SwipeableField fieldName="monthlyRent" isHidden={hiddenFields.includes('monthlyRent')} onHide={handleHideField} onRestore={handleRestoreField}>
                     <div className="form-group">
                       <label className="form-label">Monthly Rent (Rs)</label>
-                      <input type="number" className="form-input" value={monthlyRent || ''} onChange={(e) => setMonthlyRent(Number(e.target.value))} placeholder="0" />
+                      <input type="number" inputMode="decimal" className="form-input" value={monthlyRent || ''} onChange={(e) => setMonthlyRent(Number(e.target.value))} placeholder="0" />
                     </div>
                   </SwipeableField>
                 </>
@@ -2619,13 +2740,13 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <SwipeableField fieldName="maintenanceCharges" isHidden={hiddenFields.includes('maintenanceCharges')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Monthly Maintenance (Rs)</label>
-                  <input type="number" className="form-input" value={maintenanceCharges || ''} onChange={(e) => setMaintenanceCharges(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={maintenanceCharges || ''} onChange={(e) => setMaintenanceCharges(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="securityCharges" isHidden={hiddenFields.includes('securityCharges')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
                   <label className="form-label">Security Charges (Rs/month)</label>
-                  <input type="number" className="form-input" value={securityCharges || ''} onChange={(e) => setSecurityCharges(Number(e.target.value))} placeholder="0" />
+                  <input type="number" inputMode="decimal" className="form-input" value={securityCharges || ''} onChange={(e) => setSecurityCharges(Number(e.target.value))} placeholder="0" />
                 </div>
               </SwipeableField>
             </div>
@@ -2637,7 +2758,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       {activeSection === 5 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
-            <h3 className="glass-card-title">Property Photos</h3>
+            <h3 className="glass-card-title">{t('propertyPhotos')}</h3>
 
             {/* Upload options - using labels for better mobile compatibility */}
             <div className="grid grid-cols-3 gap-2 lg:gap-3 mb-4 lg:mb-6">
@@ -2701,6 +2822,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   <p className="text-xs lg:text-sm font-semibold text-text-primary">
                     {isDragActive ? 'Drop here' : 'Files'}
                   </p>
+                  <p className="text-[10px] lg:text-xs text-text-tertiary sm:hidden">Tap to select</p>
                   <p className="text-[10px] lg:text-xs text-text-tertiary hidden sm:block">Drag or browse</p>
                 </div>
               </div>
@@ -2714,8 +2836,29 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
                 <span className="text-xs text-brand font-medium">
-                  Uploading {uploadingPhotos} photo{uploadingPhotos !== 1 ? 's' : ''}...
+                  Compressing & uploading {uploadingPhotos} photo{uploadingPhotos !== 1 ? 's' : ''}...
                 </span>
+              </div>
+            )}
+
+            {/* Failed photo uploads with retry (17.4) */}
+            {failedPhotos.length > 0 && (
+              <div className="mt-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-red-400 font-medium">
+                    {failedPhotos.length} photo{failedPhotos.length !== 1 ? 's' : ''} failed to upload
+                  </span>
+                  <button
+                    onClick={() => {
+                      const toRetry = [...failedPhotos];
+                      setFailedPhotos([]);
+                      toRetry.forEach(f => processAndAddPhoto(f));
+                    }}
+                    className="px-3 py-1 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                  >
+                    Retry All
+                  </button>
+                </div>
               </div>
             )}
 
@@ -2772,8 +2915,20 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute bottom-1.5 left-1.5 lg:bottom-2 lg:left-2 text-[10px] lg:text-xs text-white font-medium opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                          Photo {actualIndex + 1}
+                        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-1.5 pb-1.5 lg:px-2 lg:pb-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                          <span className="text-[10px] lg:text-xs text-white font-medium">Photo {actualIndex + 1}</span>
+                          <div className="flex gap-0.5">
+                            {actualIndex > 0 && (
+                              <button type="button" onClick={() => movePhoto(actualIndex, -1)} className="p-1 rounded bg-black/50 text-white hover:bg-white/30 transition-colors" title="Move left">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                              </button>
+                            )}
+                            {actualIndex < photos.length - 1 && (
+                              <button type="button" onClick={() => movePhoto(actualIndex, 1)} className="p-1 rounded bg-black/50 text-white hover:bg-white/30 transition-colors" title="Move right">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <button
                           type="button"
@@ -2822,7 +2977,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       {activeSection === 6 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
           <div className="glass-card">
-            <h3 className="glass-card-title">Property Location</h3>
+            <h3 className="glass-card-title">{t('propertyLocation')}</h3>
             <p className="text-xs lg:text-sm text-text-tertiary mb-3 lg:mb-4">
               Capture GPS coordinates when at the property for the location map in the report
             </p>
@@ -2931,8 +3086,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       )}
     </form>
 
-      {/* Swipe Hint for first-time users */}
-      <SwipeHint />
+      {/* (SwipeHint removed — toggle icons used instead) */}
 
       {/* Floating Action Button for Hidden Fields */}
       {hiddenFields.length > 0 && (
@@ -2947,6 +3101,26 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
           </svg>
           <span className="badge">{hiddenFields.length}</span>
         </button>
+      )}
+
+      {/* Hide field toast with Undo */}
+      {hideToast?.visible && (
+        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-[60] animate-fade-in">
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface-200 border border-surface-300 shadow-xl text-sm">
+            <span className="text-text-secondary">Field hidden</span>
+            <button
+              type="button"
+              onClick={() => {
+                handleRestoreField(hideToast.fieldName);
+                setHideToast(null);
+                if (hideToastTimeoutRef.current) clearTimeout(hideToastTimeoutRef.current);
+              }}
+              className="font-semibold text-brand hover:text-brand-light transition-colors"
+            >
+              Undo
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Hidden Fields Modal */}

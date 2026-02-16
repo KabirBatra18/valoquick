@@ -13,7 +13,7 @@
   --color-surface-300: #3f3f46;
   --color-text-primary: #ffffff;
   --color-text-secondary: #e4e4e7;
-  --color-text-tertiary: #b4b4bb;
+  --color-text-tertiary: #a1a1aa;
 }
 
 /* Light theme overrides */
@@ -70,9 +70,18 @@ select:focus {
               opacity 0.2s ease;
 }
 
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer base {
   body {
     @apply bg-surface-50 text-text-primary font-sans antialiased min-h-screen;
+    font-family: var(--font-inter), var(--font-hindi), ui-sans-serif, system-ui, sans-serif;
     background-image:
       radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
       radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.05), transparent 25%);
@@ -167,7 +176,7 @@ select:focus {
   }
 
   .form-label {
-    @apply block text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide ml-1;
+    @apply block text-sm font-medium text-text-secondary mb-2 uppercase tracking-wide ml-1;
     letter-spacing: 0.05em;
   }
 
@@ -477,7 +486,7 @@ select:focus {
   }
 
   .form-label {
-    @apply text-xs mb-1.5;
+    @apply text-sm mb-1.5;
   }
 
   .form-group {
@@ -552,7 +561,7 @@ select:focus {
   }
 
   .form-label {
-    @apply text-xs mb-1.5;
+    @apply text-sm mb-1.5;
   }
 
   .glass-card {

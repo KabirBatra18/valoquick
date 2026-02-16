@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, verifyAuth } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { notifyAbuseAlert, notifyNewFirm } from '@/lib/email';
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 const TRIAL_LIMIT = 5;
 
@@ -71,6 +72,10 @@ function getClientIp(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimited = rateLimit(request, 'trial-check', RATE_LIMITS.auth);
+    if (rateLimited) return rateLimited;
+
     // Verify the caller is authenticated
     const authResult = await verifyAuth(request);
     if (!authResult.authenticated || !authResult.user) {

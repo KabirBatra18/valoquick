@@ -1,10 +1,36 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SessionExpiredModal() {
   const { sessionExpired, signIn } = useAuth();
+  const [countdown, setCountdown] = useState(10);
+
+  const handleSignIn = useCallback(() => {
+    signIn();
+  }, [signIn]);
+
+  useEffect(() => {
+    if (!sessionExpired) {
+      setCountdown(10);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleSignIn();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [sessionExpired, handleSignIn]);
 
   if (!sessionExpired) return null;
 
@@ -42,14 +68,14 @@ export default function SessionExpiredModal() {
 
           {/* Sign In Button */}
           <button
-            onClick={signIn}
+            onClick={handleSignIn}
             className="w-full btn btn-primary py-3 rounded-xl font-semibold"
           >
             Sign In Again
           </button>
 
           <p className="text-xs text-text-tertiary mt-4">
-            If this was not you, please change your password.
+            Redirecting in {countdown} seconds... If this was not you, please change your password.
           </p>
         </motion.div>
       </motion.div>

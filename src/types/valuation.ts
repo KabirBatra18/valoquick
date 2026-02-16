@@ -50,6 +50,7 @@ export interface FloorDetails {
 export interface ValuationInputs {
   // Basic Info
   referenceNo: string;
+  bankName?: string; // Bank name for mortgage/loan reports
   valuationDate: string;
   valuationForDate: string; // The date for which valuation is being done (e.g., 1-4-2001)
   purpose: string;

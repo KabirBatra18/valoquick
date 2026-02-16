@@ -4,6 +4,7 @@ import Razorpay from 'razorpay';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { notifyNewSubscription, notifySubscriptionCancelled } from '@/lib/email';
+import { logger } from '@/lib/logger';
 
 // App identifier to distinguish ValuQuick events from other apps using same Razorpay account
 const APP_IDENTIFIER = 'valuquick';
@@ -125,7 +126,7 @@ async function handleSubscriptionCharged(payload: RazorpayWebhookPayload['payloa
     updatedAt: Timestamp.now(),
   }, { merge: true });
 
-  console.log(`Base subscription renewed for firm ${firmId}, next billing: ${periodEnd}`);
+  logger.info(`Base subscription renewed for firm ${firmId}, next billing: ${periodEnd}`);
 
   // Send email notification for new subscription
   try {
@@ -165,7 +166,7 @@ async function handleSeatsSubscriptionCharged(
 
   // If there's a pending reduction, apply it now
   if (pendingReduction !== undefined && razorpay) {
-    console.log(`Applying pending seat reduction for firm ${firmId}: ${pendingReduction} seats`);
+    logger.info(`Applying pending seat reduction for firm ${firmId}: ${pendingReduction} seats`);
 
     try {
       if (pendingReduction === 0) {
@@ -182,7 +183,7 @@ async function handleSeatsSubscriptionCharged(
           updatedAt: Timestamp.now(),
         });
 
-        console.log(`Seats subscription cancelled for firm ${firmId}`);
+        logger.info(`Seats subscription cancelled for firm ${firmId}`);
         return;
       } else {
         // Update quantity to reduced amount
@@ -199,7 +200,7 @@ async function handleSeatsSubscriptionCharged(
           updatedAt: Timestamp.now(),
         });
 
-        console.log(`Seats reduced to ${pendingReduction} for firm ${firmId}`);
+        logger.info(`Seats reduced to ${pendingReduction} for firm ${firmId}`);
         return;
       }
     } catch (error) {
@@ -219,7 +220,7 @@ async function handleSeatsSubscriptionCharged(
     updatedAt: Timestamp.now(),
   });
 
-  console.log(`Seats subscription renewed for firm ${firmId}, ${currentQuantity} seats, next billing: ${periodEnd}`);
+  logger.info(`Seats subscription renewed for firm ${firmId}, ${currentQuantity} seats, next billing: ${periodEnd}`);
 }
 
 // Handle subscription cancellation
@@ -243,7 +244,7 @@ async function handleSubscriptionCancelled(payload: RazorpayWebhookPayload['payl
       'seats.total': 1,
       updatedAt: Timestamp.now(),
     });
-    console.log(`Seats subscription cancelled for firm ${firmId}`);
+    logger.info(`Seats subscription cancelled for firm ${firmId}`);
   } else {
     // Base subscription cancelled - also cancel seats subscription if exists
     const subscriptionDoc = await adminDb.collection('subscriptions').doc(firmId).get();
@@ -255,7 +256,7 @@ async function handleSubscriptionCancelled(payload: RazorpayWebhookPayload['payl
       if (razorpay) {
         try {
           await razorpay.subscriptions.cancel(seatsSubscriptionId);
-          console.log(`Auto-cancelled seats subscription for firm ${firmId}`);
+          logger.info(`Auto-cancelled seats subscription for firm ${firmId}`);
         } catch (error) {
           console.error('Error cancelling seats subscription:', error);
         }
@@ -267,7 +268,7 @@ async function handleSubscriptionCancelled(payload: RazorpayWebhookPayload['payl
       'seats.seatsStatus': 'cancelled',
       updatedAt: Timestamp.now(),
     });
-    console.log(`Base subscription cancelled for firm ${firmId}`);
+    logger.info(`Base subscription cancelled for firm ${firmId}`);
 
     // Send email notification for cancellation
     try {
@@ -306,14 +307,14 @@ async function handlePaymentFailed(payload: RazorpayWebhookPayload['payload']) {
       'seats.seatsStatus': 'past_due',
       updatedAt: Timestamp.now(),
     });
-    console.log(`Seats payment failed for firm ${firmId} - extra members have read-only access`);
+    logger.info(`Seats payment failed for firm ${firmId} - extra members have read-only access`);
   } else {
     // Base subscription payment failed
     await adminDb.collection('subscriptions').doc(firmId).update({
       status: 'past_due',
       updatedAt: Timestamp.now(),
     });
-    console.log(`Base payment failed for firm ${firmId}`);
+    logger.info(`Base payment failed for firm ${firmId}`);
   }
 }
 
@@ -350,7 +351,7 @@ export async function POST(req: NextRequest) {
     if (!isValuQuickEvent(event.payload)) {
       // Not a ValuQuick event - return 200 so Razorpay doesn't retry
       // (This event likely belongs to another app like Electro-Ninjas)
-      console.log('Ignoring non-ValuQuick event:', event.event);
+      logger.debug('Ignoring non-ValuQuick event:', event.event);
       return NextResponse.json({ received: true, ignored: true });
     }
 
@@ -358,7 +359,7 @@ export async function POST(req: NextRequest) {
     cleanOldWebhooks();
     const idempotencyKey = getWebhookIdempotencyKey(event.event, event.payload);
     if (processedWebhooks.has(idempotencyKey)) {
-      console.log('Duplicate webhook ignored:', idempotencyKey);
+      logger.debug('Duplicate webhook ignored:', idempotencyKey);
       return NextResponse.json({ received: true, duplicate: true });
     }
 
@@ -387,7 +388,7 @@ export async function POST(req: NextRequest) {
         await handlePaymentFailed(event.payload);
         break;
       default:
-        console.log('Unhandled webhook event:', event.event);
+        logger.debug('Unhandled webhook event:', event.event);
     }
 
     return NextResponse.json({ received: true });
