@@ -297,12 +297,31 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     categoryNo: valuerCategoryNo,
   };
 
-  const currentOwnersText = currentOwners.map(o => `${o.name} -${o.share} Share`).join('<br>');
+  const currentOwnersText = currentOwners.map(o => `${o.name} – ${o.share} Share`).join('<br>');
   const currentOwnersShort = currentOwners.map(o => o.name).join(' & ');
   const fullAddressUpper = propertyAddress.fullAddress.toUpperCase();
 
-  // Format numbers for display
-  const formatCurrency = (num: number) => `Rs${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}/-`;
+  // Format numbers for display — Indian grouping (lakhs/crores)
+  const formatCurrency = (num: number) => {
+    const fixed = num.toFixed(2);
+    const [intPart, decPart] = fixed.split('.');
+    const len = intPart.length;
+    let grouped: string;
+    if (len <= 3) {
+      grouped = intPart;
+    } else {
+      grouped = intPart.slice(-3);
+      let remaining = intPart.slice(0, -3);
+      while (remaining.length > 2) {
+        grouped = remaining.slice(-2) + ',' + grouped;
+        remaining = remaining.slice(0, -2);
+      }
+      if (remaining.length > 0) {
+        grouped = remaining + ',' + grouped;
+      }
+    }
+    return `Rs ${grouped}.${decPart}/-`;
+  };
   const formatNumber = (num: number, decimals = 2) => num.toFixed(decimals);
 
   const headerHtml = renderHeader(branding, valuerInfo, logoBase64);
@@ -328,16 +347,16 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
 
     <div class="owners">
-      <p><strong>OWNERS- IN ${originalOwnerYear} ${originalOwner}</strong></p>
-      <p><strong>CURRENT OWNERS-${currentOwnersShort}</strong></p>
+      <p><strong>OWNERS – IN ${originalOwnerYear} – ${originalOwner}</strong></p>
+      <p><strong>CURRENT OWNERS – ${currentOwnersShort}</strong></p>
     </div>
 
     <p><strong>ON BEHALF OF OWNERS</strong></p>
     ${(valuationInputs.bankName && !isIT) ? `<p style="margin-top: 8px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
 
     <div class="ref-date">
-      <span>Ref : ${valuationInputs.referenceNo}</span>
-      <span>Date :- ${valuationInputs.valuationDate}</span>
+      <span>Ref: ${valuationInputs.referenceNo}</span>
+      <span>Date: ${valuationInputs.valuationDate}</span>
     </div>
 
     ${photos.length > 0 ? `
@@ -345,11 +364,6 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
       <img src="${photos[0]}" alt="Property Photo">
     </div>
     ` : ''}
-
-    <div class="ref-date" style="margin-top: auto;">
-      <span>Ref : ${valuationInputs.referenceNo}</span>
-      <span>Date :- ${valuationInputs.valuationDate}</span>
-    </div>
     ${footerHtml}
   </div>
 
@@ -363,13 +377,13 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
 
     <div class="owners">
-      <p><strong>OWNERS- IN ${originalOwnerYear}-${originalOwner}</strong></p>
-      <p><strong>CURRENT OWNERS-${currentOwnersShort}</strong></p>
+      <p><strong>OWNERS – IN ${originalOwnerYear} – ${originalOwner}</strong></p>
+      <p><strong>CURRENT OWNERS – ${currentOwnersShort}</strong></p>
     </div>
 
     <div class="ref-date">
-      <span>Ref : ${valuationInputs.referenceNo}</span>
-      <span>Dated: ${valuationInputs.valuationDate}</span>
+      <span>Ref: ${valuationInputs.referenceNo}</span>
+      <span>Date: ${valuationInputs.valuationDate}</span>
     </div>
 
     <p class="section-title">GENERAL:</p>
@@ -391,9 +405,10 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
   <!-- Page 3: Land & Improvements -->
   <div class="page">
+    ${headerHtml}
     <p class="section-title">LAND:</p>
     <table>
-      <tr><td>12</td><td>Area of land supported by documentary proof<br>shape, dimensions and physical features</td><td>Plot Area – ${formatNumber(valuationInputs.plotArea, 4)}Sqm<br>${generalDetails.plotShape}</td></tr>
+      <tr><td>12</td><td>Area of land supported by documentary proof<br>shape, dimensions and physical features</td><td>Plot Area – ${formatNumber(valuationInputs.plotArea, 4)} Sqm<br>${generalDetails.plotShape}</td></tr>
       <tr><td>13</td><td>Road or lanes on which the land is abutting</td><td>North – ${boundaries.north}<br>South – ${boundaries.south}<br>East – ${boundaries.east}<br>West – ${boundaries.west}</td></tr>
       <tr><td>14</td><td>Is it freehold or lease-hold land?</td><td>${generalDetails.isLeasehold ? 'Leasehold' : 'Freehold'}</td></tr>
       <tr><td>15</td><td>If lease-hold, the name of lessor etc.<br>(i) initial premium<br>(ii) Ground rent payable<br>(iii) Unearned increase payable to the lessor in the event of sale or transfer</td><td>${generalDetails.isLeasehold ? generalDetails.lessorDetails || 'NA' : 'NA'}</td></tr>
@@ -423,6 +438,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
   <!-- Page 4: More Details -->
   <div class="page">
+    ${headerHtml}
     <table>
       <tr><td>28</td><td>Is separate amount being recovered for the use of fixtures like fans, geysers, refrigerators, cooking ranges, built in ward robes etc. or for service charges? If so, give details.</td><td>N/A</td></tr>
       <tr><td>29</td><td>Give details of water and electricity charges, if any, to be borne by the owner.</td><td>N/A</td></tr>
@@ -439,7 +455,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     <p class="section-title">SALE:</p>
     <table>
       <tr><td>38</td><td>Give instances of sales of immovable property in the locality on a separate sheet, indicating the name and address of the property, registration no. sale price and area of the land sold.</td><td>Not Available</td></tr>
-      <tr><td>39</td><td>Land rate adopted in this valuation</td><td>Rs${valuationInputs.landRatePerSqm}- Per Sqm</td></tr>
+      <tr><td>39</td><td>Land rate adopted in this valuation</td><td>Rs ${valuationInputs.landRatePerSqm}/- Per Sqm</td></tr>
       <tr><td>40</td><td>If sale instances are not available or not relied upon the basis of arriving at the land rate</td><td>${valuationInputs.landRateSource}</td></tr>
     </table>
 
@@ -455,6 +471,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
   <!-- Page 5: Building Technical Details -->
   <div class="page">
+    ${headerHtml}
     <p class="section-title" style="text-decoration: none; margin-bottom: 5px;">PART-II</p>
     <p class="section-title">BUILDING - TECHNICAL DETAILS</p>
     <table>
@@ -483,6 +500,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
   <!-- Page 6: More Technical & Declaration -->
   <div class="page">
+    ${headerHtml}
     <table>
       <tr><td>20</td><td>No of pumps and their horse power</td><td>${technicalDetails.noOfPumps}</td></tr>
       <tr><td>21</td><td>Roads and paving within the compound – approx. area and type of paving</td><td>${technicalDetails.roadsPaving}</td></tr>
@@ -496,7 +514,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
       <p>(b) I have no direct or indirect interest in the property valued.</p>
 
       <div class="signature">
-        <span>Date :- ${valuationInputs.valuationDate}</span>
+        <span>Date: ${valuationInputs.valuationDate}</span>
         <span>Signature of Govt. Registered Valuer</span>
       </div>
     </div>
@@ -508,8 +526,8 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     ${headerHtml}
 
     <div class="ref-date">
-      <span>Ref : ${valuationInputs.referenceNo}</span>
-      <span>Dated ${valuationInputs.valuationDate}</span>
+      <span>Ref: ${valuationInputs.referenceNo}</span>
+      <span>Date: ${valuationInputs.valuationDate}</span>
     </div>
 
     <div class="title">
@@ -517,21 +535,21 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
       IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
-    <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE IMMOVABLE PROPERTY SITUATED AT–${fullAddressUpper}</strong></p>
+    <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}</strong></p>
 
     <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for the ground floor of the building which consist of three floors {Ground floor, First floor, and Second floor}</p>
 
     <p class="section-title">Specification of Construction</p>
     <div class="specs-list">
-      <p>Roof - ${buildingSpecs.roof}</p>
-      <p>Brickwork - ${buildingSpecs.brickwork}</p>
-      <p>Flooring - ${buildingSpecs.flooring}</p>
-      <p>Tiles - ${buildingSpecs.tiles}</p>
-      <p>Electrical - ${buildingSpecs.electrical}</p>
+      <p>Roof – ${buildingSpecs.roof}</p>
+      <p>Brickwork – ${buildingSpecs.brickwork}</p>
+      <p>Flooring – ${buildingSpecs.flooring}</p>
+      <p>Tiles – ${buildingSpecs.tiles}</p>
+      <p>Electrical – ${buildingSpecs.electrical}</p>
       <p>Electrical switches – ${buildingSpecs.electricalSwitches}</p>
-      <p>Sanitary fixtures - ${buildingSpecs.sanitaryFixtures}</p>
-      <p>Wood work - ${buildingSpecs.woodwork}</p>
-      <p>Exterior - ${buildingSpecs.exterior}</p>
+      <p>Sanitary fixtures – ${buildingSpecs.sanitaryFixtures}</p>
+      <p>Woodwork – ${buildingSpecs.woodwork}</p>
+      <p>Exterior – ${buildingSpecs.exterior}</p>
     </div>
 
     <p>On the basis of above specification. I assess the cost of construction on covered area basis.</p>
@@ -540,9 +558,10 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
   <!-- Page 8: Calculations -->
   <div class="page">
+    ${headerHtml}
     <p class="section-title">CALCULATION OF VALUE OF CONSTRUCTION</p>
     <p>As per Plinth Area Rates [PAR] 1.1.92 with base as 100</p>
-    <p>Cost index as on ${valuationInputs.valuationForDate}=${valuationInputs.costIndex}</p>
+    <p>Cost index as on ${valuationInputs.valuationForDate} = ${valuationInputs.costIndex}</p>
 
     <table style="margin: 20px 0;">
       <tr>
@@ -558,12 +577,12 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
       <tr>
         <td>1</td>
         <td>Ground floor</td>
-        <td>${formatNumber(floors[0]?.area || 0, 3)}Sqm</td>
+        <td>${formatNumber(floors[0]?.area || 0, 3)} Sqm</td>
         <td>Rs ${valuationInputs.plinthAreaRate} per Sqm</td>
         <td>${valuationInputs.costIndex}</td>
-        <td>${valuationInputs.plinthAreaRate}x${valuationInputs.costIndex / 100}=Rs ${formatNumber(calculatedValues.rateOfConstruction, 1)} per Sqm</td>
-        <td>${valuationInputs.specificationIncreasePercent}%<br>Net rate of construction =${formatNumber(1 + valuationInputs.specificationIncreasePercent / 100, 2)}x${formatNumber(calculatedValues.rateOfConstruction, 1)}=Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)}per Sqm</td>
-        <td>${formatNumber(floors[0]?.area || 0, 3)}Sqmx${formatNumber(calculatedValues.netRateOfConstruction, 2)}=<br>${formatCurrency(calculatedValues.costOfConstruction)}</td>
+        <td>${valuationInputs.plinthAreaRate} × ${valuationInputs.costIndex / 100} = Rs ${formatNumber(calculatedValues.rateOfConstruction, 1)} per Sqm</td>
+        <td>${valuationInputs.specificationIncreasePercent}%<br>Net rate = ${formatNumber(1 + valuationInputs.specificationIncreasePercent / 100, 2)} × ${formatNumber(calculatedValues.rateOfConstruction, 1)} = Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)} per Sqm</td>
+        <td>${formatNumber(floors[0]?.area || 0, 3)} Sqm × ${formatNumber(calculatedValues.netRateOfConstruction, 2)} =<br>${formatCurrency(calculatedValues.costOfConstruction)}</td>
       </tr>
     </table>
 
@@ -583,7 +602,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
         <td>${valuationInputs.yearOfConstruction}</td>
         <td>${valuationInputs.ageAtValuation} Years</td>
         <td>${valuationInputs.estimatedLifeYears} years</td>
-        <td>${calculatedValues.remainingLife}/${valuationInputs.estimatedLifeYears}x ${formatCurrency(calculatedValues.costOfConstruction)}<br><strong>${formatCurrency(calculatedValues.depreciatedValue)}</strong></td>
+        <td>${calculatedValues.remainingLife}/${valuationInputs.estimatedLifeYears} × ${formatCurrency(calculatedValues.costOfConstruction)}<br><strong>${formatCurrency(calculatedValues.depreciatedValue)}</strong></td>
       </tr>
       <tr>
         <td colspan="5" style="text-align: right;"><strong>Total Depreciated value of construction</strong></td>
@@ -594,7 +613,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     <p class="section-title">VALUE OF LAND SHARE</p>
     <div class="calculation-box">
       <p class="calculation-line">Area of plot = ${formatNumber(valuationInputs.plotArea, 4)} Sqm</p>
-      <p class="calculation-line">Rate of land = Rs${valuationInputs.landRatePerSqm} Per Sq mtrs</p>
+      <p class="calculation-line">Rate of land = Rs ${valuationInputs.landRatePerSqm} Per Sqm</p>
       <p class="calculation-line" style="margin-left: 100px;">(L and DO RATES for the comparable region)</p>
       <p class="calculation-line" style="margin-left: 100px;">(${valuationInputs.landRateSource})</p>
     </div>
@@ -603,24 +622,25 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
   <!-- Page 9: Final Calculations -->
   <div class="page">
-    <p>Percentage increase in land rate due to location, wide roads on both sides[ front and rear] and year of valuation[${valuationInputs.valuationForDate}] =${valuationInputs.locationIncreasePercent} %</p>
+    ${headerHtml}
+    <p>Percentage increase in land rate due to location, wide roads on both sides [front and rear] and year of valuation [${valuationInputs.valuationForDate}] = ${valuationInputs.locationIncreasePercent}%</p>
 
     <div class="calculation-box">
-      <p class="calculation-line">Net rate =${formatNumber(1 + valuationInputs.locationIncreasePercent / 100, 1)}x${valuationInputs.landRatePerSqm}=${formatNumber(calculatedValues.netLandRate, 0)}/-</p>
-      <p class="calculation-line">Value of land = ${formatNumber(valuationInputs.plotArea, 4)}@Rs${formatNumber(calculatedValues.netLandRate, 0)}/- per Sqm = ${formatCurrency(calculatedValues.totalLandValue)}</p>
+      <p class="calculation-line">Net rate = ${formatNumber(1 + valuationInputs.locationIncreasePercent / 100, 1)} × ${valuationInputs.landRatePerSqm} = ${formatNumber(calculatedValues.netLandRate, 0)}/-</p>
+      <p class="calculation-line">Value of land = ${formatNumber(valuationInputs.plotArea, 4)} @ Rs ${formatNumber(calculatedValues.netLandRate, 0)}/- per Sqm = ${formatCurrency(calculatedValues.totalLandValue)}</p>
       <p class="calculation-line">Share of land = <strong>${valuationInputs.landShareFraction}</strong></p>
-      <p class="calculation-line">Value of land share =${valuationInputs.landShareFraction}x ${formatCurrency(calculatedValues.totalLandValue)}= <strong>${formatCurrency(calculatedValues.landShareValue)}</strong></p>
+      <p class="calculation-line">Value of land share = ${valuationInputs.landShareFraction} × ${formatCurrency(calculatedValues.totalLandValue)} = <strong>${formatCurrency(calculatedValues.landShareValue)}</strong></p>
     </div>
 
-    <p class="section-title">VALUE OF THE PROPERTY= VALUE OF LAND SHARE + VALUE OF CONSTRUCTION</p>
+    <p class="section-title">VALUE OF THE PROPERTY = VALUE OF LAND SHARE + VALUE OF CONSTRUCTION</p>
     <div class="calculation-box" style="text-align: center;">
       <p class="calculation-line">= ${formatCurrency(calculatedValues.landShareValue)} + ${formatCurrency(calculatedValues.depreciatedValue)}</p>
       <p class="calculation-line">= ${formatCurrency(calculatedValues.totalPropertyValue)}</p>
-      <p class="calculation-line" style="font-size: 14pt;"><strong>Say${formatCurrency(calculatedValues.roundedValue)}</strong></p>
+      <p class="calculation-line" style="font-size: 14pt;"><strong>Say ${formatCurrency(calculatedValues.roundedValue)}</strong></p>
     </div>
 
     <div class="final-value">
-      I assess the fair market value of the valuated property as on <strong>${valuationInputs.valuationForDate}</strong> to be <strong>Say${formatCurrency(calculatedValues.roundedValue)}</strong>
+      I assess the fair market value of the valuated property as on <strong>${valuationInputs.valuationForDate}</strong> to be <strong>Say ${formatCurrency(calculatedValues.roundedValue)}</strong>
     </div>
 
     <div class="value-words">
@@ -644,6 +664,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
       photoPages += `
       <div class="page">
+        ${headerHtml}
         <div class="photo-page">
           <p class="photo-caption">PHOTOGRAPHS OF PROPERTY SITUATED AT ${fullAddressUpper}${totalPages > 1 ? ` (Page ${page + 1} of ${totalPages})` : ''}</p>
           <div class="photo-grid">

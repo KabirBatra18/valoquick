@@ -244,6 +244,8 @@ export function getTemplateCSS(branding: FirmBranding): string {
       padding: 10mm;
       position: relative;
       min-height: calc(297mm - 20mm);
+      display: flex;
+      flex-direction: column;
     }
     .page:last-child {
       page-break-after: auto;
@@ -398,7 +400,7 @@ export function getTemplateCSS(branding: FirmBranding): string {
       max-width: 90%;
     }
     .photo-item {
-      aspect-ratio: 1;
+      aspect-ratio: 4/3;
       overflow: hidden;
       border: 1px solid #333;
     }
@@ -408,9 +410,10 @@ export function getTemplateCSS(branding: FirmBranding): string {
       object-fit: cover;
     }
 
-    /* Footer */
+    /* Footer — pinned to bottom of page via flex */
     .page-footer {
-      margin-top: 20px;
+      margin-top: auto;
+      padding-top: 12px;
       font-size: 8pt;
       color: #666;
     }
