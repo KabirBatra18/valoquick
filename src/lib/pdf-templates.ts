@@ -256,6 +256,7 @@ export function getTemplateCSS(branding: FirmBranding): string {
       align-items: flex-start;
       padding-bottom: 10px;
       margin-bottom: 20px;
+      flex-shrink: 0;
     }
     .header-left {
       flex: 1;

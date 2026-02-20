@@ -61,7 +61,7 @@ export const DEFAULT_BRANDING: FirmBranding = {
     primaryColor: '#1a5276',
   },
   footer: {
-    enabled: false,
+    enabled: true,
     showPageNumbers: true,
     showContactInfo: false,
     showDisclaimer: false,

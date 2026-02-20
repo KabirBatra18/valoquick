@@ -390,7 +390,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     <table>
       <tr><td>1</td><td>Purpose for which valuation is made</td><td>${valuationInputs.purpose}${valuationInputs.bankName ? ` (${valuationInputs.bankName})` : ''}</td></tr>
       <tr><td>2</td><td>Date as on which valuation is made</td><td>${valuationInputs.valuationDate} for the date ${valuationInputs.valuationForDate}</td></tr>
-      <tr><td>3</td><td>Name of owner/owners</td><td>IN ${originalOwnerYear}- ${originalOwner}<br>Current Owners-${currentOwnersShort}</td></tr>
+      <tr><td>3</td><td>Name of owner/owners</td><td>IN ${originalOwnerYear} – ${originalOwner}<br>Current Owners – ${currentOwnersShort}</td></tr>
       <tr><td>4</td><td>If the property is under joint ownership/co-ownership, share of each owner.</td><td>Joint Ownership<br>${currentOwnersText}</td></tr>
       <tr><td>5</td><td>Brief description of property</td><td>Ground floor of the residential property which consist of GF, FF, and SF</td></tr>
       <tr><td>6</td><td>Location, street, and ward no.</td><td>${fullAddressUpper}</td></tr>
@@ -464,7 +464,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
       <tr><td>41</td><td>Year of commencement of construction & year of completion</td><td>${valuationInputs.yearOfConstruction}</td></tr>
       <tr><td>42</td><td>What was the method of construction- by contract or employing labour directly/ both</td><td>Both</td></tr>
       <tr><td>43</td><td>For item of work done on contract, produce copies of agreement.</td><td>Not Available</td></tr>
-      <tr><td>44</td><td>For item of work done by engaging labour directly, give detail rate of materials and labour supported by documentary proof.</td><td>Not available</td></tr>
+      <tr><td>44</td><td>For item of work done by engaging labour directly, give detail rate of materials and labour supported by documentary proof.</td><td>Not Available</td></tr>
     </table>
     ${footerHtml}
   </div>
