@@ -17,34 +17,34 @@ export function renderPuppeteerHeader(
   // Build left side
   const leftParts: string[] = [];
   if (h.showLogo && logoBase64) {
-    leftParts.push(`<img src="${logoBase64}" style="max-height: 36px; max-width: 140px; object-fit: contain; display: block; margin-bottom: 2px;" />`);
+    leftParts.push(`<img src="${logoBase64}" style="max-height: 44px; max-width: 160px; object-fit: contain; display: block; margin-bottom: 3px;" />`);
   }
   if (h.showFirmName && branding.firmName) {
-    leftParts.push(`<div style="font-size: 12px; font-weight: bold; color: ${color}; line-height: 1.2;">${escapeHtml(branding.firmName)}</div>`);
+    leftParts.push(`<div style="font-size: 16px; font-weight: bold; color: ${color}; line-height: 1.2; letter-spacing: 0.3px;">${escapeHtml(branding.firmName)}</div>`);
   }
   if (h.showSubtitle && branding.subtitle) {
-    leftParts.push(`<div style="font-size: 7.5px; color: #555; line-height: 1.2;">${escapeHtml(branding.subtitle)}</div>`);
+    leftParts.push(`<div style="font-size: 9px; color: #444; line-height: 1.3; margin-top: 1px;">${escapeHtml(branding.subtitle)}</div>`);
   }
   if (h.showAddress && branding.address) {
-    leftParts.push(`<div style="font-size: 7.5px; color: #333; line-height: 1.2;">${escapeHtml(branding.address)}</div>`);
+    leftParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(branding.address)}</div>`);
   }
   if (h.showContact && (branding.contact || branding.email)) {
-    leftParts.push(`<div style="font-size: 7.5px; color: #333; line-height: 1.2;">${[branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</div>`);
+    leftParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${[branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</div>`);
   }
 
   // Build right side (valuer info)
   const rightParts: string[] = [];
   if (h.showValuerInfo && valuerInfo.name) {
-    rightParts.push(`<div style="font-size: 8px; font-weight: bold; line-height: 1.3;">${escapeHtml(valuerInfo.name)}</div>`);
-    if (valuerInfo.qualification) rightParts.push(`<div style="font-size: 7.5px; line-height: 1.3;">${escapeHtml(valuerInfo.qualification)}</div>`);
-    if (valuerInfo.designation) rightParts.push(`<div style="font-size: 7.5px; line-height: 1.3;">${escapeHtml(valuerInfo.designation)}</div>`);
-    if (valuerInfo.categoryNo) rightParts.push(`<div style="font-size: 7.5px; line-height: 1.3;">${escapeHtml(valuerInfo.categoryNo)}</div>`);
+    rightParts.push(`<div style="font-size: 10px; font-weight: bold; line-height: 1.3;">${escapeHtml(valuerInfo.name)}</div>`);
+    if (valuerInfo.qualification) rightParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.qualification)}</div>`);
+    if (valuerInfo.designation) rightParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.designation)}</div>`);
+    if (valuerInfo.categoryNo) rightParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.categoryNo)}</div>`);
   }
 
   const hasContent = leftParts.length > 0 || rightParts.length > 0;
   if (!hasContent) return '<span></span>';
 
-  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid ${color}; padding-bottom: 4px; margin-top: 5mm;">
+  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-top: 5mm;">
     <div>${leftParts.join('')}</div>
     <div style="text-align: right;">${rightParts.join('')}</div>
   </div>`;
@@ -55,18 +55,18 @@ export function renderPuppeteerFooter(branding: FirmBranding): string {
 
   let contactHtml = '';
   if (f.enabled && f.showContactInfo && (branding.contact || branding.email)) {
-    contactHtml = `<span style="font-size: 7px; color: #666;">${[branding.firmName, branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</span>`;
+    contactHtml = `<span style="font-size: 8px; color: #555;">${[branding.firmName, branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</span>`;
   }
 
   // Always show page numbers
-  const pageNumHtml = `<span style="font-size: 7px; color: #666;">Page <span class="pageNumber"></span></span>`;
+  const pageNumHtml = `<span style="font-size: 8px; color: #555;">Page <span class="pageNumber"></span></span>`;
 
   let disclaimerHtml = '';
   if (f.enabled && f.showDisclaimer && f.disclaimerText) {
-    disclaimerHtml = `<div style="font-size: 6px; color: #888; font-style: italic; text-align: center; margin-top: 2px;">${escapeHtml(f.disclaimerText)}</div>`;
+    disclaimerHtml = `<div style="font-size: 7px; color: #777; font-style: italic; text-align: center; margin-top: 2px;">${escapeHtml(f.disclaimerText)}</div>`;
   }
 
-  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; border-top: 1px solid #ccc; padding-top: 3px;">
+  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; border-top: 1.5px solid #bbb; padding-top: 4px;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       ${contactHtml}
       ${pageNumHtml}
@@ -298,9 +298,18 @@ export function getTemplateCSS(branding: FirmBranding): string {
     .page {
       padding: 5mm 12mm;
       page-break-after: always;
+      display: flex;
+      flex-direction: column;
     }
     .page:last-child {
       page-break-after: auto;
+    }
+
+    /* Preview mode: simulate A4 pages so footers pin to bottom */
+    body.preview-mode .page {
+      min-height: 270mm;
+      border-bottom: 2px solid #e0e0e0;
+      margin-bottom: 8mm;
     }
 
     /* --- Cover page --- */
@@ -620,14 +629,15 @@ export function getTemplateCSS(branding: FirmBranding): string {
     }
     .header-left { flex: 1; }
     .header-right { text-align: right; }
-    .header-logo { max-height: 50px; max-width: 160px; object-fit: contain; display: block; margin-bottom: 4px; }
-    .header-firm-name { font-size: 14pt; margin: 0; line-height: 1.2; }
-    .header-subtitle, .header-address, .header-contact { font-size: 8pt; margin: 2px 0; color: #555; }
-    .valuer-info p { font-size: 9pt; margin: 1px 0; }
+    .header-logo { max-height: 56px; max-width: 180px; object-fit: contain; display: block; margin-bottom: 4px; }
+    .header-firm-name { font-size: 16pt; margin: 0; line-height: 1.2; letter-spacing: 0.3px; }
+    .header-subtitle { font-size: 9pt; margin: 3px 0 1px; color: #444; }
+    .header-address, .header-contact { font-size: 9pt; margin: 1px 0; color: #333; }
+    .valuer-info p { font-size: 9.5pt; margin: 1px 0; }
     .valuer-name { font-weight: bold; }
-    .valuer-badge { display: inline-block; font-size: 8pt; background: #f0f0f0; padding: 1px 6px; border-radius: 3px; margin: 1px 2px; }
-    .valuer-cat { font-size: 8pt; margin-top: 2px; }
-    .page-footer { margin-top: 20px; padding-top: 8px; font-size: 8pt; }
+    .valuer-badge { display: inline-block; font-size: 8.5pt; background: #f0f0f0; padding: 2px 7px; border-radius: 3px; margin: 1px 2px; }
+    .valuer-cat { font-size: 8.5pt; margin-top: 2px; }
+    .page-footer { margin-top: auto; padding-top: 8px; font-size: 8pt; }
     .footer-row { display: flex; justify-content: space-between; align-items: center; }
     .footer-contact, .footer-page-num { font-size: 8pt; color: #666; }
     .footer-disclaimer { font-size: 7pt; color: #888; font-style: italic; margin-top: 3px; text-align: center; }

@@ -354,7 +354,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     ${getTemplateCSS(branding)}
   </style>
 </head>
-<body>
+<body${isPreview ? ' class="preview-mode"' : ''}>
   <!-- Page 1: Cover Page -->
   <div class="page">
     ${headerHtml}
