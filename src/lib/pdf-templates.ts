@@ -282,18 +282,21 @@ export function getTemplateCSS(branding: FirmBranding): string {
 
   // Base CSS — used for PDF body content (headers/footers handled by Puppeteer)
   const baseCSS = `
-    @page { margin: 0; }
-    * {
-      margin: 0;
-      padding: 0;
+    *, *::before, *::after {
       box-sizing: border-box;
     }
     body {
       font-size: 11pt;
-      line-height: 1.4;
+      line-height: 1.5;
       color: #1a1a1a;
+      margin: 0;
+      padding: 0;
+    }
+    p {
+      margin: 10px 0;
     }
     .page {
+      padding: 5mm 12mm;
       page-break-after: always;
     }
     .page:last-child {
