@@ -1391,7 +1391,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.heic', '.heif'] },
   });
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

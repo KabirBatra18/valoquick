@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { storage } from './firebase';
 
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_PHOTO_SIZE = 25 * 1024 * 1024; // 25MB — iPad/iPhone cameras produce 6-10MB photos
 const MAX_DIMENSION = 600; // Photos display at ~300px in PDF grid — 600px is 2x for sharpness
 const JPEG_QUALITY = 0.6; // Good enough for report photos, ~3x smaller than 0.8
 
@@ -11,9 +11,10 @@ export async function uploadReportPhoto(
   file: File
 ): Promise<string> {
   if (file.size > MAX_PHOTO_SIZE) {
-    throw new Error('Photo must be under 5MB.');
+    throw new Error('Photo must be under 25MB.');
   }
 
+  // Compress regardless of input size — a 10MB iPad photo becomes ~80KB after resize + JPEG
   const compressed = await compressAndCropPhoto(file);
 
   const timestamp = Date.now();
