@@ -1382,10 +1382,9 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   }, [firmId, reportId]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    // Process 2 at a time — avoids thrashing CPU/bandwidth with 6+ concurrent uploads
-    for (let i = 0; i < acceptedFiles.length; i += 2) {
-      const batch = acceptedFiles.slice(i, i + 2);
-      await Promise.all(batch.map(file => processAndAddPhoto(file)));
+    // Process one at a time — iPad Safari can crash on concurrent large image decodes
+    for (const file of acceptedFiles) {
+      await processAndAddPhoto(file);
     }
   }, [processAndAddPhoto]);
 
@@ -1400,10 +1399,9 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       const fileList = Array.from(files);
       // Reset input immediately so same file can be selected again
       e.target.value = '';
-      // Process 2 at a time
-      for (let i = 0; i < fileList.length; i += 2) {
-        const batch = fileList.slice(i, i + 2);
-        await Promise.all(batch.map(file => processAndAddPhoto(file)));
+      // Process one at a time — iPad Safari can crash on concurrent large image decodes
+      for (const file of fileList) {
+        await processAndAddPhoto(file);
       }
     }
   };

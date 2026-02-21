@@ -39,12 +39,48 @@ export async function deleteReportPhotos(firmId: string, reportId: string): Prom
   }
 }
 
+/**
+ * Decode image via new Image() + objectURL — works on all Safari versions including HEIC.
+ * Runs on the main thread but is the most compatible path.
+ */
+function loadImageElement(file: File): Promise<{ img: HTMLImageElement; url: string }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => resolve({ img, url });
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error(`Failed to decode image: ${file.name} (${file.type})`));
+    };
+    img.src = url;
+  });
+}
+
 async function compressAndCropPhoto(file: File): Promise<Blob> {
-  // createImageBitmap decodes off the main thread — much faster than new Image()
-  const bitmap = await createImageBitmap(file);
+  let sourceWidth: number;
+  let sourceHeight: number;
+  let drawSource: CanvasImageSource;
+  let bitmap: ImageBitmap | null = null;
+  let objectUrl: string | null = null;
+
+  // Try createImageBitmap (fast, off-thread) — fall back to Image element for
+  // Safari HEIC photos and older iPadOS versions where createImageBitmap may
+  // not support the file format or isn't available at all.
+  try {
+    bitmap = await createImageBitmap(file);
+    sourceWidth = bitmap.width;
+    sourceHeight = bitmap.height;
+    drawSource = bitmap;
+  } catch {
+    const { img, url } = await loadImageElement(file);
+    objectUrl = url;
+    sourceWidth = img.naturalWidth;
+    sourceHeight = img.naturalHeight;
+    drawSource = img;
+  }
 
   // Center-crop to square, cap at MAX_DIMENSION
-  const size = Math.min(bitmap.width, bitmap.height);
+  const size = Math.min(sourceWidth, sourceHeight);
   const targetSize = Math.min(size, MAX_DIMENSION);
 
   const canvas = document.createElement('canvas');
@@ -52,11 +88,13 @@ async function compressAndCropPhoto(file: File): Promise<Blob> {
   canvas.height = targetSize;
 
   const ctx = canvas.getContext('2d')!;
-  const offsetX = (bitmap.width - size) / 2;
-  const offsetY = (bitmap.height - size) / 2;
-  ctx.drawImage(bitmap, offsetX, offsetY, size, size, 0, 0, targetSize, targetSize);
+  const offsetX = (sourceWidth - size) / 2;
+  const offsetY = (sourceHeight - size) / 2;
+  ctx.drawImage(drawSource, offsetX, offsetY, size, size, 0, 0, targetSize, targetSize);
 
-  bitmap.close(); // Free decoded image memory immediately
+  // Cleanup decoded image memory — safe try/catch for older Safari without bitmap.close()
+  if (bitmap) try { bitmap.close(); } catch { /* older Safari */ }
+  if (objectUrl) URL.revokeObjectURL(objectUrl);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
