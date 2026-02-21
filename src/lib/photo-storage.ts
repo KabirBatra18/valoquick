@@ -1,9 +1,20 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { storage } from './firebase';
 
-const MAX_PHOTO_SIZE = 25 * 1024 * 1024; // 25MB — iPad/iPhone cameras produce 6-10MB photos
-const MAX_DIMENSION = 600; // Photos display at ~300px in PDF grid — 600px is 2x for sharpness
-const JPEG_QUALITY = 0.6; // Good enough for report photos, ~3x smaller than 0.8
+const MAX_PHOTO_SIZE = 25 * 1024 * 1024; // 25MB
+const MAX_DIMENSION = 600;
+const JPEG_QUALITY = 0.6;
+
+/** Race a promise against a timeout — prevents forever-hanging promises on mobile */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
 
 export async function uploadReportPhoto(
   firmId: string,
@@ -14,19 +25,29 @@ export async function uploadReportPhoto(
     throw new Error('Photo must be under 25MB.');
   }
 
-  // Compress regardless of input size — a 10MB iPad photo becomes ~80KB after resize + JPEG
-  const compressed = await compressAndCropPhoto(file);
+  let blob: Blob;
+  try {
+    blob = await withTimeout(compressPhoto(file), 20000, 'Photo compression');
+  } catch (compressErr) {
+    // Compression failed — upload the original file directly as fallback
+    console.warn('Compression failed, uploading original:', compressErr);
+    blob = file;
+  }
 
   const timestamp = Date.now();
   const storagePath = `firms/${firmId}/reports/${reportId}/photos/${timestamp}`;
   const storageRef = ref(storage, storagePath);
 
-  await uploadBytes(storageRef, compressed, {
-    contentType: 'image/jpeg',
-    cacheControl: 'public, max-age=31536000',
-  });
+  await withTimeout(
+    uploadBytes(storageRef, blob, {
+      contentType: blob.type || 'image/jpeg',
+      cacheControl: 'public, max-age=31536000',
+    }),
+    60000,
+    'Firebase upload'
+  );
 
-  return getDownloadURL(storageRef);
+  return withTimeout(getDownloadURL(storageRef), 10000, 'Getting download URL');
 }
 
 export async function deleteReportPhotos(firmId: string, reportId: string): Promise<void> {
@@ -39,39 +60,53 @@ export async function deleteReportPhotos(firmId: string, reportId: string): Prom
   }
 }
 
-async function compressAndCropPhoto(file: File): Promise<Blob> {
-  // Use new Image() + objectURL — most compatible across all mobile browsers
-  // (createImageBitmap breaks on iPad HEIC and some Android WebViews)
+async function compressPhoto(file: File): Promise<Blob> {
   const url = URL.createObjectURL(file);
 
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error(`Cannot decode image: ${file.name}`));
-      el.src = url;
-    });
+    // Load image — 15s timeout in case onload/onerror never fires
+    const img = await withTimeout(
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('Cannot decode image'));
+        el.src = url;
+      }),
+      15000,
+      'Image decode'
+    );
+
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) throw new Error('Image has zero dimensions');
 
     // Center-crop to square, cap at MAX_DIMENSION
-    const size = Math.min(img.naturalWidth, img.naturalHeight);
+    const size = Math.min(w, h);
     const targetSize = Math.min(size, MAX_DIMENSION);
 
     const canvas = document.createElement('canvas');
     canvas.width = targetSize;
     canvas.height = targetSize;
 
-    const ctx = canvas.getContext('2d')!;
-    const offsetX = (img.naturalWidth - size) / 2;
-    const offsetY = (img.naturalHeight - size) / 2;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas context unavailable');
+
+    const offsetX = (w - size) / 2;
+    const offsetY = (h - size) / 2;
     ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, targetSize, targetSize);
 
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
-        'image/jpeg',
-        JPEG_QUALITY
-      );
-    });
+    // toBlob — 10s timeout in case callback never fires
+    return await withTimeout(
+      new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('toBlob returned null'))),
+          'image/jpeg',
+          JPEG_QUALITY
+        );
+      }),
+      10000,
+      'Canvas toBlob'
+    );
   } finally {
     URL.revokeObjectURL(url);
   }
