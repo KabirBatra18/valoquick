@@ -222,9 +222,9 @@ export function renderCondensedHeader(branding: FirmBranding, valuerName?: strin
   if (!firmName && !valuerName) return '';
 
   return `
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid ${color}; padding-bottom: 5px; margin-bottom: 15px; font-family: 'Times New Roman', serif;">
-      ${firmName ? `<span style="font-size: 9.5pt; color: ${color}; font-weight: 600; letter-spacing: 0.2px;">${escapeHtml(firmName)}</span>` : ''}
-      ${valuerName ? `<span style="font-size: 8.5pt; color: #555;">${escapeHtml(valuerName)}</span>` : ''}
+    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-bottom: 15px; font-family: 'Times New Roman', serif;">
+      ${firmName ? `<span style="font-size: 16px; color: ${color}; font-weight: bold; letter-spacing: 0.3px;">${escapeHtml(firmName)}</span>` : ''}
+      ${valuerName ? `<span style="font-size: 10px; color: #555;">${escapeHtml(valuerName)}</span>` : ''}
     </div>`;
 }
 
