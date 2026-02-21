@@ -39,68 +39,40 @@ export async function deleteReportPhotos(firmId: string, reportId: string): Prom
   }
 }
 
-/**
- * Decode image via new Image() + objectURL — works on all Safari versions including HEIC.
- * Runs on the main thread but is the most compatible path.
- */
-function loadImageElement(file: File): Promise<{ img: HTMLImageElement; url: string }> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => resolve({ img, url });
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error(`Failed to decode image: ${file.name} (${file.type})`));
-    };
-    img.src = url;
-  });
-}
-
 async function compressAndCropPhoto(file: File): Promise<Blob> {
-  let sourceWidth: number;
-  let sourceHeight: number;
-  let drawSource: CanvasImageSource;
-  let bitmap: ImageBitmap | null = null;
-  let objectUrl: string | null = null;
+  // Use new Image() + objectURL — most compatible across all mobile browsers
+  // (createImageBitmap breaks on iPad HEIC and some Android WebViews)
+  const url = URL.createObjectURL(file);
 
-  // Try createImageBitmap (fast, off-thread) — fall back to Image element for
-  // Safari HEIC photos and older iPadOS versions where createImageBitmap may
-  // not support the file format or isn't available at all.
   try {
-    bitmap = await createImageBitmap(file);
-    sourceWidth = bitmap.width;
-    sourceHeight = bitmap.height;
-    drawSource = bitmap;
-  } catch {
-    const { img, url } = await loadImageElement(file);
-    objectUrl = url;
-    sourceWidth = img.naturalWidth;
-    sourceHeight = img.naturalHeight;
-    drawSource = img;
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error(`Cannot decode image: ${file.name}`));
+      el.src = url;
+    });
+
+    // Center-crop to square, cap at MAX_DIMENSION
+    const size = Math.min(img.naturalWidth, img.naturalHeight);
+    const targetSize = Math.min(size, MAX_DIMENSION);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+
+    const ctx = canvas.getContext('2d')!;
+    const offsetX = (img.naturalWidth - size) / 2;
+    const offsetY = (img.naturalHeight - size) / 2;
+    ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, targetSize, targetSize);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
+        'image/jpeg',
+        JPEG_QUALITY
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(url);
   }
-
-  // Center-crop to square, cap at MAX_DIMENSION
-  const size = Math.min(sourceWidth, sourceHeight);
-  const targetSize = Math.min(size, MAX_DIMENSION);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = targetSize;
-  canvas.height = targetSize;
-
-  const ctx = canvas.getContext('2d')!;
-  const offsetX = (sourceWidth - size) / 2;
-  const offsetY = (sourceHeight - size) / 2;
-  ctx.drawImage(drawSource, offsetX, offsetY, size, size, 0, 0, targetSize, targetSize);
-
-  // Cleanup decoded image memory — safe try/catch for older Safari without bitmap.close()
-  if (bitmap) try { bitmap.close(); } catch { /* older Safari */ }
-  if (objectUrl) URL.revokeObjectURL(objectUrl);
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
-      'image/jpeg',
-      JPEG_QUALITY
-    );
-  });
 }

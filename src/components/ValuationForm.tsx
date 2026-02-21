@@ -1364,9 +1364,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     hiddenFields, onDataChange
   ]);
 
-  // Upload photo to Firebase Storage (compressed + cropped server-side)
+  // Upload photo to Firebase Storage (compressed + cropped)
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const processAndAddPhoto = useCallback(async (file: File) => {
-    if (!firmId || !reportId) return;
+    if (!firmId || !reportId) {
+      setPhotoError('Report not ready — please wait a moment and try again.');
+      return;
+    }
+    setPhotoError(null);
     setUploadingPhotos((prev) => prev + 1);
     try {
       const url = await uploadReportPhoto(firmId, reportId, file);
@@ -1374,7 +1379,9 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       // Remove from failed list if it was a retry
       setFailedPhotos((prev) => prev.filter((f) => f !== file));
     } catch (err) {
-      console.error('Failed to upload photo:', err);
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Failed to upload photo:', msg);
+      setPhotoError(`Upload failed: ${msg}`);
       setFailedPhotos((prev) => prev.some(f => f === file) ? prev : [...prev, file]);
     } finally {
       setUploadingPhotos((prev) => prev - 1);
@@ -2820,7 +2827,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               </div>
             )}
 
-            {/* Failed photo uploads with retry (17.4) */}
+            {/* Error message */}
+            {photoError && (
+              <div className="mt-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <p className="text-xs text-amber-400 font-medium">{photoError}</p>
+              </div>
+            )}
+
+            {/* Failed photo uploads with retry */}
             {failedPhotos.length > 0 && (
               <div className="mt-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
                 <div className="flex items-center justify-between">
