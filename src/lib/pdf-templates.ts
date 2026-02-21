@@ -1,9 +1,81 @@
 // PDF Template Engine — 5 header/footer styles for firm branding
-// Each template is CSS-scoped via body class: .tmpl-{style}
+// Puppeteer native header/footer for PDF output (consistent on every page)
+// Embedded header/footer for HTML preview mode
 
 import { FirmBranding, ValuerInfo, DEFAULT_BRANDING } from '@/types/branding';
 
-// ============ HEADER RENDERING ============
+// ============ PUPPETEER NATIVE HEADER/FOOTER (for PDF output) ============
+
+export function renderPuppeteerHeader(
+  branding: FirmBranding,
+  valuerInfo: ValuerInfo,
+  logoBase64: string | null
+): string {
+  const h = branding.header;
+  const color = h.primaryColor || '#1a5276';
+
+  // Build left side
+  const leftParts: string[] = [];
+  if (h.showLogo && logoBase64) {
+    leftParts.push(`<img src="${logoBase64}" style="max-height: 36px; max-width: 140px; object-fit: contain; display: block; margin-bottom: 2px;" />`);
+  }
+  if (h.showFirmName && branding.firmName) {
+    leftParts.push(`<div style="font-size: 12px; font-weight: bold; color: ${color}; line-height: 1.2;">${escapeHtml(branding.firmName)}</div>`);
+  }
+  if (h.showSubtitle && branding.subtitle) {
+    leftParts.push(`<div style="font-size: 7.5px; color: #555; line-height: 1.2;">${escapeHtml(branding.subtitle)}</div>`);
+  }
+  if (h.showAddress && branding.address) {
+    leftParts.push(`<div style="font-size: 7.5px; color: #333; line-height: 1.2;">${escapeHtml(branding.address)}</div>`);
+  }
+  if (h.showContact && (branding.contact || branding.email)) {
+    leftParts.push(`<div style="font-size: 7.5px; color: #333; line-height: 1.2;">${[branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</div>`);
+  }
+
+  // Build right side (valuer info)
+  const rightParts: string[] = [];
+  if (h.showValuerInfo && valuerInfo.name) {
+    rightParts.push(`<div style="font-size: 8px; font-weight: bold; line-height: 1.3;">${escapeHtml(valuerInfo.name)}</div>`);
+    if (valuerInfo.qualification) rightParts.push(`<div style="font-size: 7.5px; line-height: 1.3;">${escapeHtml(valuerInfo.qualification)}</div>`);
+    if (valuerInfo.designation) rightParts.push(`<div style="font-size: 7.5px; line-height: 1.3;">${escapeHtml(valuerInfo.designation)}</div>`);
+    if (valuerInfo.categoryNo) rightParts.push(`<div style="font-size: 7.5px; line-height: 1.3;">${escapeHtml(valuerInfo.categoryNo)}</div>`);
+  }
+
+  const hasContent = leftParts.length > 0 || rightParts.length > 0;
+  if (!hasContent) return '<span></span>';
+
+  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid ${color}; padding-bottom: 4px; margin-top: 5mm;">
+    <div>${leftParts.join('')}</div>
+    <div style="text-align: right;">${rightParts.join('')}</div>
+  </div>`;
+}
+
+export function renderPuppeteerFooter(branding: FirmBranding): string {
+  const f = branding.footer;
+
+  let contactHtml = '';
+  if (f.enabled && f.showContactInfo && (branding.contact || branding.email)) {
+    contactHtml = `<span style="font-size: 7px; color: #666;">${[branding.firmName, branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</span>`;
+  }
+
+  // Always show page numbers
+  const pageNumHtml = `<span style="font-size: 7px; color: #666;">Page <span class="pageNumber"></span></span>`;
+
+  let disclaimerHtml = '';
+  if (f.enabled && f.showDisclaimer && f.disclaimerText) {
+    disclaimerHtml = `<div style="font-size: 6px; color: #888; font-style: italic; text-align: center; margin-top: 2px;">${escapeHtml(f.disclaimerText)}</div>`;
+  }
+
+  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; border-top: 1px solid #ccc; padding-top: 3px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      ${contactHtml}
+      ${pageNumHtml}
+    </div>
+    ${disclaimerHtml}
+  </div>`;
+}
+
+// ============ EMBEDDED HEADER/FOOTER (for preview mode) ============
 
 export function renderHeader(
   branding: FirmBranding,
@@ -72,7 +144,6 @@ function renderValuerBlock(v: ValuerInfo, style: string): string {
     </div>`;
 }
 
-// --- Classic: Two-column, 2px border-bottom ---
 function renderClassicHeader(
   logo: string, name: string, subtitle: string, address: string, contact: string, valuer: string, color: string
 ): string {
@@ -87,7 +158,6 @@ function renderClassicHeader(
     </div>`;
 }
 
-// --- Modern: 4px left sidebar accent, sans-serif ---
 function renderModernHeader(
   logo: string, name: string, subtitle: string, address: string, contact: string, valuer: string, color: string
 ): string {
@@ -102,7 +172,6 @@ function renderModernHeader(
     </div>`;
 }
 
-// --- Elegant: Centered logo, small-caps, thin double lines ---
 function renderElegantHeader(
   logo: string, name: string, subtitle: string, address: string, contact: string, valuer: string, color: string
 ): string {
@@ -117,7 +186,6 @@ function renderElegantHeader(
     </div>`;
 }
 
-// --- Bold Corporate: Full-width colored banner ---
 function renderBoldCorporateHeader(
   logo: string, name: string, subtitle: string, address: string, contact: string, valuer: string, color: string
 ): string {
@@ -132,7 +200,6 @@ function renderBoldCorporateHeader(
     </div>`;
 }
 
-// --- Minimal: Logo + name only, thin grey divider ---
 function renderMinimalHeader(
   logo: string, name: string, subtitle: string, address: string, contact: string, valuer: string
 ): string {
@@ -147,7 +214,7 @@ function renderMinimalHeader(
     </div>`;
 }
 
-// ============ FOOTER RENDERING ============
+// ============ FOOTER (for preview) ============
 
 export function renderFooter(branding: FirmBranding): string {
   const f = branding.footer;
@@ -175,21 +242,14 @@ export function renderFooter(branding: FirmBranding): string {
     case 'modern':
       return `
         <div class="page-footer" style="border-top: 3px solid ${color}; padding-top: 6px;">
-          <div class="footer-row">
-            ${contactHtml}
-            ${pageNumHtml}
-          </div>
+          <div class="footer-row">${contactHtml}${pageNumHtml}</div>
           ${disclaimerHtml}
         </div>`;
-
     case 'elegant':
       return `
         <div class="page-footer" style="border-top: 1px solid ${color}; padding-top: 8px; text-align: center;">
-          ${contactHtml}
-          ${pageNumHtml}
-          ${disclaimerHtml}
+          ${contactHtml}${pageNumHtml}${disclaimerHtml}
         </div>`;
-
     case 'boldCorporate':
       return `
         <div class="page-footer" style="background-color: ${color}; color: #fff; padding: 8px 16px; border-radius: 3px;">
@@ -199,23 +259,16 @@ export function renderFooter(branding: FirmBranding): string {
           </div>
           ${disclaimerHtml ? disclaimerHtml.replace('class="footer-disclaimer"', 'class="footer-disclaimer" style="color: rgba(255,255,255,0.8);"') : ''}
         </div>`;
-
     case 'minimal':
       return `
         <div class="page-footer" style="border-top: 1px solid #eee; padding-top: 6px;">
-          <div class="footer-row">
-            ${pageNumHtml}
-          </div>
+          <div class="footer-row">${pageNumHtml}</div>
         </div>`;
-
     case 'classic':
     default:
       return `
         <div class="page-footer" style="border-top: 1px solid #999; padding-top: 8px;">
-          <div class="footer-row">
-            ${contactHtml}
-            ${pageNumHtml}
-          </div>
+          <div class="footer-row">${contactHtml}${pageNumHtml}</div>
           ${disclaimerHtml}
         </div>`;
   }
@@ -227,8 +280,9 @@ export function getTemplateCSS(branding: FirmBranding): string {
   const style = branding.templateStyle || 'classic';
   const color = branding.header.primaryColor || '#1a5276';
 
-  // Base CSS shared across all templates
+  // Base CSS — used for PDF body content (headers/footers handled by Puppeteer)
   const baseCSS = `
+    @page { margin: 0; }
     * {
       margin: 0;
       padding: 0;
@@ -237,60 +291,44 @@ export function getTemplateCSS(branding: FirmBranding): string {
     body {
       font-size: 11pt;
       line-height: 1.4;
-      color: #000;
+      color: #1a1a1a;
     }
     .page {
       page-break-after: always;
-      padding: 10mm;
-      position: relative;
-      min-height: calc(297mm - 20mm);
-      display: flex;
-      flex-direction: column;
     }
     .page:last-child {
       page-break-after: auto;
     }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-      flex-shrink: 0;
-    }
-    .header-left {
-      flex: 1;
-    }
-    .header-right {
-      text-align: right;
-      flex-shrink: 0;
-    }
-    .header-right p {
-      font-size: 10pt;
-      margin: 1px 0;
-    }
-    .header-logo {
-      max-height: 60px;
-      max-width: 180px;
-      object-fit: contain;
-      margin-bottom: 4px;
-      display: block;
-    }
-    .header-firm-name {
-      font-size: 16pt;
+
+    /* --- Cover page --- */
+    .cover-title {
+      text-align: center;
       font-weight: bold;
-      margin-bottom: 2px;
+      margin: 30px 0 20px;
+      font-size: 13pt;
+      line-height: 1.5;
     }
-    .header-subtitle,
-    .header-address,
-    .header-contact {
-      font-size: 10pt;
-      margin: 1px 0;
+    .cover-owners {
+      margin: 20px 0;
+      line-height: 1.6;
     }
-    .valuer-info p {
-      font-size: 10pt;
-      margin: 1px 0;
+    .cover-meta {
+      margin: 18px 0 10px;
+      line-height: 1.8;
     }
+    .cover-photo {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .cover-photo img {
+      max-width: 85%;
+      max-height: 480px;
+      border: 2px solid #444;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    /* --- Inline title (non-cover pages) --- */
     .title {
       text-align: center;
       font-weight: bold;
@@ -304,24 +342,47 @@ export function getTemplateCSS(branding: FirmBranding): string {
       display: flex;
       justify-content: space-between;
       margin: 20px 0;
+    }
+    .ref-date span {
       font-weight: bold;
     }
+
+    /* --- Tables --- */
     table {
       width: 100%;
       border-collapse: collapse;
       margin: 15px 0;
     }
     th, td {
-      border: 1px solid #000;
-      padding: 6px 8px;
+      border: 1px solid #444;
+      padding: 7px 10px;
       text-align: left;
       vertical-align: top;
       font-size: 10pt;
     }
     th {
-      background-color: #f0f0f0;
+      background-color: #e8eaed;
       font-weight: bold;
+      font-size: 9.5pt;
     }
+    /* Zebra striping for readability */
+    tbody tr:nth-child(even),
+    table tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    /* Questionnaire tables (3-col: serial, question, answer) */
+    .q-table td:first-child {
+      width: 28px;
+      text-align: center;
+      color: #555;
+      font-size: 9.5pt;
+    }
+    .q-table td:nth-child(2) {
+      width: 52%;
+    }
+
+    /* --- Section titles --- */
     .section-title {
       font-weight: bold;
       font-size: 12pt;
@@ -329,13 +390,18 @@ export function getTemplateCSS(branding: FirmBranding): string {
       text-decoration: underline;
       page-break-after: avoid;
     }
+    .part-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 13pt;
+      margin: 10px 0 5px;
+      letter-spacing: 0.5px;
+      page-break-after: avoid;
+    }
     h1, h2, h3, h4, h5, h6, .section-title, .part-title, strong {
       page-break-after: avoid;
       orphans: 3;
       widows: 3;
-    }
-    table {
-      page-break-inside: avoid;
     }
     tr {
       page-break-inside: avoid;
@@ -346,45 +412,93 @@ export function getTemplateCSS(branding: FirmBranding): string {
     p + table, .section-title + table, strong + table {
       page-break-before: avoid;
     }
-    .cover-photo {
-      text-align: center;
-      margin: 30px 0;
+
+    /* --- N/A placeholder styling --- */
+    .na {
+      color: #999;
+      font-style: italic;
     }
-    .cover-photo img {
-      max-width: 80%;
-      max-height: 400px;
-      border: 2px solid #333;
-      border-radius: 8px;
+
+    /* --- Declaration & Signature --- */
+    .declaration {
+      margin-top: 30px;
+      padding: 20px 24px;
+      border: 1px solid #d0d0d0;
+      background-color: #fafbfc;
+      border-radius: 4px;
+    }
+    .declaration .section-title {
+      margin-top: 0;
     }
     .signature {
       display: flex;
       justify-content: space-between;
-      margin-top: 40px;
-      padding-top: 20px;
+      margin-top: 50px;
+      padding-top: 0;
     }
+    .sig-block {
+      text-align: center;
+      min-width: 180px;
+    }
+    .sig-line {
+      border-top: 1px solid #333;
+      padding-top: 8px;
+      font-size: 10pt;
+    }
+
+    /* --- Calculations --- */
     .calculation-box {
       margin: 15px 0;
-      padding: 10px;
+      padding: 12px 16px;
+      background-color: #f8f9fa;
+      border-left: 3px solid ${color};
+      border-radius: 2px;
     }
     .calculation-line {
-      margin: 5px 0;
+      margin: 6px 0;
     }
-    .specs-list p {
-      margin: 5px 0;
+
+    /* --- Specs table --- */
+    .specs-table {
+      width: 100%;
+      margin: 10px 0 15px;
+      border-collapse: collapse;
     }
+    .specs-table td {
+      border: none;
+      padding: 4px 10px;
+      font-size: 10.5pt;
+    }
+    .specs-table td:first-child {
+      font-weight: bold;
+      width: 150px;
+      color: #333;
+    }
+    .specs-table tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    /* --- Final value emphasis --- */
     .final-value {
       margin: 30px 0;
-      padding: 15px;
-      border: 2px solid #000;
+      padding: 16px 20px;
+      border: 2px solid ${color};
+      background-color: #f0f7ed;
       text-align: center;
       font-size: 12pt;
+      border-radius: 4px;
     }
     .value-words {
       text-align: center;
       font-weight: bold;
       margin: 15px 0;
       font-size: 12pt;
+      background-color: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 4px;
     }
+
+    /* --- Photos --- */
     .photo-page {
       text-align: center;
     }
@@ -401,68 +515,128 @@ export function getTemplateCSS(branding: FirmBranding): string {
       max-width: 90%;
     }
     .photo-item {
-      aspect-ratio: 4/3;
       overflow: hidden;
-      border: 1px solid #333;
+      border: 1px solid #444;
+      border-radius: 3px;
     }
     .photo-item img {
       width: 100%;
-      height: 100%;
+      aspect-ratio: 4/3;
       object-fit: cover;
+      display: block;
+    }
+    .photo-number {
+      text-align: center;
+      font-size: 8.5pt;
+      color: #666;
+      padding: 4px 0;
+      background-color: #f8f9fa;
+      border-top: 1px solid #eee;
     }
 
-    /* Footer — pinned to bottom of page via flex */
-    .page-footer {
-      margin-top: auto;
-      padding-top: 12px;
-      font-size: 8pt;
-      color: #666;
+    /* --- Total / summary rows --- */
+    .total-row td {
+      border-top: 2px solid #333;
+      background-color: #f0f1f3 !important;
     }
-    .footer-row {
+
+    /* --- Detail tables (2-col: label + value, used in addendum pages) --- */
+    .detail-table td:first-child {
+      width: 40%;
+      color: #333;
+    }
+
+    /* --- Location map page --- */
+    .map-container {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .map-container img {
+      max-width: 100%;
+      height: auto;
+      border: 2px solid #444;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .coord-table {
+      width: 60%;
+      margin: 30px auto;
+    }
+    .coord-table td {
+      text-align: center;
+      padding: 15px;
+      background-color: #f8f9fa;
+    }
+    .map-date {
+      text-align: center;
+      font-size: 10pt;
+      color: #666;
+      margin-top: 20px;
+    }
+    .map-attribution {
+      text-align: center;
+      font-size: 9pt;
+      color: #888;
+      margin-top: 40px;
+    }
+
+    /* --- Valuer sign-off (final page) --- */
+    .valuer-signoff {
+      margin-top: 40px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
     }
-    .footer-contact {
-      font-size: 8pt;
+    .valuer-signoff .sig-block {
+      text-align: center;
+      min-width: 180px;
     }
-    .footer-page-num {
-      font-size: 8pt;
-    }
-    .footer-disclaimer {
-      font-size: 7pt;
-      color: #888;
-      margin-top: 4px;
-      font-style: italic;
+    .valuer-signoff .sig-line {
+      border-top: 1px solid #333;
+      padding-top: 8px;
+      font-size: 10pt;
+      line-height: 1.5;
     }
 
-    /* Page counter for page numbers */
-    body { counter-reset: page; }
-    .page { counter-increment: page; }
-    .page-number::after { content: counter(page); }
+    /* --- Continuation label --- */
+    .cont-label {
+      font-size: 10pt;
+      color: #666;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
   `;
 
-  // Style-specific overrides
+  // Preview-mode header/footer CSS (embedded headers; Puppeteer handles these in PDF mode)
+  const previewHeaderFooterCSS = `
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .header-left { flex: 1; }
+    .header-right { text-align: right; }
+    .header-logo { max-height: 50px; max-width: 160px; object-fit: contain; display: block; margin-bottom: 4px; }
+    .header-firm-name { font-size: 14pt; margin: 0; line-height: 1.2; }
+    .header-subtitle, .header-address, .header-contact { font-size: 8pt; margin: 2px 0; color: #555; }
+    .valuer-info p { font-size: 9pt; margin: 1px 0; }
+    .valuer-name { font-weight: bold; }
+    .valuer-badge { display: inline-block; font-size: 8pt; background: #f0f0f0; padding: 1px 6px; border-radius: 3px; margin: 1px 2px; }
+    .valuer-cat { font-size: 8pt; margin-top: 2px; }
+    .page-footer { margin-top: 20px; padding-top: 8px; font-size: 8pt; }
+    .footer-row { display: flex; justify-content: space-between; align-items: center; }
+    .footer-contact, .footer-page-num { font-size: 8pt; color: #666; }
+    .footer-disclaimer { font-size: 7pt; color: #888; font-style: italic; margin-top: 3px; text-align: center; }
+  `;
+
+  // Style-specific overrides (body font only — headers handled by Puppeteer)
   let styleCSS = '';
 
   switch (style) {
     case 'modern':
       styleCSS = `
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .header-firm-name { font-size: 18pt; letter-spacing: 0.5px; color: ${color}; }
-        .header-subtitle { color: #555; font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; }
-        .valuer-badge {
-          display: inline-block;
-          background: ${color}15;
-          border: 1px solid ${color}40;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 8pt;
-          margin: 2px 2px;
-          color: ${color};
-        }
-        .valuer-name { font-weight: 600; font-size: 11pt; margin-bottom: 4px; }
-        .valuer-cat { font-size: 8pt; color: #666; margin-top: 4px; }
         .section-title { color: ${color}; }
         th { background-color: ${color}10; }
       `;
@@ -471,14 +645,6 @@ export function getTemplateCSS(branding: FirmBranding): string {
     case 'elegant':
       styleCSS = `
         body { font-family: Georgia, 'Times New Roman', serif; }
-        .header-firm-name {
-          font-size: 18pt;
-          font-variant: small-caps;
-          letter-spacing: 2px;
-          color: ${color};
-        }
-        .header-subtitle { font-style: italic; font-size: 10pt; color: #555; }
-        .header-address, .header-contact { font-size: 9pt; color: #444; }
         .section-title { font-style: italic; }
         .final-value { border: 1px solid ${color}; }
       `;
@@ -487,15 +653,6 @@ export function getTemplateCSS(branding: FirmBranding): string {
     case 'boldCorporate':
       styleCSS = `
         body { font-family: Arial, Helvetica, sans-serif; }
-        .header-firm-name {
-          font-size: 20pt;
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        .header-subtitle { font-size: 9pt; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; }
-        .header-address, .header-contact { font-size: 9pt; opacity: 0.85; }
-        .header-logo { max-height: 50px; filter: brightness(0) invert(1); }
         .section-title { color: ${color}; text-transform: uppercase; font-size: 11pt; }
         th { background-color: ${color}; color: #fff; }
       `;
@@ -504,8 +661,6 @@ export function getTemplateCSS(branding: FirmBranding): string {
     case 'minimal':
       styleCSS = `
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .header-firm-name { font-size: 14pt; font-weight: 500; color: #333; }
-        .header-logo { max-height: 40px; }
       `;
       break;
 
@@ -513,13 +668,11 @@ export function getTemplateCSS(branding: FirmBranding): string {
     default:
       styleCSS = `
         body { font-family: 'Times New Roman', Times, serif; }
-        .header-left h1, .header-firm-name { font-size: 16pt; }
-        .header-left p { font-size: 10pt; margin: 1px 0; }
       `;
       break;
   }
 
-  return baseCSS + styleCSS;
+  return baseCSS + previewHeaderFooterCSS + styleCSS;
 }
 
 // ============ HELPERS ============

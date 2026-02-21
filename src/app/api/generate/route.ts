@@ -3,7 +3,7 @@ import { ValuationReport } from '@/types/valuation';
 import { verifyAuth, adminDb, verifySession } from '@/lib/firebase-admin';
 import { TRIAL_LIMIT } from '@/types/subscription';
 import { FirmBranding, ValuerInfo } from '@/types/branding';
-import { getTemplateCSS, renderHeader, renderFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
+import { getTemplateCSS, renderHeader, renderFooter, renderPuppeteerHeader, renderPuppeteerFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
 import { htmlToPdfBase64 } from '@/lib/puppeteer';
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
@@ -132,17 +132,34 @@ export async function POST(request: NextRequest) {
       data.photos = base64Photos.filter(Boolean) as string[];
     }
 
-    // Generate HTML content for PDF
-    const htmlContent = generateHTML(data, firmBranding, logoBase64);
-
-    // Preview mode: return HTML without running Puppeteer
+    // Check if preview mode (return HTML without Puppeteer)
     const { searchParams } = new URL(request.url);
-    if (searchParams.get('preview') === 'true') {
+    const isPreview = searchParams.get('preview') === 'true';
+
+    // Generate HTML content — in preview mode, headers/footers are embedded in HTML;
+    // in PDF mode, they're empty because Puppeteer renders them natively on every page
+    const htmlContent = generateHTML(data, firmBranding, logoBase64, isPreview);
+
+    if (isPreview) {
       return NextResponse.json({ html: htmlContent });
     }
 
-    // Full generation: convert HTML to PDF via Puppeteer
-    const pdfBase64 = await htmlToPdfBase64(htmlContent);
+    // Build Puppeteer native header/footer for consistent rendering on every PDF page
+    const valuerInfo: ValuerInfo = {
+      name: data.valuerName,
+      qualification: data.valuerQualification,
+      designation: data.valuerDesignation,
+      categoryNo: data.valuerCategoryNo,
+    };
+    const headerTemplate = renderPuppeteerHeader(firmBranding, valuerInfo, logoBase64);
+    const footerTemplate = renderPuppeteerFooter(firmBranding);
+
+    const pdfBase64 = await htmlToPdfBase64(htmlContent, {
+      headerTemplate,
+      footerTemplate,
+      marginTop: '30mm',
+      marginBottom: '15mm',
+    });
 
     return NextResponse.json({
       pdf: pdfBase64,
@@ -178,32 +195,32 @@ function generateAddendumPages(
     <div class="page">
       ${headerHtml}
       <p class="section-title">LEGAL &amp; REGULATORY COMPLIANCE</p>
-      <table>
-        <tr><td style="width:40%">Encumbrances</td><td>${ext.encumbrances || 'Nil'}</td></tr>
-        <tr><td>Building Plan Sanction</td><td>${ext.buildingPlanSanction || 'N/A'}</td></tr>
-        <tr><td>Approval Authority</td><td>${ext.approvalAuthority || 'N/A'}</td></tr>
+      <table class="detail-table">
+        <tr><td>Encumbrances</td><td>${ext.encumbrances || 'Nil'}</td></tr>
+        <tr><td>Building Plan Sanction</td><td>${ext.buildingPlanSanction || '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Approval Authority</td><td>${ext.approvalAuthority || '<span class="na">N/A</span>'}</td></tr>
         <tr><td>Plan Violations</td><td>${ext.planViolations || 'None observed'}</td></tr>
-        <tr><td>Occupancy Certificate</td><td>${ext.occupancyCertificateStatus || 'N/A'}</td></tr>
+        <tr><td>Occupancy Certificate</td><td>${ext.occupancyCertificateStatus || '<span class="na">N/A</span>'}</td></tr>
         <tr><td>Unauthorized Constructions</td><td>${ext.unauthorizedConstructions || 'None observed'}</td></tr>
-        <tr><td>SARFAESI Compliant</td><td>${ext.sarfaesiCompliant || 'N/A'}</td></tr>
+        <tr><td>SARFAESI Compliant</td><td>${ext.sarfaesiCompliant || '<span class="na">N/A</span>'}</td></tr>
         ${isPSU ? `
-        <tr><td>FAR/FSI Permitted</td><td>${ext.farFsiPermitted || 'N/A'}</td></tr>
-        <tr><td>FAR/FSI Consumed</td><td>${ext.farFsiConsumed || 'N/A'}</td></tr>
-        <tr><td>Ground Coverage</td><td>${ext.groundCoverage || 'N/A'}</td></tr>
+        <tr><td>FAR/FSI Permitted</td><td>${ext.farFsiPermitted || '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>FAR/FSI Consumed</td><td>${ext.farFsiConsumed || '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Ground Coverage</td><td>${ext.groundCoverage || '<span class="na">N/A</span>'}</td></tr>
         ` : ''}
       </table>
 
       ${isPSU ? `
       <p class="section-title" style="margin-top: 20px;">RENTAL &amp; TENANCY DETAILS</p>
-      <table>
-        <tr><td style="width:40%">Occupied by Tenant</td><td>${ext.isOccupiedByTenant ? 'Yes' : 'No'}</td></tr>
+      <table class="detail-table">
+        <tr><td>Occupied by Tenant</td><td>${ext.isOccupiedByTenant ? 'Yes' : 'No'}</td></tr>
         ${ext.isOccupiedByTenant ? `
-        <tr><td>Number of Tenants</td><td>${ext.numberOfTenants || 'N/A'}</td></tr>
-        <tr><td>Monthly Rent</td><td>${ext.monthlyRent ? formatCurrency(ext.monthlyRent) : 'N/A'}</td></tr>
-        <tr><td>Tenancy Duration</td><td>${ext.tenancyDuration || 'N/A'}</td></tr>
-        <tr><td>Tenancy Status</td><td>${ext.tenancyStatus || 'N/A'}</td></tr>
+        <tr><td>Number of Tenants</td><td>${ext.numberOfTenants || '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Monthly Rent</td><td>${ext.monthlyRent ? formatCurrency(ext.monthlyRent) : '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Tenancy Duration</td><td>${ext.tenancyDuration || '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Tenancy Status</td><td>${ext.tenancyStatus || '<span class="na">N/A</span>'}</td></tr>
         ` : ''}
-        <tr><td>Reasonable Letting Value</td><td>${ext.reasonableLettingValue ? formatCurrency(ext.reasonableLettingValue) : 'N/A'}</td></tr>
+        <tr><td>Reasonable Letting Value</td><td>${ext.reasonableLettingValue ? formatCurrency(ext.reasonableLettingValue) : '<span class="na">N/A</span>'}</td></tr>
       </table>
       ` : ''}
       ${footerHtml}
@@ -214,23 +231,23 @@ function generateAddendumPages(
     <div class="page">
       ${headerHtml}
       <p class="section-title">MARKETABILITY ASSESSMENT</p>
-      <table>
-        <tr><td style="width:40%">Location Attributes</td><td>${ext.locationAttributes || 'N/A'}</td></tr>
-        <tr><td>Comparable Sale Prices</td><td>${ext.comparableSalePrices || 'Not Available'}</td></tr>
-        <tr><td>Demand-Supply Assessment</td><td>${ext.demandSupplyComment || 'N/A'}</td></tr>
-        <tr><td>Last Two Transactions</td><td>${ext.lastTwoTransactions || 'Not Available'}</td></tr>
-        <tr><td>Market Rate Trend</td><td>${ext.marketRateTrend || 'N/A'}</td></tr>
+      <table class="detail-table">
+        <tr><td>Location Attributes</td><td>${ext.locationAttributes || '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Comparable Sale Prices</td><td>${ext.comparableSalePrices || '<span class="na">Not Available</span>'}</td></tr>
+        <tr><td>Demand-Supply Assessment</td><td>${ext.demandSupplyComment || '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Last Two Transactions</td><td>${ext.lastTwoTransactions || '<span class="na">Not Available</span>'}</td></tr>
+        <tr><td>Market Rate Trend</td><td>${ext.marketRateTrend || '<span class="na">N/A</span>'}</td></tr>
       </table>
 
       <p class="section-title" style="margin-top: 20px;">VALUATION SUMMARY</p>
-      <table>
-        <tr><td style="width:40%">Guideline Value (Land)</td><td>${ext.guidelineValueLand ? formatCurrency(ext.guidelineValueLand) : 'N/A'}</td></tr>
-        <tr><td>Guideline Value (Building)</td><td>${ext.guidelineValueBuilding ? formatCurrency(ext.guidelineValueBuilding) : 'N/A'}</td></tr>
+      <table class="detail-table">
+        <tr><td>Guideline Value (Land)</td><td>${ext.guidelineValueLand ? formatCurrency(ext.guidelineValueLand) : '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Guideline Value (Building)</td><td>${ext.guidelineValueBuilding ? formatCurrency(ext.guidelineValueBuilding) : '<span class="na">N/A</span>'}</td></tr>
         <tr><td><strong>Fair Market Value</strong></td><td><strong>${formatCurrency(calculatedValues.roundedValue)}</strong></td></tr>
-        <tr><td>Forced Sale Value</td><td>${ext.forcedSaleValue ? formatCurrency(ext.forcedSaleValue) : 'N/A'}</td></tr>
+        <tr><td>Forced Sale Value</td><td>${ext.forcedSaleValue ? formatCurrency(ext.forcedSaleValue) : '<span class="na">N/A</span>'}</td></tr>
         ${isPSU ? `
-        <tr><td>Insurance Value</td><td>${ext.insuranceValue ? formatCurrency(ext.insuranceValue) : 'N/A'}</td></tr>
-        <tr><td>Variation Justification</td><td>${ext.variationJustification || 'N/A'}</td></tr>
+        <tr><td>Insurance Value</td><td>${ext.insuranceValue ? formatCurrency(ext.insuranceValue) : '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Variation Justification</td><td>${ext.variationJustification || '<span class="na">N/A</span>'}</td></tr>
         ` : ''}
         <tr><td>Valuation Methodology</td><td>${ext.valuationMethodology || 'Cost Approach + Market Comparison'}</td></tr>
       </table>
@@ -244,11 +261,11 @@ function generateAddendumPages(
     <div class="page">
       ${headerHtml}
       <p class="section-title">GUIDELINE VALUE COMPARISON (Section 50C / 56(2)(x))</p>
-      <table>
-        <tr><td style="width:40%">Guideline Value (Land)</td><td>${ext.guidelineValueLand ? formatCurrency(ext.guidelineValueLand) : 'N/A'}</td></tr>
-        <tr><td>Guideline Value (Building)</td><td>${ext.guidelineValueBuilding ? formatCurrency(ext.guidelineValueBuilding) : 'N/A'}</td></tr>
+      <table class="detail-table">
+        <tr><td>Guideline Value (Land)</td><td>${ext.guidelineValueLand ? formatCurrency(ext.guidelineValueLand) : '<span class="na">N/A</span>'}</td></tr>
+        <tr><td>Guideline Value (Building)</td><td>${ext.guidelineValueBuilding ? formatCurrency(ext.guidelineValueBuilding) : '<span class="na">N/A</span>'}</td></tr>
         <tr><td><strong>Fair Market Value (Assessed)</strong></td><td><strong>${formatCurrency(calculatedValues.roundedValue)}</strong></td></tr>
-        <tr><td>Variation Justification</td><td>${ext.variationJustification || 'N/A'}</td></tr>
+        <tr><td>Variation Justification</td><td>${ext.variationJustification || '<span class="na">N/A</span>'}</td></tr>
         <tr><td>Valuation Methodology</td><td>${ext.valuationMethodology || 'Cost Approach + Market Comparison'}</td></tr>
       </table>
       ${footerHtml}
@@ -258,7 +275,7 @@ function generateAddendumPages(
   return pages;
 }
 
-function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64: string | null): string {
+function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64: string | null, isPreview: boolean): string {
   const {
     valuerName,
     valuerQualification,
@@ -324,8 +341,9 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   };
   const formatNumber = (num: number, decimals = 2) => num.toFixed(decimals);
 
-  const headerHtml = renderHeader(branding, valuerInfo, logoBase64);
-  const footerHtml = renderFooter(branding);
+  // In preview mode, embed headers/footers in HTML. In PDF mode, Puppeteer renders them natively.
+  const headerHtml = isPreview ? renderHeader(branding, valuerInfo, logoBase64) : '';
+  const footerHtml = isPreview ? renderFooter(branding) : '';
 
   return `
 <!DOCTYPE html>
@@ -341,18 +359,20 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   <div class="page">
     ${headerHtml}
 
-    <div class="title">
+    <div class="cover-title">
       VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
       IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
-    <div class="owners">
+    <div class="cover-owners">
       <p><strong>OWNERS – IN ${originalOwnerYear} – ${originalOwner}</strong></p>
       <p><strong>CURRENT OWNERS – ${currentOwnersShort}</strong></p>
     </div>
 
-    <p><strong>ON BEHALF OF OWNERS</strong></p>
-    ${(valuationInputs.bankName && !isIT) ? `<p style="margin-top: 8px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
+    <div class="cover-meta">
+      <p><strong>ON BEHALF OF OWNERS</strong></p>
+      ${(valuationInputs.bankName && !isIT) ? `<p style="margin-top: 6px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
+    </div>
 
     <div class="ref-date">
       <span>Ref: ${valuationInputs.referenceNo}</span>
@@ -386,8 +406,8 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
       <span>Date: ${valuationInputs.valuationDate}</span>
     </div>
 
-    <p class="section-title">GENERAL:</p>
-    <table>
+    <p class="section-title">GENERAL</p>
+    <table class="q-table">
       <tr><td>1</td><td>Purpose for which valuation is made</td><td>${valuationInputs.purpose}${valuationInputs.bankName ? ` (${valuationInputs.bankName})` : ''}</td></tr>
       <tr><td>2</td><td>Date as on which valuation is made</td><td>${valuationInputs.valuationDate} for the date ${valuationInputs.valuationForDate}</td></tr>
       <tr><td>3</td><td>Name of owner/owners</td><td>IN ${originalOwnerYear} – ${originalOwner}<br>Current Owners – ${currentOwnersShort}</td></tr>
@@ -406,32 +426,32 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   <!-- Page 3: Land & Improvements -->
   <div class="page">
     ${headerHtml}
-    <p class="section-title">LAND:</p>
-    <table>
+    <p class="section-title">LAND</p>
+    <table class="q-table">
       <tr><td>12</td><td>Area of land supported by documentary proof<br>shape, dimensions and physical features</td><td>Plot Area – ${formatNumber(valuationInputs.plotArea, 4)} Sqm<br>${generalDetails.plotShape}</td></tr>
       <tr><td>13</td><td>Road or lanes on which the land is abutting</td><td>North – ${boundaries.north}<br>South – ${boundaries.south}<br>East – ${boundaries.east}<br>West – ${boundaries.west}</td></tr>
       <tr><td>14</td><td>Is it freehold or lease-hold land?</td><td>${generalDetails.isLeasehold ? 'Leasehold' : 'Freehold'}</td></tr>
-      <tr><td>15</td><td>If lease-hold, the name of lessor etc.<br>(i) initial premium<br>(ii) Ground rent payable<br>(iii) Unearned increase payable to the lessor in the event of sale or transfer</td><td>${generalDetails.isLeasehold ? generalDetails.lessorDetails || 'NA' : 'NA'}</td></tr>
+      <tr><td>15</td><td>If lease-hold, the name of lessor etc.<br>(i) initial premium<br>(ii) Ground rent payable<br>(iii) Unearned increase payable to the lessor in the event of sale or transfer</td><td>${generalDetails.isLeasehold ? generalDetails.lessorDetails || '<span class="na">N/A</span>' : '<span class="na">N/A</span>'}</td></tr>
       <tr><td>16</td><td>Are there any restrictive covenant in regard to use of land? If so, attach a copy of the covenant</td><td>${generalDetails.restrictiveCovenants}</td></tr>
       <tr><td>17</td><td>Are there any agreements of easement? If so, attach copies</td><td>${generalDetails.easementAgreements}</td></tr>
       <tr><td>18</td><td>Does the land fall in an area included in any town planning of government or any statutory body? If so, give particulars</td><td>${generalDetails.townPlanningArea}</td></tr>
       <tr><td>19</td><td>Has any contribution been made towards development or is any demand for such contribution still outstanding?</td><td>${generalDetails.developmentContribution}</td></tr>
       <tr><td>20</td><td>Has the whole or part of the land been notified for acquisition by government or any statutory body? Give date of the notification.</td><td>${generalDetails.acquisitionNotification}</td></tr>
-      <tr><td>21</td><td>Attach a dimension site plan</td><td>Owner to attach if required</td></tr>
+      <tr><td>21</td><td>Attach a dimension site plan</td><td><span class="na">Owner to attach if required</span></td></tr>
     </table>
 
-    <p class="section-title">IMPROVEMENTS:</p>
-    <table>
-      <tr><td>22</td><td>Attached plans and elevations of all structures standing on the land & layout plan.</td><td>Owner to attach if required.</td></tr>
+    <p class="section-title">IMPROVEMENTS</p>
+    <table class="q-table">
+      <tr><td>22</td><td>Attached plans and elevations of all structures standing on the land & layout plan.</td><td><span class="na">Owner to attach if required</span></td></tr>
       <tr><td>23</td><td>Furnish technical details of the building on a separate sheet</td><td>Good Specifications</td></tr>
       <tr><td>24</td><td>(I) Is the building owner occupied/ tenanted/ both<br>(ii) If partly owner occupied, specify portion & extent of area under owner occupation?</td><td>${generalDetails.buildingOccupancy}</td></tr>
       <tr><td>25</td><td>What is the floor space index permissible & Percentage actually utilized?</td><td>${generalDetails.floorSpaceIndex}</td></tr>
     </table>
 
-    <p class="section-title">RENT:</p>
-    <table>
-      <tr><td>26</td><td>(I) Name of tenant/ leases/ licenses etc.<br>(ii) Portion in their occupation.<br>(iii) Monthly or annual rent/ compensation.<br>(iv) Gross amount received for the whole property</td><td>N/A<br>N/A<br>N/A<br>N/A</td></tr>
-      <tr><td>27</td><td>Are any of the occupants related to, or close business associates of the owner?</td><td>N/A</td></tr>
+    <p class="section-title">RENT</p>
+    <table class="q-table">
+      <tr><td>26</td><td>(I) Name of tenant/ leases/ licenses etc.<br>(ii) Portion in their occupation.<br>(iii) Monthly or annual rent/ compensation.<br>(iv) Gross amount received for the whole property</td><td><span class="na">N/A<br>N/A<br>N/A<br>N/A</span></td></tr>
+      <tr><td>27</td><td>Are any of the occupants related to, or close business associates of the owner?</td><td><span class="na">N/A</span></td></tr>
     </table>
     ${footerHtml}
   </div>
@@ -439,32 +459,33 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   <!-- Page 4: More Details -->
   <div class="page">
     ${headerHtml}
-    <table>
-      <tr><td>28</td><td>Is separate amount being recovered for the use of fixtures like fans, geysers, refrigerators, cooking ranges, built in ward robes etc. or for service charges? If so, give details.</td><td>N/A</td></tr>
-      <tr><td>29</td><td>Give details of water and electricity charges, if any, to be borne by the owner.</td><td>N/A</td></tr>
-      <tr><td>30</td><td>Has the tenant to bear the whole or part of the cost of repair and maintenance? Give particulars.</td><td>N/A</td></tr>
-      <tr><td>31</td><td>If a lift is installed, who is to bear the cost of maintenance and operation- owner or tenant</td><td>N/A</td></tr>
-      <tr><td>32</td><td>If a pump is installed, who has to bear the cost of maintenance and operation- owner or tenant</td><td>N/A</td></tr>
-      <tr><td>33</td><td>Who has to bear the cost of electricity charges for lighting of common space like entrance hall, stairs, passage, compound wall etc.- owner or tenant?</td><td>N/A</td></tr>
+    <p class="cont-label">RENT (Contd.)</p>
+    <table class="q-table">
+      <tr><td>28</td><td>Is separate amount being recovered for the use of fixtures like fans, geysers, refrigerators, cooking ranges, built in ward robes etc. or for service charges? If so, give details.</td><td><span class="na">N/A</span></td></tr>
+      <tr><td>29</td><td>Give details of water and electricity charges, if any, to be borne by the owner.</td><td><span class="na">N/A</span></td></tr>
+      <tr><td>30</td><td>Has the tenant to bear the whole or part of the cost of repair and maintenance? Give particulars.</td><td><span class="na">N/A</span></td></tr>
+      <tr><td>31</td><td>If a lift is installed, who is to bear the cost of maintenance and operation- owner or tenant</td><td><span class="na">N/A</span></td></tr>
+      <tr><td>32</td><td>If a pump is installed, who has to bear the cost of maintenance and operation- owner or tenant</td><td><span class="na">N/A</span></td></tr>
+      <tr><td>33</td><td>Who has to bear the cost of electricity charges for lighting of common space like entrance hall, stairs, passage, compound wall etc.- owner or tenant?</td><td><span class="na">N/A</span></td></tr>
       <tr><td>34</td><td>What is the amount of property tax? Who is to bear it? Give details with documentary proof</td><td>${generalDetails.propertyTax}</td></tr>
       <tr><td>35</td><td>Is the building insured? If so give the policy no., amount for which it is insured and the annual premium.</td><td>${generalDetails.buildingInsurance}</td></tr>
-      <tr><td>36</td><td>Is any dispute between landlord and tenant regarding rent pending in a court of law?</td><td>N/A</td></tr>
-      <tr><td>37</td><td>Has any standard rent been fixed for the premises under any law relating to rent control?</td><td>N/A</td></tr>
+      <tr><td>36</td><td>Is any dispute between landlord and tenant regarding rent pending in a court of law?</td><td><span class="na">N/A</span></td></tr>
+      <tr><td>37</td><td>Has any standard rent been fixed for the premises under any law relating to rent control?</td><td><span class="na">N/A</span></td></tr>
     </table>
 
-    <p class="section-title">SALE:</p>
-    <table>
-      <tr><td>38</td><td>Give instances of sales of immovable property in the locality on a separate sheet, indicating the name and address of the property, registration no. sale price and area of the land sold.</td><td>Not Available</td></tr>
+    <p class="section-title">SALE</p>
+    <table class="q-table">
+      <tr><td>38</td><td>Give instances of sales of immovable property in the locality on a separate sheet, indicating the name and address of the property, registration no. sale price and area of the land sold.</td><td><span class="na">Not Available</span></td></tr>
       <tr><td>39</td><td>Land rate adopted in this valuation</td><td>Rs ${valuationInputs.landRatePerSqm}/- Per Sqm</td></tr>
       <tr><td>40</td><td>If sale instances are not available or not relied upon the basis of arriving at the land rate</td><td>${valuationInputs.landRateSource}</td></tr>
     </table>
 
-    <p class="section-title">COST OF CONSTRUCTION:</p>
-    <table>
+    <p class="section-title">COST OF CONSTRUCTION</p>
+    <table class="q-table">
       <tr><td>41</td><td>Year of commencement of construction & year of completion</td><td>${valuationInputs.yearOfConstruction}</td></tr>
       <tr><td>42</td><td>What was the method of construction- by contract or employing labour directly/ both</td><td>Both</td></tr>
-      <tr><td>43</td><td>For item of work done on contract, produce copies of agreement.</td><td>Not Available</td></tr>
-      <tr><td>44</td><td>For item of work done by engaging labour directly, give detail rate of materials and labour supported by documentary proof.</td><td>Not Available</td></tr>
+      <tr><td>43</td><td>For item of work done on contract, produce copies of agreement.</td><td><span class="na">Not Available</span></td></tr>
+      <tr><td>44</td><td>For item of work done by engaging labour directly, give detail rate of materials and labour supported by documentary proof.</td><td><span class="na">Not Available</span></td></tr>
     </table>
     ${footerHtml}
   </div>
@@ -472,27 +493,27 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   <!-- Page 5: Building Technical Details -->
   <div class="page">
     ${headerHtml}
-    <p class="section-title" style="text-decoration: none; margin-bottom: 5px;">PART-II</p>
-    <p class="section-title">BUILDING - TECHNICAL DETAILS</p>
-    <table>
+    <p class="part-title">PART-II</p>
+    <p class="section-title">BUILDING – TECHNICAL DETAILS</p>
+    <table class="q-table">
       <tr><td>1</td><td>No. of floors and height of each floor</td><td>${technicalDetails.heightOfFloors}</td></tr>
       <tr><td>2</td><td>Total Covered area on all Floors</td><td>${technicalDetails.totalCoveredArea}</td></tr>
       <tr><td>3</td><td>Year of construction</td><td>${technicalDetails.yearOfConstruction}</td></tr>
       <tr><td>4</td><td>Estimated total life of building</td><td>${technicalDetails.estimatedLife}</td></tr>
       <tr><td>5</td><td>Type of Construction – Load Bearing Walls / RCC Frame / Steel Frame</td><td>${technicalDetails.constructionType}</td></tr>
       <tr><td>6</td><td>Type of foundation</td><td>${technicalDetails.foundationType}</td></tr>
-      <tr><td>7</td><td>Walls<br>(a)Ground Floor</td><td>Brick walls</td></tr>
+      <tr><td>7</td><td>Walls<br>(a) Ground Floor</td><td>Brick walls</td></tr>
       <tr><td>8</td><td>Partitions</td><td>${technicalDetails.partitions}</td></tr>
       <tr><td>9</td><td>Doors and windows (Floor wise)<br>(a) Ground Floor</td><td>${floors[0]?.doorsWindows || 'Teak Wood'}</td></tr>
       <tr><td>10</td><td>Flooring (Floor Wise)<br>(a) Ground Floor</td><td>${buildingSpecs.flooring}</td></tr>
       <tr><td>11</td><td>Finishing (Floor Wise)<br>(a) Ground Floor<br>(b) First Floor<br>(c) Second Floor</td><td>Cement sand plaster with POP and Paint finish</td></tr>
-      <tr><td>12</td><td>Roofing & Terracing</td><td>${technicalDetails.roofingTerracing}</td></tr>
-      <tr><td>13</td><td>Special Architectural decorative features, if any.</td><td>${technicalDetails.architecturalFeatures || buildingSpecs.exterior}</td></tr>
-      <tr><td>14</td><td>(a) Internal wiring - surface or conduit<br>(b) Class of fittings – superior / ordinary / poor</td><td>${technicalDetails.internalWiring}, ${technicalDetails.fittingsClass}</td></tr>
-      <tr><td>15</td><td>Sanitary installations<br>(a) No. of water closets<br>    No. of sinks<br>(b) Class of fittings – superior coloured / superior white / ordinary</td><td>${technicalDetails.noOfWaterClosets}<br>${technicalDetails.noOfSinks}<br>${technicalDetails.sanitaryFittingsClass}</td></tr>
+      <tr><td>12</td><td>Roofing &amp; Terracing</td><td>${technicalDetails.roofingTerracing}</td></tr>
+      <tr><td>13</td><td>Special Architectural decorative features, if any</td><td>${technicalDetails.architecturalFeatures || buildingSpecs.exterior}</td></tr>
+      <tr><td>14</td><td>(a) Internal wiring – surface or conduit<br>(b) Class of fittings – superior / ordinary / poor</td><td>${technicalDetails.internalWiring}, ${technicalDetails.fittingsClass}</td></tr>
+      <tr><td>15</td><td>Sanitary installations<br>(a) No. of water closets<br>&nbsp;&nbsp;&nbsp;&nbsp;No. of sinks<br>(b) Class of fittings – superior coloured / superior white / ordinary</td><td>${technicalDetails.noOfWaterClosets}<br>${technicalDetails.noOfSinks}<br>${technicalDetails.sanitaryFittingsClass}</td></tr>
       <tr><td>16</td><td>Compound wall:<br>(a) Height and length<br>(b) Type of construction</td><td>${technicalDetails.compoundWallHeight}<br>${technicalDetails.compoundWallType}</td></tr>
       <tr><td>17</td><td>No of Lifts and capacity</td><td>${technicalDetails.noOfLifts}</td></tr>
-      <tr><td>18</td><td>Underground pump – capacity & type of construction</td><td>${technicalDetails.undergroundPump}</td></tr>
+      <tr><td>18</td><td>Underground pump – capacity &amp; type of construction</td><td>${technicalDetails.undergroundPump}</td></tr>
       <tr><td>19</td><td>Overhead water tank – type and capacity</td><td>${technicalDetails.overheadTank}</td></tr>
     </table>
     ${footerHtml}
@@ -501,7 +522,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   <!-- Page 6: More Technical & Declaration -->
   <div class="page">
     ${headerHtml}
-    <table>
+    <table class="q-table">
       <tr><td>20</td><td>No of pumps and their horse power</td><td>${technicalDetails.noOfPumps}</td></tr>
       <tr><td>21</td><td>Roads and paving within the compound – approx. area and type of paving</td><td>${technicalDetails.roadsPaving}</td></tr>
       <tr><td>22</td><td>Sewer disposal – whether connected to public sewer; if septic tank provided, no. and capacity</td><td>${technicalDetails.sewerDisposal}</td></tr>
@@ -509,13 +530,17 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
     <div class="declaration">
       <p class="section-title">DECLARATION</p>
-      <p>I hereby declare that :</p>
-      <p style="margin: 10px 0;">(a) The information furnished in Part-1 is true and correct to the best of my knowledge and belief.</p>
+      <p>I hereby declare that:</p>
+      <p style="margin: 10px 0;">(a) The information furnished in Part-I is true and correct to the best of my knowledge and belief.</p>
       <p>(b) I have no direct or indirect interest in the property valued.</p>
 
       <div class="signature">
-        <span>Date: ${valuationInputs.valuationDate}</span>
-        <span>Signature of Govt. Registered Valuer</span>
+        <div class="sig-block">
+          <div class="sig-line">Date: ${valuationInputs.valuationDate}</div>
+        </div>
+        <div class="sig-block">
+          <div class="sig-line">Signature of Govt. Registered Valuer</div>
+        </div>
       </div>
     </div>
     ${footerHtml}
@@ -537,22 +562,22 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
     <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}</strong></p>
 
-    <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for the ground floor of the building which consist of three floors {Ground floor, First floor, and Second floor}</p>
+    <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for the ground floor of the building which consists of three floors (Ground floor, First floor, and Second floor)</p>
 
     <p class="section-title">Specification of Construction</p>
-    <div class="specs-list">
-      <p>Roof – ${buildingSpecs.roof}</p>
-      <p>Brickwork – ${buildingSpecs.brickwork}</p>
-      <p>Flooring – ${buildingSpecs.flooring}</p>
-      <p>Tiles – ${buildingSpecs.tiles}</p>
-      <p>Electrical – ${buildingSpecs.electrical}</p>
-      <p>Electrical switches – ${buildingSpecs.electricalSwitches}</p>
-      <p>Sanitary fixtures – ${buildingSpecs.sanitaryFixtures}</p>
-      <p>Woodwork – ${buildingSpecs.woodwork}</p>
-      <p>Exterior – ${buildingSpecs.exterior}</p>
-    </div>
+    <table class="specs-table">
+      <tr><td>Roof</td><td>${buildingSpecs.roof}</td></tr>
+      <tr><td>Brickwork</td><td>${buildingSpecs.brickwork}</td></tr>
+      <tr><td>Flooring</td><td>${buildingSpecs.flooring}</td></tr>
+      <tr><td>Tiles</td><td>${buildingSpecs.tiles}</td></tr>
+      <tr><td>Electrical</td><td>${buildingSpecs.electrical}</td></tr>
+      <tr><td>Switches</td><td>${buildingSpecs.electricalSwitches}</td></tr>
+      <tr><td>Sanitary</td><td>${buildingSpecs.sanitaryFixtures}</td></tr>
+      <tr><td>Woodwork</td><td>${buildingSpecs.woodwork}</td></tr>
+      <tr><td>Exterior</td><td>${buildingSpecs.exterior}</td></tr>
+    </table>
 
-    <p>On the basis of above specification. I assess the cost of construction on covered area basis.</p>
+    <p>On the basis of above specification, I assess the cost of construction on covered area basis.</p>
     ${footerHtml}
   </div>
 
@@ -563,28 +588,16 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     <p>As per Plinth Area Rates [PAR] 1.1.92 with base as 100</p>
     <p>Cost index as on ${valuationInputs.valuationForDate} = ${valuationInputs.costIndex}</p>
 
-    <table style="margin: 20px 0;">
-      <tr>
-        <th>S.no</th>
-        <th>Floor and Year of construction</th>
-        <th>Area of floors</th>
-        <th>Plinth area rate as on 1.1.92</th>
-        <th>Cost index on ${valuationInputs.valuationForDate}</th>
-        <th>Rate of construction for the year</th>
-        <th>Percentage increase in cost of construction due to superior services and specifications</th>
-        <th>Cost of construction</th>
-      </tr>
-      <tr>
-        <td>1</td>
-        <td>Ground floor</td>
-        <td>${formatNumber(floors[0]?.area || 0, 3)} Sqm</td>
-        <td>Rs ${valuationInputs.plinthAreaRate} per Sqm</td>
-        <td>${valuationInputs.costIndex}</td>
-        <td>${valuationInputs.plinthAreaRate} × ${valuationInputs.costIndex / 100} = Rs ${formatNumber(calculatedValues.rateOfConstruction, 1)} per Sqm</td>
-        <td>${valuationInputs.specificationIncreasePercent}%<br>Net rate = ${formatNumber(1 + valuationInputs.specificationIncreasePercent / 100, 2)} × ${formatNumber(calculatedValues.rateOfConstruction, 1)} = Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)} per Sqm</td>
-        <td>${formatNumber(floors[0]?.area || 0, 3)} Sqm × ${formatNumber(calculatedValues.netRateOfConstruction, 2)} =<br>${formatCurrency(calculatedValues.costOfConstruction)}</td>
-      </tr>
-    </table>
+    <div class="calculation-box">
+      <p class="calculation-line"><strong>1. Ground Floor</strong> (Year of construction: ${valuationInputs.yearOfConstruction})</p>
+      <p class="calculation-line">Area of floor = ${formatNumber(floors[0]?.area || 0, 3)} Sqm</p>
+      <p class="calculation-line">Plinth area rate (as on 1.1.92) = Rs ${valuationInputs.plinthAreaRate} per Sqm</p>
+      <p class="calculation-line">Cost index as on ${valuationInputs.valuationForDate} = ${valuationInputs.costIndex}</p>
+      <p class="calculation-line">Rate of construction = ${valuationInputs.plinthAreaRate} × ${valuationInputs.costIndex / 100} = Rs ${formatNumber(calculatedValues.rateOfConstruction, 1)} per Sqm</p>
+      <p class="calculation-line">Percentage increase due to superior specifications = ${valuationInputs.specificationIncreasePercent}%</p>
+      <p class="calculation-line">Net rate = ${formatNumber(1 + valuationInputs.specificationIncreasePercent / 100, 2)} × ${formatNumber(calculatedValues.rateOfConstruction, 1)} = Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)} per Sqm</p>
+      <p class="calculation-line"><strong>Cost of construction = ${formatNumber(floors[0]?.area || 0, 3)} Sqm × Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)} = ${formatCurrency(calculatedValues.costOfConstruction)}</strong></p>
+    </div>
 
     <p class="section-title">DEPRECIATION DUE TO AGE OF THE CONSTRUCTION</p>
     <table>
@@ -604,7 +617,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
         <td>${valuationInputs.estimatedLifeYears} years</td>
         <td>${calculatedValues.remainingLife}/${valuationInputs.estimatedLifeYears} × ${formatCurrency(calculatedValues.costOfConstruction)}<br><strong>${formatCurrency(calculatedValues.depreciatedValue)}</strong></td>
       </tr>
-      <tr>
+      <tr class="total-row">
         <td colspan="5" style="text-align: right;"><strong>Total Depreciated value of construction</strong></td>
         <td><strong>${formatCurrency(calculatedValues.depreciatedValue)}</strong></td>
       </tr>
@@ -628,8 +641,8 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     <div class="calculation-box">
       <p class="calculation-line">Net rate = ${formatNumber(1 + valuationInputs.locationIncreasePercent / 100, 1)} × ${valuationInputs.landRatePerSqm} = ${formatNumber(calculatedValues.netLandRate, 0)}/-</p>
       <p class="calculation-line">Value of land = ${formatNumber(valuationInputs.plotArea, 4)} @ Rs ${formatNumber(calculatedValues.netLandRate, 0)}/- per Sqm = ${formatCurrency(calculatedValues.totalLandValue)}</p>
-      <p class="calculation-line">Share of land = <strong>${valuationInputs.landShareFraction}</strong></p>
-      <p class="calculation-line">Value of land share = ${valuationInputs.landShareFraction} × ${formatCurrency(calculatedValues.totalLandValue)} = <strong>${formatCurrency(calculatedValues.landShareValue)}</strong></p>
+      <p class="calculation-line">Share of land = <strong>${valuationInputs.landShareFraction || (valuationInputs.landShareDecimal ? valuationInputs.landShareDecimal.toString() : '1/1')}</strong></p>
+      <p class="calculation-line">Value of land share = ${valuationInputs.landShareFraction || (valuationInputs.landShareDecimal ? valuationInputs.landShareDecimal.toString() : '1/1')} × ${formatCurrency(calculatedValues.totalLandValue)} = <strong>${formatCurrency(calculatedValues.landShareValue)}</strong></p>
     </div>
 
     <p class="section-title">VALUE OF THE PROPERTY = VALUE OF LAND SHARE + VALUE OF CONSTRUCTION</p>
@@ -645,6 +658,19 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
     <div class="value-words">
       [ ${calculatedValues.valueInWords} ]
+    </div>
+
+    <div class="valuer-signoff">
+      <div class="sig-block">
+        <div class="sig-line">Date: ${valuationInputs.valuationDate}</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line">
+          ${valuerName}<br>
+          ${valuerDesignation}<br>
+          ${valuerCategoryNo}
+        </div>
+      </div>
     </div>
     ${footerHtml}
   </div>
@@ -671,6 +697,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
             ${pagePhotos.map((photo, i) => `
               <div class="photo-item">
                 <img src="${photo}" alt="Property photo ${startIdx + i + 1}">
+                <div class="photo-number">Photo ${startIdx + i + 1}</div>
               </div>
             `).join('')}
           </div>
@@ -688,37 +715,31 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   <div class="page">
     ${headerHtml}
 
-    <p class="section-title" style="text-align: center; text-decoration: none;">LOCATION MAP</p>
+    <p class="part-title">LOCATION MAP</p>
     <p style="text-align: center; margin-bottom: 20px; font-size: 10pt;">
       Property situated at ${fullAddressUpper}
     </p>
 
-    <div style="text-align: center; margin: 20px 0;">
-      <img src="${location.mapUrl}" alt="Property Location Map" style="max-width: 100%; height: auto; border: 2px solid #333; border-radius: 8px;" />
+    <div class="map-container">
+      <img src="${location.mapUrl}" alt="Property Location Map" />
     </div>
 
-    <table style="width: 60%; margin: 30px auto;">
+    <table class="coord-table">
       <tr>
-        <td style="text-align: center; padding: 15px; background-color: #f5f5f5;">
+        <td>
           <strong>Latitude</strong><br>
           <span style="font-family: monospace; font-size: 14pt;">${location.lat.toFixed(6)}° N</span>
         </td>
-        <td style="text-align: center; padding: 15px; background-color: #f5f5f5;">
+        <td>
           <strong>Longitude</strong><br>
           <span style="font-family: monospace; font-size: 14pt;">${location.lng.toFixed(6)}° E</span>
         </td>
       </tr>
     </table>
 
-    <p style="text-align: center; font-size: 10pt; color: #666; margin-top: 20px;">
-      Location captured on ${location.capturedAt}
-    </p>
+    <p class="map-date">Location captured on ${location.capturedAt}</p>
+    <p class="map-attribution">Map data &copy; Google Maps</p>
 
-    <div style="margin-top: 40px; text-align: center;">
-      <p style="font-size: 9pt; color: #888;">
-        Map data © Google Maps
-      </p>
-    </div>
     ${footerHtml}
   </div>
   ` : ''}

@@ -2,6 +2,13 @@ import puppeteerCore from 'puppeteer-core';
 import puppeteer from 'puppeteer';
 import chromium from '@sparticuz/chromium';
 
+export interface PdfOptions {
+  headerTemplate?: string;
+  footerTemplate?: string;
+  marginTop?: string;
+  marginBottom?: string;
+}
+
 export async function getBrowser() {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION) {
     const executablePath = await chromium.executablePath();
@@ -35,7 +42,7 @@ export async function getBrowser() {
   }
 }
 
-export async function htmlToPdfBase64(html: string): Promise<string> {
+export async function htmlToPdfBase64(html: string, options?: PdfOptions): Promise<string> {
   const browser = await getBrowser();
   try {
     const page = await browser.newPage();
@@ -78,10 +85,22 @@ export async function htmlToPdfBase64(html: string): Promise<string> {
       });
     });
 
+    const useHeaderFooter = !!(options?.headerTemplate || options?.footerTemplate);
+
     const pdfBuffer = await page.pdf({
       format: 'A4',
-      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+      margin: {
+        top: options?.marginTop || '10mm',
+        right: '10mm',
+        bottom: options?.marginBottom || '10mm',
+        left: '10mm',
+      },
       printBackground: true,
+      displayHeaderFooter: useHeaderFooter,
+      ...(useHeaderFooter && {
+        headerTemplate: options!.headerTemplate || '<span></span>',
+        footerTemplate: options!.footerTemplate || '<span></span>',
+      }),
     });
 
     return Buffer.from(pdfBuffer).toString('base64');
