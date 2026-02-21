@@ -3,7 +3,7 @@ import { ValuationReport } from '@/types/valuation';
 import { verifyAuth, adminDb, verifySession } from '@/lib/firebase-admin';
 import { TRIAL_LIMIT } from '@/types/subscription';
 import { FirmBranding, ValuerInfo } from '@/types/branding';
-import { getTemplateCSS, renderHeader, renderFooter, renderPuppeteerHeader, renderPuppeteerFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
+import { getTemplateCSS, renderHeader, renderCondensedHeader, renderFooter, renderPuppeteerFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
 import { htmlToPdfBase64 } from '@/lib/puppeteer';
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
@@ -144,20 +144,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ html: htmlContent });
     }
 
-    // Build Puppeteer native header/footer for consistent rendering on every PDF page
-    const valuerInfo: ValuerInfo = {
-      name: data.valuerName,
-      qualification: data.valuerQualification,
-      designation: data.valuerDesignation,
-      categoryNo: data.valuerCategoryNo,
-    };
-    const headerTemplate = renderPuppeteerHeader(firmBranding, valuerInfo, logoBase64);
+    // Puppeteer footer for reliable page numbering (headers are embedded in HTML)
     const footerTemplate = renderPuppeteerFooter(firmBranding);
 
     const pdfBase64 = await htmlToPdfBase64(htmlContent, {
-      headerTemplate,
       footerTemplate,
-      marginTop: '30mm',
+      marginTop: '12mm',
       marginBottom: '15mm',
     });
 
@@ -341,8 +333,10 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   };
   const formatNumber = (num: number, decimals = 2) => num.toFixed(decimals);
 
-  // In preview mode, embed headers/footers in HTML. In PDF mode, Puppeteer renders them natively.
-  const headerHtml = isPreview ? renderHeader(branding, valuerInfo, logoBase64) : '';
+  // Full header on cover page (page 1), condensed on pages 2+ — always embedded in HTML
+  const fullHeaderHtml = renderHeader(branding, valuerInfo, logoBase64);
+  const headerHtml = renderCondensedHeader(branding, valuerInfo.name);
+  // Footer: embedded in preview, Puppeteer native in PDF (for reliable page numbers on every page)
   const footerHtml = isPreview ? renderFooter(branding) : '';
 
   return `
@@ -355,9 +349,9 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   </style>
 </head>
 <body${isPreview ? ' class="preview-mode"' : ''}>
-  <!-- Page 1: Cover Page -->
+  <!-- Page 1: Cover Page (full header) -->
   <div class="page">
-    ${headerHtml}
+    ${fullHeaderHtml}
 
     <div class="cover-title">
       VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>

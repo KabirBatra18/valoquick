@@ -214,6 +214,20 @@ function renderMinimalHeader(
     </div>`;
 }
 
+// ============ CONDENSED HEADER (pages 2+ — both preview and PDF) ============
+
+export function renderCondensedHeader(branding: FirmBranding, valuerName?: string): string {
+  const color = branding.header.primaryColor || '#1a5276';
+  const firmName = branding.firmName;
+  if (!firmName && !valuerName) return '';
+
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid ${color}; padding-bottom: 5px; margin-bottom: 15px; font-family: 'Times New Roman', serif;">
+      ${firmName ? `<span style="font-size: 9.5pt; color: ${color}; font-weight: 600; letter-spacing: 0.2px;">${escapeHtml(firmName)}</span>` : ''}
+      ${valuerName ? `<span style="font-size: 8.5pt; color: #555;">${escapeHtml(valuerName)}</span>` : ''}
+    </div>`;
+}
+
 // ============ FOOTER (for preview) ============
 
 export function renderFooter(branding: FirmBranding): string {
