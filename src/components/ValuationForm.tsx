@@ -1381,10 +1381,12 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     }
   }, [firmId, reportId]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    acceptedFiles.forEach((file) => {
-      processAndAddPhoto(file);
-    });
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    // Process 2 at a time — avoids thrashing CPU/bandwidth with 6+ concurrent uploads
+    for (let i = 0; i < acceptedFiles.length; i += 2) {
+      const batch = acceptedFiles.slice(i, i + 2);
+      await Promise.all(batch.map(file => processAndAddPhoto(file)));
+    }
   }, [processAndAddPhoto]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -1392,15 +1394,18 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
   });
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
-        processAndAddPhoto(file);
-      });
+      const fileList = Array.from(files);
+      // Reset input immediately so same file can be selected again
+      e.target.value = '';
+      // Process 2 at a time
+      for (let i = 0; i < fileList.length; i += 2) {
+        const batch = fileList.slice(i, i + 2);
+        await Promise.all(batch.map(file => processAndAddPhoto(file)));
+      }
     }
-    // Reset input so same file can be selected again
-    e.target.value = '';
   };
 
   const totalPhotoPages = Math.ceil(photos.length / PHOTOS_PER_PAGE);

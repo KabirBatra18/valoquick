@@ -2,8 +2,8 @@ import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebas
 import { storage } from './firebase';
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_DIMENSION = 800;
-const JPEG_QUALITY = 0.8;
+const MAX_DIMENSION = 600; // Photos display at ~300px in PDF grid — 600px is 2x for sharpness
+const JPEG_QUALITY = 0.6; // Good enough for report photos, ~3x smaller than 0.8
 
 export async function uploadReportPhoto(
   firmId: string,
@@ -14,7 +14,6 @@ export async function uploadReportPhoto(
     throw new Error('Photo must be under 5MB.');
   }
 
-  // Compress and crop to square
   const compressed = await compressAndCropPhoto(file);
 
   const timestamp = Date.now();
@@ -40,36 +39,29 @@ export async function deleteReportPhotos(firmId: string, reportId: string): Prom
 }
 
 async function compressAndCropPhoto(file: File): Promise<Blob> {
+  // createImageBitmap decodes off the main thread — much faster than new Image()
+  const bitmap = await createImageBitmap(file);
+
+  // Center-crop to square, cap at MAX_DIMENSION
+  const size = Math.min(bitmap.width, bitmap.height);
+  const targetSize = Math.min(size, MAX_DIMENSION);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetSize;
+  canvas.height = targetSize;
+
+  const ctx = canvas.getContext('2d')!;
+  const offsetX = (bitmap.width - size) / 2;
+  const offsetY = (bitmap.height - size) / 2;
+  ctx.drawImage(bitmap, offsetX, offsetY, size, size, 0, 0, targetSize, targetSize);
+
+  bitmap.close(); // Free decoded image memory immediately
+
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    const canvas = document.createElement('canvas');
-
-    img.onload = () => {
-      // Center-crop to square
-      const size = Math.min(img.width, img.height);
-      const targetSize = Math.min(size, MAX_DIMENSION);
-
-      canvas.width = targetSize;
-      canvas.height = targetSize;
-
-      const ctx = canvas.getContext('2d')!;
-      const offsetX = (img.width - size) / 2;
-      const offsetY = (img.height - size) / 2;
-      ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, targetSize, targetSize);
-
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
-        'image/jpeg',
-        JPEG_QUALITY
-      );
-
-      URL.revokeObjectURL(img.src);
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(img.src);
-      reject(new Error('Failed to load image'));
-    };
-    img.src = URL.createObjectURL(file);
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
+      'image/jpeg',
+      JPEG_QUALITY
+    );
   });
 }
