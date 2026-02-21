@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -1083,6 +1083,8 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [uploadingPhotos, setUploadingPhotos] = useState(0);
   const [failedPhotos, setFailedPhotos] = useState<File[]>([]);
   const PHOTOS_PER_PAGE = 6;
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Location
   const [locationLat, setLocationLat] = useState<number | null>(initialData?.locationLat || null);
@@ -1366,9 +1368,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   // Upload photo to Firebase Storage (compressed + cropped)
   const [photoError, setPhotoError] = useState<string | null>(null);
+
   const processAndAddPhoto = useCallback(async (file: File) => {
     if (!firmId || !reportId) {
-      setPhotoError('Report not ready — please wait a moment and try again.');
+      setPhotoError('Report not ready — please wait and try again.');
+      return;
+    }
+    if (!file || file.size === 0) {
+      setPhotoError('Empty file — please try again.');
       return;
     }
     setPhotoError(null);
@@ -1376,42 +1383,49 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     try {
       const url = await uploadReportPhoto(firmId, reportId, file);
       setPhotos((prev) => [...prev, url]);
-      // Remove from failed list if it was a retry
       setFailedPhotos((prev) => prev.filter((f) => f !== file));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Failed to upload photo:', msg);
-      setPhotoError(`Upload failed: ${msg}`);
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      console.error('Photo upload error:', msg);
+      setPhotoError(msg);
       setFailedPhotos((prev) => prev.some(f => f === file) ? prev : [...prev, file]);
     } finally {
       setUploadingPhotos((prev) => prev - 1);
     }
   }, [firmId, reportId]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    // Process one at a time — iPad Safari can crash on concurrent large image decodes
-    for (const file of acceptedFiles) {
+  // Read files into memory-safe blobs immediately, then process sequentially
+  const processFiles = useCallback(async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    for (const file of list) {
       await processAndAddPhoto(file);
     }
   }, [processAndAddPhoto]);
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    await processFiles(acceptedFiles);
+  }, [processFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.heic', '.heif'] },
   });
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      const fileList = Array.from(files);
-      // Reset input immediately so same file can be selected again
-      e.target.value = '';
-      // Process one at a time — iPad Safari can crash on concurrent large image decodes
-      for (const file of fileList) {
-        await processAndAddPhoto(file);
-      }
+    if (!files || files.length === 0) return;
+    // Snapshot files before any async work or input reset
+    const list = Array.from(files);
+    try {
+      await processFiles(list);
+    } catch (err) {
+      console.error('handleFileSelect error:', err);
     }
-  };
+    // Reset AFTER processing — prevents File invalidation on some Android browsers
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+  }, [processFiles]);
 
   const totalPhotoPages = Math.ceil(photos.length / PHOTOS_PER_PAGE);
   const currentPagePhotos = photos.slice(
@@ -2751,6 +2765,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               {/* Camera Button - Using label for reliable mobile camera access */}
               <label className="flex flex-col items-center justify-center gap-1.5 lg:gap-2 p-3 lg:p-5 bg-gradient-to-br from-brand/20 to-brand/5 border-2 border-brand/40 rounded-xl lg:rounded-2xl hover:border-brand hover:from-brand/30 hover:to-brand/10 active:scale-[0.98] transition-all duration-200 cursor-pointer">
                 <input
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
@@ -2769,9 +2784,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 </div>
               </label>
 
-              {/* Gallery Button - Using label for reliable mobile gallery access */}
+              {/* Gallery Button */}
               <label className="flex flex-col items-center justify-center gap-1.5 lg:gap-2 p-3 lg:p-5 border-2 border-surface-300 rounded-xl lg:rounded-2xl hover:border-text-tertiary hover:bg-surface-200/30 active:scale-[0.98] transition-all duration-200 cursor-pointer">
                 <input
+                  ref={galleryInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileSelect}
@@ -2827,10 +2843,20 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               </div>
             )}
 
-            {/* Error message */}
+            {/* Error message with dismiss */}
             {photoError && (
               <div className="mt-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <p className="text-xs text-amber-400 font-medium">{photoError}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-amber-400 font-medium flex-1">{photoError}</p>
+                  <button
+                    onClick={() => setPhotoError(null)}
+                    className="p-1 text-amber-400 hover:text-amber-300 transition-colors flex-shrink-0"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -2839,18 +2865,28 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               <div className="mt-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-red-400 font-medium">
-                    {failedPhotos.length} photo{failedPhotos.length !== 1 ? 's' : ''} failed to upload
+                    {failedPhotos.length} photo{failedPhotos.length !== 1 ? 's' : ''} failed
                   </span>
-                  <button
-                    onClick={() => {
-                      const toRetry = [...failedPhotos];
-                      setFailedPhotos([]);
-                      toRetry.forEach(f => processAndAddPhoto(f));
-                    }}
-                    className="px-3 py-1 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
-                  >
-                    Retry All
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setFailedPhotos([])}
+                      className="px-3 py-1 text-xs font-medium text-red-400 rounded-lg transition-colors hover:bg-red-500/10"
+                    >
+                      Dismiss
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const toRetry = [...failedPhotos];
+                        setFailedPhotos([]);
+                        for (const f of toRetry) {
+                          await processAndAddPhoto(f);
+                        }
+                      }}
+                      className="px-3 py-1 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                    >
+                      Retry All
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
