@@ -4,6 +4,21 @@
 
 import { FirmBranding, ValuerInfo, DEFAULT_BRANDING } from '@/types/branding';
 
+function getFontFamily(style?: string): string {
+  switch (style) {
+    case 'modern':
+    case 'minimal':
+      return "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    case 'elegant':
+      return "Georgia, 'Times New Roman', serif";
+    case 'boldCorporate':
+      return "Arial, Helvetica, sans-serif";
+    case 'classic':
+    default:
+      return "'Times New Roman', Times, serif";
+  }
+}
+
 // ============ PUPPETEER NATIVE HEADER/FOOTER (for PDF output) ============
 
 export function renderPuppeteerHeader(
@@ -44,7 +59,8 @@ export function renderPuppeteerHeader(
   const hasContent = leftParts.length > 0 || rightParts.length > 0;
   if (!hasContent) return '<span></span>';
 
-  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-top: 5mm;">
+  const fontFamily = getFontFamily(branding.templateStyle);
+  return `<div style="width: 100%; padding: 0 10mm; font-family: ${fontFamily}; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-top: 5mm;">
     <div>${leftParts.join('')}</div>
     <div style="text-align: right;">${rightParts.join('')}</div>
   </div>`;
@@ -66,7 +82,8 @@ export function renderPuppeteerFooter(branding: FirmBranding): string {
     disclaimerHtml = `<div style="font-size: 7px; color: #777; font-style: italic; text-align: center; margin-top: 2px;">${escapeHtml(f.disclaimerText)}</div>`;
   }
 
-  return `<div style="width: 100%; padding: 0 10mm; font-family: 'Times New Roman', serif; border-top: 1.5px solid #bbb; padding-top: 4px;">
+  const fontFamily = getFontFamily(branding.templateStyle);
+  return `<div style="width: 100%; padding: 0 10mm; font-family: ${fontFamily}; border-top: 1.5px solid #bbb; padding-top: 4px;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       ${contactHtml}
       ${pageNumHtml}
@@ -221,8 +238,9 @@ export function renderCondensedHeader(branding: FirmBranding, valuerName?: strin
   const firmName = branding.firmName;
   if (!firmName && !valuerName) return '';
 
+  const fontFamily = getFontFamily(branding.templateStyle);
   return `
-    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-bottom: 15px; font-family: 'Times New Roman', serif;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-bottom: 15px; font-family: ${fontFamily};">
       ${firmName ? `<span style="font-size: 16px; color: ${color}; font-weight: bold; letter-spacing: 0.3px;">${escapeHtml(firmName)}</span>` : ''}
       ${valuerName ? `<span style="font-size: 10px; color: #555;">${escapeHtml(valuerName)}</span>` : ''}
     </div>`;
