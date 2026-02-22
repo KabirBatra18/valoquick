@@ -1366,7 +1366,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     hiddenFields, onDataChange
   ]);
 
-  // Upload photo to Firebase Storage (compressed + cropped)
+  // ── Photo upload ──────────────────────────────────────────────────────
   const [photoError, setPhotoError] = useState<string | null>(null);
 
   const processAndAddPhoto = useCallback(async (file: File) => {
@@ -1374,38 +1374,24 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       setPhotoError('Report not ready — please wait and try again.');
       return;
     }
-    if (!file || file.size === 0) {
-      setPhotoError('Empty file — please try again.');
-      return;
-    }
     setPhotoError(null);
-    setUploadingPhotos((prev) => prev + 1);
+    setUploadingPhotos((n) => n + 1);
     try {
       const url = await uploadReportPhoto(firmId, reportId, file);
       setPhotos((prev) => [...prev, url]);
       setFailedPhotos((prev) => prev.filter((f) => f !== file));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
-      console.error('Photo upload error:', msg);
       setPhotoError(msg);
-      setFailedPhotos((prev) => prev.some(f => f === file) ? prev : [...prev, file]);
+      setFailedPhotos((prev) => prev.some((f) => f === file) ? prev : [...prev, file]);
     } finally {
-      setUploadingPhotos((prev) => prev - 1);
+      setUploadingPhotos((n) => n - 1);
     }
   }, [firmId, reportId]);
 
-  // Read files into memory-safe blobs immediately, then process sequentially
-  const processFiles = useCallback(async (files: FileList | File[]) => {
-    const list = Array.from(files);
-    if (list.length === 0) return;
-    for (const file of list) {
-      await processAndAddPhoto(file);
-    }
-  }, [processAndAddPhoto]);
-
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    await processFiles(acceptedFiles);
-  }, [processFiles]);
+    for (const file of acceptedFiles) await processAndAddPhoto(file);
+  }, [processAndAddPhoto]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -1413,19 +1399,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   });
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    // Snapshot files before any async work or input reset
-    const list = Array.from(files);
-    try {
-      await processFiles(list);
-    } catch (err) {
-      console.error('handleFileSelect error:', err);
-    }
-    // Reset AFTER processing — prevents File invalidation on some Android browsers
+    const fileList = e.target.files;
+    if (!fileList?.length) return;
+    const files = Array.from(fileList);
+    for (const file of files) await processAndAddPhoto(file);
+    // Reset AFTER processing — some Android browsers invalidate Files on early reset
     if (cameraInputRef.current) cameraInputRef.current.value = '';
     if (galleryInputRef.current) galleryInputRef.current.value = '';
-  }, [processFiles]);
+  }, [processAndAddPhoto]);
 
   const totalPhotoPages = Math.ceil(photos.length / PHOTOS_PER_PAGE);
   const currentPagePhotos = photos.slice(

@@ -1,181 +1,107 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { storage } from './firebase';
 
-const MAX_PHOTO_SIZE = 25 * 1024 * 1024; // 25MB
-const MAX_DIMENSION = 600;
-const JPEG_QUALITY = 0.6;
+const MAX_DIM = 600;
+const QUALITY = 0.6;
 
-// ---------------------------------------------------------------------------
-// Timeout utility — prevents any promise from hanging forever
-// ---------------------------------------------------------------------------
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout>;
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
-    }),
-  ]).finally(() => clearTimeout(timer));
-}
+// ── Public API (same signatures as before — no import changes needed) ──────
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
 export async function uploadReportPhoto(
   firmId: string,
   reportId: string,
   file: File
 ): Promise<string> {
-  if (!file || file.size === 0) throw new Error('Empty file');
-  if (file.size > MAX_PHOTO_SIZE) throw new Error('Photo must be under 25MB.');
-
-  // Compress — multiple fallback strategies, never throws to caller
+  // 1. Compress (falls back to raw file if anything goes wrong)
   let blob: Blob;
   try {
-    blob = await compressPhoto(file);
+    blob = await compress(file);
   } catch {
-    // All compression strategies failed — upload original
-    blob = file;
+    blob = file; // upload original — large but guaranteed to work
   }
 
-  const timestamp = Date.now();
-  const storagePath = `firms/${firmId}/reports/${reportId}/photos/${timestamp}`;
-  const storageRef = ref(storage, storagePath);
+  // 2. Upload to Firebase Storage (one automatic retry on failure)
+  const path = `firms/${firmId}/reports/${reportId}/photos/${Date.now()}`;
+  const sRef = ref(storage, path);
+  const opts = { contentType: blob.type || 'image/jpeg' };
 
-  // Upload with 1 automatic retry
-  await retryOnce(() =>
-    withTimeout(
-      uploadBytes(storageRef, blob, {
-        contentType: blob.type || 'image/jpeg',
-        cacheControl: 'public, max-age=31536000',
-      }),
-      60000,
-      'Upload',
-    )
-  );
+  try {
+    await uploadBytes(sRef, blob, opts);
+  } catch {
+    await sleep(1500);
+    await uploadBytes(sRef, blob, opts);
+  }
 
-  return withTimeout(getDownloadURL(storageRef), 15000, 'Download URL');
+  // 3. Return download URL
+  return getDownloadURL(sRef);
 }
 
 export async function deleteReportPhotos(firmId: string, reportId: string): Promise<void> {
-  const folderRef = ref(storage, `firms/${firmId}/reports/${reportId}/photos`);
   try {
-    const result = await listAll(folderRef);
-    await Promise.all(result.items.map((item) => deleteObject(item)));
+    const folder = ref(storage, `firms/${firmId}/reports/${reportId}/photos`);
+    const { items } = await listAll(folder);
+    await Promise.all(items.map((i) => deleteObject(i)));
   } catch {
-    // Folder may not exist
+    // folder may not exist
   }
 }
 
-// ---------------------------------------------------------------------------
-// Retry helper — tries once, waits 2s, tries again
-// ---------------------------------------------------------------------------
-async function retryOnce<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn();
-  } catch (err) {
-    await new Promise((r) => setTimeout(r, 2000));
-    return fn(); // second attempt throws to caller if it fails
-  }
-}
+// ── Compression pipeline ───────────────────────────────────────────────────
+// Uses only battle-tested APIs that work on every browser since 2015:
+//   FileReader.readAsDataURL  →  new Image() onload  →  canvas drawImage
+//   →  canvas.toDataURL (synchronous!)  →  manual base64→Blob
+// No createImageBitmap, no URL.createObjectURL, no canvas.toBlob callbacks.
 
-// ---------------------------------------------------------------------------
-// Image compression — three layered fallback strategies
-// ---------------------------------------------------------------------------
-async function compressPhoto(file: File): Promise<Blob> {
-  // Load image (two decode strategies)
-  const img = await loadImage(file);
+async function compress(file: File): Promise<Blob> {
+  const dataUrl = await readFile(file);
+  const img = await decodeImage(dataUrl);
 
   const w = img.naturalWidth;
   const h = img.naturalHeight;
-  if (!w || !h) throw new Error('Image has zero dimensions');
+  if (!w || !h) throw new Error('Invalid image');
 
-  // Center-crop to square, cap at MAX_DIMENSION
-  const size = Math.min(w, h);
-  const targetSize = Math.min(size, MAX_DIMENSION);
+  // Center-crop to square, cap at MAX_DIM
+  const crop = Math.min(w, h);
+  const out = Math.min(crop, MAX_DIM);
 
   const canvas = document.createElement('canvas');
-  canvas.width = targetSize;
-  canvas.height = targetSize;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas context unavailable');
-
-  ctx.drawImage(img, (w - size) / 2, (h - size) / 2, size, size, 0, 0, targetSize, targetSize);
-
-  // Convert canvas to blob (two export strategies)
-  return canvasToBlob(canvas);
-}
-
-// ---------------------------------------------------------------------------
-// Image loading — objectURL first, FileReader data URL fallback
-// ---------------------------------------------------------------------------
-async function loadImage(file: File): Promise<HTMLImageElement> {
-  // Strategy 1: objectURL (fast, works on most browsers)
-  try {
-    return await loadViaObjectURL(file);
-  } catch { /* fall through */ }
-
-  // Strategy 2: FileReader → data URL (slower but works on all WebViews)
-  return loadViaDataURL(file);
-}
-
-function loadViaObjectURL(file: File): Promise<HTMLImageElement> {
-  const url = URL.createObjectURL(file);
-  return withTimeout(
-    new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => { resolve(el); };
-      el.onerror = () => { URL.revokeObjectURL(url); reject(new Error('objectURL decode failed')); };
-      el.src = url;
-    }),
-    15000,
-    'Image decode',
+  canvas.width = out;
+  canvas.height = out;
+  canvas.getContext('2d')!.drawImage(
+    img, (w - crop) / 2, (h - crop) / 2, crop, crop, 0, 0, out, out
   );
-  // Note: we intentionally don't revoke the URL on success — the <img> element
-  // still references it and revoking could blank the source before canvas draw.
-  // The URL is ephemeral and will be GC'd with the page.
+
+  // toDataURL is synchronous — can never hang or fail to call back
+  const jpeg = canvas.toDataURL('image/jpeg', QUALITY);
+  return base64ToBlob(jpeg);
 }
 
-function loadViaDataURL(file: File): Promise<HTMLImageElement> {
-  return withTimeout(
-    new Promise<HTMLImageElement>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const el = new Image();
-        el.onload = () => resolve(el);
-        el.onerror = () => reject(new Error('dataURL decode failed'));
-        el.src = reader.result as string;
-      };
-      reader.onerror = () => reject(new Error('FileReader failed'));
-      reader.readAsDataURL(file);
-    }),
-    20000,
-    'FileReader decode',
-  );
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function readFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Cannot read file'));
+    reader.readAsDataURL(file);
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Canvas → Blob — toBlob first, toDataURL fallback
-// ---------------------------------------------------------------------------
-async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-  // Strategy 1: canvas.toBlob (standard, async)
-  try {
-    return await withTimeout(
-      new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error('toBlob null'))),
-          'image/jpeg',
-          JPEG_QUALITY,
-        );
-      }),
-      10000,
-      'toBlob',
-    );
-  } catch { /* fall through */ }
-
-  // Strategy 2: toDataURL → fetch → blob (synchronous export, universally supported)
-  const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
-  const res = await fetch(dataUrl);
-  return res.blob();
+function decodeImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Cannot decode image'));
+    img.src = src;
+  });
 }
+
+function base64ToBlob(dataUrl: string): Blob {
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const raw = atob(parts[1]);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
