@@ -23,7 +23,6 @@ import { SavedReport, ReportFormData } from '@/types/report';
 import { TrialRecord, Subscription, TRIAL_LIMIT, MAX_DEVICES_PER_ACCOUNT } from '@/types/subscription';
 import { updateUserFirmId, clearUserFirmId } from './auth';
 import { arrayUnion, increment } from 'firebase/firestore';
-import { deleteReportPhotos } from './photo-storage';
 
 // ============ FIRM FUNCTIONS ============
 
@@ -567,7 +566,7 @@ export async function saveReport(
         lastModifiedBy: userId,
       },
       formData: formDataWithoutPhotos,
-      photoUrls: photos, // Save photo Storage URLs (small strings, not base64)
+      photoUrls: photos, // base64 data URLs (compressed ~30-50KB each)
     },
     { merge: true }
   );
@@ -583,13 +582,7 @@ export async function updateReportPhotoUrls(
 }
 
 export async function deleteReport(firmId: string, reportId: string): Promise<void> {
-  // Clean up photos from Firebase Storage before deleting the document
-  try {
-    await deleteReportPhotos(firmId, reportId);
-  } catch (e) {
-    console.error('Failed to clean up report photos from Storage:', e);
-  }
-
+  // Photos are stored as base64 in the document — deleted automatically with it
   const reportRef = doc(db, 'firms', firmId, 'reports', reportId);
   await deleteDoc(reportRef);
 }

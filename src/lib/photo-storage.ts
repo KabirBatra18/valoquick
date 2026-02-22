@@ -1,85 +1,47 @@
-import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
-import { storage } from './firebase';
+// Photos are compressed client-side and stored as base64 data URLs in Firestore.
+// No Firebase Storage dependency — eliminates CORS, rules, and bucket issues.
 
-const MAX_DIM = 600;
-const QUALITY = 0.6;
-
-// Hard timeout — wraps ANY promise so it can never hang forever
-function timeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout>;
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`${label} timed out (${ms / 1000}s)`)), ms);
-    }),
-  ]).finally(() => clearTimeout(timer));
-}
+const MAX_DIM = 500;
+const QUALITY = 0.5;
 
 export async function uploadReportPhoto(
-  firmId: string,
-  reportId: string,
+  _firmId: string,
+  _reportId: string,
   file: File,
   onStage?: (stage: string) => void,
 ): Promise<string> {
-  if (!storage) throw new Error('Firebase Storage not ready — refresh the page');
   if (!file || file.size === 0) throw new Error('No photo selected');
 
-  // ── Step 1: Compress (15s timeout, falls back to raw file) ─────────
   onStage?.('Compressing...');
-  let blob: Blob;
-  try {
-    blob = await timeout(compressPhoto(file), 15000, 'Compression');
-  } catch {
-    blob = file; // upload original if compression fails/times out
-  }
 
-  // ── Step 2: Upload to Firebase Storage (45s timeout, 1 retry) ──────
-  onStage?.('Uploading...');
-  const path = `firms/${firmId}/reports/${reportId}/photos/${Date.now()}`;
-  const sRef = ref(storage, path);
-  const opts = { contentType: 'image/jpeg' };
+  // 15-second hard timeout on entire compression
+  let timer: ReturnType<typeof setTimeout>;
+  const result = await Promise.race([
+    compressToDataUrl(file),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('Compression timed out')), 15000);
+    }),
+  ]).finally(() => clearTimeout(timer!));
 
-  try {
-    await timeout(uploadBytes(sRef, blob, opts), 45000, 'Upload');
-  } catch (firstErr) {
-    onStage?.('Retrying upload...');
-    await new Promise((r) => setTimeout(r, 2000));
-    try {
-      await timeout(uploadBytes(sRef, blob, opts), 45000, 'Upload retry');
-    } catch {
-      throw firstErr; // surface original error
-    }
-  }
-
-  // ── Step 3: Get download URL (10s timeout) ─────────────────────────
-  onStage?.('Finishing...');
-  return timeout(getDownloadURL(sRef), 10000, 'Download URL');
+  onStage?.('');
+  return result;
 }
 
-export async function deleteReportPhotos(firmId: string, reportId: string): Promise<void> {
-  try {
-    const folder = ref(storage, `firms/${firmId}/reports/${reportId}/photos`);
-    const { items } = await listAll(folder);
-    await Promise.all(items.map((i) => deleteObject(i)));
-  } catch {
-    // folder may not exist
-  }
-}
+// No-op — photos are stored in Firestore, deleted with the report document
+export async function deleteReportPhotos(_firmId: string, _reportId: string): Promise<void> {}
 
-// ── Compression: single callback-based promise, no async chains ──────────
-// Uses objectURL (memory-efficient) + canvas.toDataURL (synchronous export).
-// The entire operation is wrapped in ONE promise with its own internal timeout
-// so nothing can hang.
-function compressPhoto(file: File): Promise<Blob> {
+// Compress and return a base64 data URL string.
+// Uses objectURL + Image + canvas.toDataURL (synchronous — cannot hang).
+function compressToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     let done = false;
-    const finish = (result: Blob | Error) => {
+    const finish = (result: string | Error) => {
       if (done) return;
       done = true;
-      result instanceof Error ? reject(result) : resolve(result);
+      if (typeof result === 'string') resolve(result);
+      else reject(result);
     };
 
-    // Internal safety timeout (shouldn't fire — outer timeout is the real guard)
     const timer = setTimeout(() => finish(new Error('Internal compression timeout')), 14000);
 
     const url = URL.createObjectURL(file);
@@ -110,8 +72,8 @@ function compressPhoto(file: File): Promise<Blob> {
         );
 
         // toDataURL is SYNCHRONOUS — cannot hang
-        const jpegDataUrl = canvas.toDataURL('image/jpeg', QUALITY);
-        finish(dataUrlToBlob(jpegDataUrl));
+        const dataUrl = canvas.toDataURL('image/jpeg', QUALITY);
+        finish(dataUrl);
       } catch (e) {
         finish(e instanceof Error ? e : new Error('Compression error'));
       }
@@ -119,13 +81,4 @@ function compressPhoto(file: File): Promise<Blob> {
 
     img.src = url;
   });
-}
-
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, b64] = dataUrl.split(',');
-  const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
-  const raw = atob(b64);
-  const arr = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-  return new Blob([arr], { type: mime });
 }
