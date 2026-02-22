@@ -10,7 +10,7 @@ service firebase.storage {
       // Only firm members can upload photos (with size and type restrictions)
       allow write: if request.auth != null &&
         firestore.exists(/databases/(default)/documents/firms/$(firmId)/members/$(request.auth.uid)) &&
-        request.resource.size < 10 * 1024 * 1024 && // 10MB limit per photo
+        request.resource.size < 25 * 1024 * 1024 && // 25MB limit per photo
         request.resource.contentType.matches('image/.*');
 
       // Only firm members can delete photos

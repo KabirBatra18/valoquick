@@ -1368,6 +1368,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   // ── Photo upload ──────────────────────────────────────────────────────
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [uploadStage, setUploadStage] = useState('');
 
   const processAndAddPhoto = useCallback(async (file: File) => {
     if (!firmId || !reportId) {
@@ -1375,14 +1376,17 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       return;
     }
     setPhotoError(null);
+    setUploadStage('Starting...');
     setUploadingPhotos((n) => n + 1);
     try {
-      const url = await uploadReportPhoto(firmId, reportId, file);
+      const url = await uploadReportPhoto(firmId, reportId, file, setUploadStage);
       setPhotos((prev) => [...prev, url]);
       setFailedPhotos((prev) => prev.filter((f) => f !== file));
+      setUploadStage('');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       setPhotoError(msg);
+      setUploadStage('');
       setFailedPhotos((prev) => prev.some((f) => f === file) ? prev : [...prev, file]);
     } finally {
       setUploadingPhotos((n) => n - 1);
@@ -2811,7 +2815,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
               </div>
             </div>
 
-            {/* Upload progress indicator */}
+            {/* Upload progress indicator — shows exact step */}
             {uploadingPhotos > 0 && (
               <div className="flex items-center gap-2 mt-3 p-2.5 rounded-lg bg-brand/10 border border-brand/20">
                 <svg className="animate-spin w-4 h-4 text-brand flex-shrink-0" fill="none" viewBox="0 0 24 24">
@@ -2819,7 +2823,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
                 <span className="text-xs text-brand font-medium">
-                  Compressing & uploading {uploadingPhotos} photo{uploadingPhotos !== 1 ? 's' : ''}...
+                  {uploadStage || 'Processing...'} ({uploadingPhotos} photo{uploadingPhotos !== 1 ? 's' : ''})
                 </span>
               </div>
             )}

@@ -6,6 +6,7 @@ import { FirmBranding, ValuerInfo } from '@/types/branding';
 import { getTemplateCSS, renderHeader, renderCondensedHeader, renderFooter, renderPuppeteerFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
 import { htmlToPdfBase64 } from '@/lib/puppeteer';
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import sharp from 'sharp';
 
 // Configure for serverless - allow up to 5 minutes for PDF generation
 export const maxDuration = 300;
@@ -113,7 +114,8 @@ export async function POST(request: NextRequest) {
 
     const data: ValuationReport = await request.json();
 
-    // Convert photo URLs to base64 for PDF embedding (Puppeteer can't reliably access Firebase Storage URLs)
+    // Convert photo URLs to base64 for PDF embedding
+    // Uses sharp to resize to 600x600 — handles raw uploads that skipped client compression
     if (data.photos && data.photos.length > 0) {
       const base64Photos = await Promise.all(
         data.photos.map(async (photoUrl) => {
@@ -121,9 +123,13 @@ export async function POST(request: NextRequest) {
           try {
             const response = await fetch(photoUrl);
             if (!response.ok) return null;
-            const buffer = await response.arrayBuffer();
-            const mimeType = response.headers.get('content-type') || 'image/jpeg';
-            return `data:${mimeType};base64,${Buffer.from(buffer).toString('base64')}`;
+            const inputBuffer = Buffer.from(await response.arrayBuffer());
+            // Resize to 600x600 center-crop, JPEG quality 60 — keeps PDF small
+            const resized = await sharp(inputBuffer)
+              .resize(600, 600, { fit: 'cover', position: 'centre' })
+              .jpeg({ quality: 60 })
+              .toBuffer();
+            return `data:image/jpeg;base64,${resized.toString('base64')}`;
           } catch {
             return null;
           }
