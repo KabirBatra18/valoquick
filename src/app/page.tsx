@@ -14,7 +14,6 @@ import { useReports } from '@/hooks/useReports';
 import { updateReportStatus as updateReportStatusFirestore } from '@/lib/firestore';
 import ReportEditor from '@/components/ReportEditor';
 import { authenticatedFetch } from '@/lib/api-client';
-import { recordTrialUsage } from '@/lib/trial';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -454,14 +453,9 @@ export default function Home() {
         }
       }
 
-      // Record trial usage (if not subscribed)
-      if (!isSubscribed && userId) {
-        try {
-          await recordTrialUsage(userId, firmId);
-          await refreshSubscription();
-        } catch (err) {
-          console.error('Error recording trial usage:', err);
-        }
+      // Refresh trial status — counter is incremented server-side in export-pdf API
+      if (!isSubscribed) {
+        await refreshSubscription();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to export PDF');
