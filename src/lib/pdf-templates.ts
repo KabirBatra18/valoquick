@@ -346,18 +346,18 @@ export function getTemplateCSS(branding: FirmBranding): string {
 
     /* --- Cover page --- */
     .cover-title {
-      text-align: center;
+      text-align: left;
       font-weight: bold;
-      margin: 30px 0 20px;
+      margin: 24px 0 16px;
       font-size: 13pt;
       line-height: 1.5;
     }
     .cover-owners {
-      margin: 20px 0;
+      margin: 14px 0;
       line-height: 1.6;
     }
     .cover-meta {
-      margin: 18px 0 10px;
+      margin: 14px 0 10px;
       line-height: 1.8;
     }
     .cover-photo {
@@ -374,9 +374,9 @@ export function getTemplateCSS(branding: FirmBranding): string {
 
     /* --- Inline title (non-cover pages) --- */
     .title {
-      text-align: center;
+      text-align: left;
       font-weight: bold;
-      margin: 20px 0;
+      margin: 16px 0;
       font-size: 12pt;
     }
     .owners {
@@ -657,7 +657,7 @@ export function getTemplateCSS(branding: FirmBranding): string {
       justify-content: space-between;
       align-items: flex-start;
       padding-bottom: 10px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     .header-left { flex: 1; }
     .header-right { text-align: right; }
