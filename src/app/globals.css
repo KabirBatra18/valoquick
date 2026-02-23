@@ -687,10 +687,10 @@ select:focus {
 /* Hidden fields floating action button */
 .hidden-fields-fab {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  width: 3.5rem;
-  height: 3.5rem;
+  bottom: 5rem; /* Above mobile bottom nav (h-14 = 56px) */
+  right: 1rem;
+  width: 3rem;
+  height: 3rem;
   border-radius: 50%;
   background: var(--color-surface-100);
   border: 1px solid var(--color-surface-300);
@@ -701,6 +701,15 @@ select:focus {
   cursor: pointer;
   z-index: 40;
   transition: all 0.2s ease;
+}
+
+@media (min-width: 1024px) {
+  .hidden-fields-fab {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+  }
 }
 
 .hidden-fields-fab:hover {
