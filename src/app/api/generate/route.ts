@@ -316,6 +316,22 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   const currentOwnersShort = currentOwners.map(o => o.name).join(' & ');
   const fullAddressUpper = propertyAddress.fullAddress.toUpperCase();
 
+  // Dynamic property description based on floors being valued
+  const floorNames = floors.map(f => f.floorName).filter(Boolean);
+  const floorDescUpper = floorNames.length === 1
+    ? `${floorNames[0].toUpperCase()} OF THE`
+    : floorNames.length > 1
+      ? `${floorNames.map(n => n.toUpperCase()).join(', ')} OF THE`
+      : 'THE';
+  const floorDescSentence = floorNames.length === 1
+    ? floorNames[0]
+    : floorNames.length > 1
+      ? floorNames.join(', ')
+      : 'the property';
+  const floorListSentence = floorNames.length > 0
+    ? `the ${floorNames.join(', ').toLowerCase()}`
+    : 'the property';
+
   // Format numbers for display — Indian grouping (lakhs/crores)
   const formatCurrency = (num: number) => {
     const fixed = num.toFixed(2);
@@ -360,8 +376,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     ${fullHeaderHtml}
 
     <div class="cover-title">
-      VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
-      IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
+      VALUATION REPORT FOR THE FAIR MARKET VALUE OF ${floorDescUpper} IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
     <div class="cover-owners">
@@ -371,7 +386,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
     <div class="cover-meta">
       <p><strong>ON BEHALF OF OWNERS</strong></p>
-      ${(valuationInputs.bankName && !isIT) ? `<p style="margin-top: 6px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
+      ${(valuationInputs.bankName && valuationInputs.bankName.trim() && !isIT) ? `<p style="margin-top: 6px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
     </div>
 
     <div class="ref-date">
@@ -392,8 +407,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     ${headerHtml}
 
     <div class="title">
-      VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
-      IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
+      VALUATION REPORT FOR THE FAIR MARKET VALUE OF ${floorDescUpper} IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
     <div class="owners">
@@ -412,7 +426,7 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
       <tr><td>2</td><td>Date as on which valuation is made</td><td>${valuationInputs.valuationDate} for the date ${valuationInputs.valuationForDate}</td></tr>
       <tr><td>3</td><td>Name of owner/owners</td><td>IN ${originalOwnerYear} – ${originalOwner}<br>Current Owners – ${currentOwnersShort}</td></tr>
       <tr><td>4</td><td>If the property is under joint ownership/co-ownership, share of each owner.</td><td>Joint Ownership<br>${currentOwnersText}</td></tr>
-      <tr><td>5</td><td>Brief description of property</td><td>Ground floor of the residential property which consist of GF, FF, and SF</td></tr>
+      <tr><td>5</td><td>Brief description of property</td><td>${floorDescSentence} of the ${generalDetails.propertyType?.toLowerCase() || 'residential'} property${floors.length > 0 ? ` which consists of ${floors.map(f => f.floorName).join(', ')}` : ''}</td></tr>
       <tr><td>6</td><td>Location, street, and ward no.</td><td>${fullAddressUpper}</td></tr>
       <tr><td>7</td><td>Survey/ Plot no. of land</td><td>As above.</td></tr>
       <tr><td>8</td><td>Is the property situated in residential/ mixed area/ commercial/ industrial area?</td><td>${generalDetails.propertyType}</td></tr>
@@ -556,13 +570,12 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
 
     <div class="title">
-      VALUATION REPORT FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE<br>
-      IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
+      VALUATION REPORT FOR THE FAIR MARKET VALUE OF ${floorDescUpper} IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}
     </div>
 
-    <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF GROUND FLOOR OF THE IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}</strong></p>
+    <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF ${floorDescUpper} IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}</strong></p>
 
-    <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for the ground floor of the building which consists of three floors (Ground floor, First floor, and Second floor)</p>
+    <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for ${floorListSentence} of the building${floors.length > 0 ? ` which consists of ${floors.map(f => f.floorName).join(', ')}` : ''}.</p>
 
     <p class="section-title">Specification of Construction</p>
     <table class="specs-table">

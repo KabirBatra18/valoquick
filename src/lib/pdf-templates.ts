@@ -240,7 +240,7 @@ export function renderCondensedHeader(branding: FirmBranding, valuerName?: strin
 
   const fontFamily = getFontFamily(branding.templateStyle);
   return `
-    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-bottom: 15px; font-family: ${fontFamily};">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-bottom: 15px; margin-left: -4mm; margin-right: -4mm; padding-left: 4mm; padding-right: 4mm; font-family: ${fontFamily};">
       ${firmName ? `<span style="font-size: 16px; color: ${color}; font-weight: bold; letter-spacing: 0.3px;">${escapeHtml(firmName)}</span>` : ''}
       ${valuerName ? `<span style="font-size: 10px; color: #555;">${escapeHtml(valuerName)}</span>` : ''}
     </div>`;
@@ -366,7 +366,7 @@ export function getTemplateCSS(branding: FirmBranding): string {
     }
     .cover-photo img {
       max-width: 85%;
-      max-height: 480px;
+      max-height: 280px;
       border: 2px solid #444;
       border-radius: 6px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -658,6 +658,10 @@ export function getTemplateCSS(branding: FirmBranding): string {
       align-items: flex-start;
       padding-bottom: 10px;
       margin-bottom: 10px;
+      margin-left: -4mm;
+      margin-right: -4mm;
+      padding-left: 4mm;
+      padding-right: 4mm;
     }
     .header-left { flex: 1; }
     .header-right { text-align: right; }

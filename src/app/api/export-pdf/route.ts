@@ -90,8 +90,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'HTML content too large' }, { status: 413 });
     }
 
-    // Convert HTML to PDF
-    const pdfBase64 = await htmlToPdfBase64(html);
+    // Prepare HTML for PDF: strip preview-mode styling and hide embedded footers
+    // (Puppeteer native footer handles page numbers reliably on every page)
+    const cleanHtml = html
+      .replace('class="preview-mode"', '')
+      .replace('</style>', '.page-footer { display: none !important; }\n</style>');
+
+    // Simple Puppeteer footer with page numbers
+    const footerTemplate = `<div style="width: 100%; padding: 0 10mm; font-size: 8px; color: #555; border-top: 1px solid #bbb; padding-top: 4px; text-align: right;">Page <span class="pageNumber"></span></div>`;
+
+    // Convert HTML to PDF with proper footer and margins
+    const pdfBase64 = await htmlToPdfBase64(cleanHtml, {
+      footerTemplate,
+      marginTop: '12mm',
+      marginBottom: '15mm',
+    });
 
     // Vercel serverless response limit is ~4.5MB — check before sending
     const responseSizeBytes = pdfBase64.length + 20; // +20 for JSON wrapper
