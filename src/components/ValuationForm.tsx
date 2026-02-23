@@ -936,8 +936,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     }
   }, [landShareFraction]);
 
-  // Portion Being Valued
-  const [portionValued, setPortionValued] = useState(initialData?.portionValued || '');
+  // Portion Being Valued — multi-select (backward compat: old data may be a string)
+  const [portionsValued, setPortionsValued] = useState<string[]>(() => {
+    const raw = initialData?.portionValued;
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string' && raw) return [raw];
+    return [];
+  });
+  const [customPortion, setCustomPortion] = useState('');
 
   // Construction Details
   const [floorArea, setFloorArea] = useState<number>(initialData?.floorArea || 0);
@@ -1217,7 +1223,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         locationIncreasePercent,
         landShareFraction,
         landShareDecimal,
-        portionValued,
+        portionValued: portionsValued,
         floorArea,
         plinthAreaRate,
         costIndex,
@@ -1345,7 +1351,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     originalOwner, originalOwnerYear, ownerPhone, currentOwners, developerName,
     referenceNo, bankName, inspectionDate, valuationDate, valuationForDate, purpose,
     plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
-    portionValued, floorArea, plinthAreaRate, costIndex, specificationIncreasePercent,
+    portionsValued, floorArea, plinthAreaRate, costIndex, specificationIncreasePercent,
     yearOfConstruction, estimatedLifeYears, ageAtValuation,
     roof, brickwork, flooring, tiles, electrical, electricalSwitches, sanitaryFixtures, woodwork, exterior,
     floorHeight, constructionType, foundationType, partitions, roofingTerracing, architecturalFeatures,
@@ -1479,14 +1485,15 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         northEast: northEastBoundary, northWest: northWestBoundary, southEast: southEastBoundary, southWest: southWestBoundary
       },
       originalOwner, originalOwnerYear, currentOwners, valuationInputs,
-      floors: [{
-        floorName: portionValued || 'Ground Floor', area: floorArea, height: floorHeight, yearOfConstruction,
+      floors: (portionsValued.length > 0 ? portionsValued : ['Ground Floor']).map(name => ({
+        floorName: name, area: floorArea, height: floorHeight, yearOfConstruction,
         walls: 'Brick walls', doorsWindows: woodwork.includes('Teak') ? 'Teak Wood' : woodwork,
         flooring, finishing: 'Cement sand plaster with POP and Paint finish',
-      }],
+      })),
       technicalDetails: {
-        noOfFloors: portionValued || 'Ground Floor', heightOfFloors: `Ht of ${portionValued || 'Ground floor'} -${floorHeight}`,
-        totalCoveredArea: `${portionValued || 'GF'}-${floorArea}Sqm`, yearOfConstruction,
+        noOfFloors: portionsValued.join(', ') || 'Ground Floor',
+        heightOfFloors: `Ht of ${portionsValued.join(', ') || 'Ground floor'} -${floorHeight}`,
+        totalCoveredArea: `${portionsValued.join('+') || 'GF'}-${floorArea}Sqm`, yearOfConstruction,
         estimatedLife: `${estimatedLifeYears} years from the year of construction`,
         constructionType, foundationType, partitions, roofingTerracing, architecturalFeatures,
         internalWiring: electrical, fittingsClass: electricalSwitches, noOfWaterClosets, noOfSinks,
@@ -1657,23 +1664,6 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   placeholder="e.g., Residential"
                 />
               </SwipeableField>
-              <SwipeableField fieldName="portionValued" isHidden={hiddenFields.includes('portionValued')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormSelectWithCustom
-                  label="Portion Being Valued"
-                  value={portionValued}
-                  onChange={setPortionValued}
-                  options={[
-                    { value: 'Ground Floor', label: 'Ground Floor' },
-                    { value: 'First Floor', label: 'First Floor' },
-                    { value: 'Second Floor', label: 'Second Floor' },
-                    { value: 'Ground + First Floor', label: 'Ground + First Floor' },
-                    { value: 'Entire Building', label: 'Entire Building' },
-                    { value: 'Flat/Apartment', label: 'Flat/Apartment' },
-                    { value: 'Villa/Independent House', label: 'Villa/Independent House' },
-                  ]}
-                  placeholder="e.g., Ground Floor"
-                />
-              </SwipeableField>
               <SwipeableField fieldName="localityClass" isHidden={hiddenFields.includes('localityClass')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom
                   label="Locality Class"
@@ -1730,6 +1720,103 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 />
               </SwipeableField>
             </div>
+
+            {!hiddenFields.includes('portionValued') && (
+              <div style={{ marginTop: '12px' }}>
+                <label className="text-xs lg:text-sm font-medium text-text-secondary" style={{ display: 'block', marginBottom: '8px' }}>Portion Being Valued</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-3">
+                  {[
+                    'Basement', 'Ground Floor', 'Mezzanine', 'First Floor',
+                    'Second Floor', 'Third Floor', 'Fourth Floor', 'Fifth Floor',
+                  ].map((floor) => (
+                    <label
+                      key={floor}
+                      className={`flex items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg lg:rounded-xl border cursor-pointer transition-all ${
+                        portionsValued.includes(floor)
+                          ? 'bg-brand/10 border-brand text-text-primary'
+                          : 'bg-surface-100 border-surface-200 text-text-secondary hover:border-surface-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={portionsValued.includes(floor)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            // Selecting a floor deselects whole-property options
+                            setPortionsValued(prev => [...prev.filter(p => !['Entire Building', 'Flat/Apartment', 'Villa/Independent House'].includes(p)), floor]);
+                          } else {
+                            setPortionsValued(prev => prev.filter(p => p !== floor));
+                          }
+                        }}
+                        className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded border-surface-300 focus:ring-brand"
+                        style={{ accentColor: '#6366f1' }}
+                      />
+                      <span className="text-xs lg:text-sm">{floor}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 lg:gap-3" style={{ marginTop: '8px' }}>
+                  {['Entire Building', 'Flat/Apartment', 'Villa/Independent House'].map((opt) => (
+                    <label
+                      key={opt}
+                      className={`flex items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg lg:rounded-xl border cursor-pointer transition-all ${
+                        portionsValued.includes(opt)
+                          ? 'bg-brand/10 border-brand text-text-primary'
+                          : 'bg-surface-100 border-surface-200 text-text-secondary hover:border-surface-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={portionsValued.includes(opt)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            // Whole-property option replaces all other selections
+                            setPortionsValued([opt]);
+                          } else {
+                            setPortionsValued(prev => prev.filter(p => p !== opt));
+                          }
+                        }}
+                        className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded border-surface-300 focus:ring-brand"
+                        style={{ accentColor: '#6366f1' }}
+                      />
+                      <span className="text-xs lg:text-sm">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="flex gap-2" style={{ marginTop: '8px' }}>
+                  <input
+                    type="text"
+                    value={customPortion}
+                    onChange={(e) => setCustomPortion(e.target.value)}
+                    placeholder="Add custom (e.g., Terrace, Penthouse)"
+                    className="flex-1 p-2 rounded-lg border bg-surface-100 border-surface-200 text-xs lg:text-sm text-text-primary placeholder:text-text-tertiary focus:border-brand focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = customPortion.trim();
+                      if (val && !portionsValued.includes(val)) {
+                        setPortionsValued(prev => [...prev.filter(p => !['Entire Building', 'Flat/Apartment', 'Villa/Independent House'].includes(p)), val]);
+                        setCustomPortion('');
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg bg-brand text-white text-xs lg:text-sm font-medium hover:bg-brand-hover transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+                {portionsValued.some(p => !['Basement', 'Ground Floor', 'Mezzanine', 'First Floor', 'Second Floor', 'Third Floor', 'Fourth Floor', 'Fifth Floor', 'Entire Building', 'Flat/Apartment', 'Villa/Independent House'].includes(p)) && (
+                  <div className="flex flex-wrap gap-1" style={{ marginTop: '6px' }}>
+                    {portionsValued.filter(p => !['Basement', 'Ground Floor', 'Mezzanine', 'First Floor', 'Second Floor', 'Third Floor', 'Fourth Floor', 'Fifth Floor', 'Entire Building', 'Flat/Apartment', 'Villa/Independent House'].includes(p)).map(custom => (
+                      <span key={custom} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand/10 border border-brand text-xs text-text-primary">
+                        {custom}
+                        <button type="button" onClick={() => setPortionsValued(prev => prev.filter(p => p !== custom))} className="text-text-tertiary hover:text-red-500">&times;</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="glass-card">

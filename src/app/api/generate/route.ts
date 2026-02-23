@@ -318,19 +318,29 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
 
   // Dynamic property description based on floors being valued
   const floorNames = floors.map(f => f.floorName).filter(Boolean);
-  const floorDescUpper = floorNames.length === 1
-    ? `${floorNames[0].toUpperCase()} OF THE`
-    : floorNames.length > 1
-      ? `${floorNames.map(n => n.toUpperCase()).join(', ')} OF THE`
-      : 'THE';
-  const floorDescSentence = floorNames.length === 1
-    ? floorNames[0]
-    : floorNames.length > 1
-      ? floorNames.join(', ')
-      : 'the property';
-  const floorListSentence = floorNames.length > 0
-    ? `the ${floorNames.join(', ').toLowerCase()}`
-    : 'the property';
+  const WHOLE_PROPERTY = ['Entire Building', 'Villa/Independent House', 'Flat/Apartment'];
+  const isWholeProperty = floorNames.some(n => WHOLE_PROPERTY.includes(n));
+
+  // Build natural-language list: "A, B AND C" (not "A, B, C")
+  const joinNatural = (items: string[], sep = 'AND') => {
+    if (items.length <= 1) return items[0] || '';
+    return items.slice(0, -1).join(', ') + ` ${sep} ` + items[items.length - 1];
+  };
+
+  // UPPER-CASE descriptor for titles: "GROUND FLOOR AND FIRST FLOOR OF THE" or just "THE"
+  const floorDescUpper = isWholeProperty || floorNames.length === 0
+    ? 'THE'
+    : `${joinNatural(floorNames.map(n => n.toUpperCase()))} OF THE`;
+
+  // Sentence-case descriptor for body text
+  const floorDescSentence = isWholeProperty || floorNames.length === 0
+    ? 'the property'
+    : joinNatural(floorNames);
+
+  // "the ground floor and first floor" for inline sentences
+  const floorListSentence = isWholeProperty || floorNames.length === 0
+    ? 'the property'
+    : `the ${joinNatural(floorNames).toLowerCase()}`;
 
   // Format numbers for display — Indian grouping (lakhs/crores)
   const formatCurrency = (num: number) => {
