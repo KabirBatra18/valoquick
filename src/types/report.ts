@@ -224,6 +224,9 @@ export interface ReportFormData {
   landShareFraction: string;
   landShareDecimal: number;
 
+  // Portion Being Valued (e.g., Ground Floor, First Floor, Entire Building, Flat)
+  portionValued: string;
+
   // Construction Details
   floorArea: number;
   plinthAreaRate: number;
@@ -400,6 +403,7 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   locationIncreasePercent: 0,
   landShareFraction: '',
   landShareDecimal: 0,
+  portionValued: '',
   floorArea: 0,
   plinthAreaRate: 0,
   costIndex: 0,

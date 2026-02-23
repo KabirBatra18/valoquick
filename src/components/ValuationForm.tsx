@@ -936,6 +936,9 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     }
   }, [landShareFraction]);
 
+  // Portion Being Valued
+  const [portionValued, setPortionValued] = useState(initialData?.portionValued || '');
+
   // Construction Details
   const [floorArea, setFloorArea] = useState<number>(initialData?.floorArea || 0);
   const [plinthAreaRate, setPlinthAreaRate] = useState<number>(initialData?.plinthAreaRate || 0);
@@ -1214,6 +1217,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         locationIncreasePercent,
         landShareFraction,
         landShareDecimal,
+        portionValued,
         floorArea,
         plinthAreaRate,
         costIndex,
@@ -1341,7 +1345,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     originalOwner, originalOwnerYear, ownerPhone, currentOwners, developerName,
     referenceNo, bankName, inspectionDate, valuationDate, valuationForDate, purpose,
     plotArea, landRatePerSqm, landRateSource, locationIncreasePercent, landShareFraction, landShareDecimal,
-    floorArea, plinthAreaRate, costIndex, specificationIncreasePercent,
+    portionValued, floorArea, plinthAreaRate, costIndex, specificationIncreasePercent,
     yearOfConstruction, estimatedLifeYears, ageAtValuation,
     roof, brickwork, flooring, tiles, electrical, electricalSwitches, sanitaryFixtures, woodwork, exterior,
     floorHeight, constructionType, foundationType, partitions, roofingTerracing, architecturalFeatures,
@@ -1476,13 +1480,13 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
       },
       originalOwner, originalOwnerYear, currentOwners, valuationInputs,
       floors: [{
-        floorName: 'Ground Floor', area: floorArea, height: floorHeight, yearOfConstruction,
+        floorName: portionValued || 'Ground Floor', area: floorArea, height: floorHeight, yearOfConstruction,
         walls: 'Brick walls', doorsWindows: woodwork.includes('Teak') ? 'Teak Wood' : woodwork,
         flooring, finishing: 'Cement sand plaster with POP and Paint finish',
       }],
       technicalDetails: {
-        noOfFloors: 'Ground Floor', heightOfFloors: `Ht of Ground floor -${floorHeight}`,
-        totalCoveredArea: `GF-${floorArea}Sqm`, yearOfConstruction,
+        noOfFloors: portionValued || 'Ground Floor', heightOfFloors: `Ht of ${portionValued || 'Ground floor'} -${floorHeight}`,
+        totalCoveredArea: `${portionValued || 'GF'}-${floorArea}Sqm`, yearOfConstruction,
         estimatedLife: `${estimatedLifeYears} years from the year of construction`,
         constructionType, foundationType, partitions, roofingTerracing, architecturalFeatures,
         internalWiring: electrical, fittingsClass: electricalSwitches, noOfWaterClosets, noOfSinks,
@@ -1651,6 +1655,23 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                     { value: 'Agricultural', label: 'Agricultural' },
                   ]}
                   placeholder="e.g., Residential"
+                />
+              </SwipeableField>
+              <SwipeableField fieldName="portionValued" isHidden={hiddenFields.includes('portionValued')} onHide={handleHideField} onRestore={handleRestoreField}>
+                <FormSelectWithCustom
+                  label="Portion Being Valued"
+                  value={portionValued}
+                  onChange={setPortionValued}
+                  options={[
+                    { value: 'Ground Floor', label: 'Ground Floor' },
+                    { value: 'First Floor', label: 'First Floor' },
+                    { value: 'Second Floor', label: 'Second Floor' },
+                    { value: 'Ground + First Floor', label: 'Ground + First Floor' },
+                    { value: 'Entire Building', label: 'Entire Building' },
+                    { value: 'Flat/Apartment', label: 'Flat/Apartment' },
+                    { value: 'Villa/Independent House', label: 'Villa/Independent House' },
+                  ]}
+                  placeholder="e.g., Ground Floor"
                 />
               </SwipeableField>
               <SwipeableField fieldName="localityClass" isHidden={hiddenFields.includes('localityClass')} onHide={handleHideField} onRestore={handleRestoreField}>

@@ -356,6 +356,7 @@ export async function createReport(
     locationIncreasePercent: 0,
     landShareFraction: '',
     landShareDecimal: 1,
+    portionValued: '',
     floorArea: 0,
     plinthAreaRate: 0,
     costIndex: 100,

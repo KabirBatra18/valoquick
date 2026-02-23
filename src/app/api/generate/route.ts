@@ -757,6 +757,12 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   </div>
   ` : ''}
 
+${isPreview ? `<script>
+document.querySelectorAll('.page').forEach(function(page, i) {
+  var nums = page.querySelectorAll('.page-number');
+  nums.forEach(function(n) { n.textContent = String(i + 1); });
+});
+</script>` : ''}
 </body>
 </html>
   `;

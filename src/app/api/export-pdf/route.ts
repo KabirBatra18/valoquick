@@ -96,8 +96,8 @@ export async function POST(request: NextRequest) {
       .replace('class="preview-mode"', '')
       .replace('</style>', '.page-footer { display: none !important; }\n</style>');
 
-    // Simple Puppeteer footer with page numbers
-    const footerTemplate = `<div style="width: 100%; padding: 0 10mm; font-size: 8px; color: #555; border-top: 1px solid #bbb; padding-top: 4px; text-align: right;">Page <span class="pageNumber"></span></div>`;
+    // Puppeteer footer with page numbers — font-size must be explicit for Chromium header/footer context
+    const footerTemplate = `<div style="width: 100%; margin: 0 10mm; font-size: 10px; font-family: Arial, sans-serif; color: #555; border-top: 1px solid #bbb; padding-top: 4px; text-align: right;"><span>Page </span><span class="pageNumber"></span></div>`;
 
     // Convert HTML to PDF with proper footer and margins
     const pdfBase64 = await htmlToPdfBase64(cleanHtml, {

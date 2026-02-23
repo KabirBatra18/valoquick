@@ -74,8 +74,8 @@ export function renderPuppeteerFooter(branding: FirmBranding): string {
     contactHtml = `<span style="font-size: 8px; color: #555;">${[branding.firmName, branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</span>`;
   }
 
-  // Always show page numbers
-  const pageNumHtml = `<span style="font-size: 8px; color: #555;">Page <span class="pageNumber"></span></span>`;
+  // Always show page numbers — font-size must be explicit for Chromium header/footer context
+  const pageNumHtml = `<span style="font-size: 10px; color: #555;"><span>Page </span><span class="pageNumber"></span></span>`;
 
   let disclaimerHtml = '';
   if (f.enabled && f.showDisclaimer && f.disclaimerText) {
