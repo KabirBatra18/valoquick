@@ -1,5 +1,4 @@
 import puppeteerCore from 'puppeteer-core';
-import puppeteer from 'puppeteer';
 import chromium from '@sparticuz/chromium';
 
 export interface PdfOptions {
@@ -19,7 +18,9 @@ export async function getBrowser() {
       headless: true,
     });
   } else {
-    return puppeteer.launch({
+    // Dynamic import — only loads full puppeteer (with bundled Chromium) locally
+    const puppeteer = await import('puppeteer');
+    return puppeteer.default.launch({
       headless: true,
       args: [
         '--no-sandbox',
@@ -43,68 +44,70 @@ export async function getBrowser() {
 }
 
 export async function htmlToPdfBase64(html: string, options?: PdfOptions): Promise<string> {
-  const browser = await getBrowser();
-  try {
-    const page = await browser.newPage();
+  // Hard timeout: 120 seconds for the entire operation
+  let timer: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('PDF generation timed out (120s)')), 120000);
+  });
 
-    page.setDefaultTimeout(120000);
-    await page.setJavaScriptEnabled(false);
+  const generatePdf = async (): Promise<string> => {
+    const browser = await getBrowser();
+    try {
+      const page = await browser.newPage();
 
-    await page.setContent(html, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000,
-    });
+      page.setDefaultTimeout(60000);
 
-    // Wait for base64 images to finish rendering
-    await page.evaluate(() => {
-      return new Promise<void>((resolve) => {
-        const images = document.querySelectorAll('img');
-        let loadedCount = 0;
-        const totalImages = images.length;
-
-        if (totalImages === 0) {
-          resolve();
-          return;
-        }
-
-        const checkComplete = () => {
-          loadedCount++;
-          if (loadedCount >= totalImages) resolve();
-        };
-
-        images.forEach((img) => {
-          if (img.complete) {
-            checkComplete();
-          } else {
-            img.onload = checkComplete;
-            img.onerror = checkComplete;
-          }
-        });
-
-        setTimeout(resolve, 10000);
+      await page.setContent(html, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
       });
-    });
 
-    const useHeaderFooter = !!(options?.headerTemplate || options?.footerTemplate);
+      // Brief wait for base64 images to render (they're inline, should be instant)
+      await page.evaluate(() => {
+        return new Promise<void>((resolve) => {
+          const images = document.querySelectorAll('img');
+          if (images.length === 0) { resolve(); return; }
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: {
-        top: options?.marginTop || '10mm',
-        right: '10mm',
-        bottom: options?.marginBottom || '10mm',
-        left: '10mm',
-      },
-      printBackground: true,
-      displayHeaderFooter: useHeaderFooter,
-      ...(useHeaderFooter && {
-        headerTemplate: options!.headerTemplate || '<span></span>',
-        footerTemplate: options!.footerTemplate || '<span></span>',
-      }),
-    });
+          let loaded = 0;
+          const done = () => { loaded++; if (loaded >= images.length) resolve(); };
+          images.forEach((img) => {
+            if (img.complete) done();
+            else { img.onload = done; img.onerror = done; }
+          });
 
-    return Buffer.from(pdfBuffer).toString('base64');
+          // Safety: resolve after 5s regardless
+          setTimeout(resolve, 5000);
+        });
+      });
+
+      const useHeaderFooter = !!(options?.headerTemplate || options?.footerTemplate);
+
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        margin: {
+          top: options?.marginTop || '10mm',
+          right: '10mm',
+          bottom: options?.marginBottom || '10mm',
+          left: '10mm',
+        },
+        printBackground: true,
+        displayHeaderFooter: useHeaderFooter,
+        ...(useHeaderFooter && {
+          headerTemplate: options!.headerTemplate || '<span></span>',
+          footerTemplate: options!.footerTemplate || '<span></span>',
+        }),
+        timeout: 60000,
+      });
+
+      return Buffer.from(pdfBuffer).toString('base64');
+    } finally {
+      await browser.close();
+    }
+  };
+
+  try {
+    return await Promise.race([generatePdf(), timeoutPromise]);
   } finally {
-    await browser.close();
+    clearTimeout(timer!);
   }
 }
