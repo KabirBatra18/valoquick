@@ -421,10 +421,25 @@ export default function Home() {
   const handleExportPdf = async (editedHtml: string) => {
     setIsExporting(true);
     try {
-      const response = await authenticatedFetch('/api/export-pdf', {
-        method: 'POST',
-        body: JSON.stringify({ html: editedHtml }),
-      });
+      // 2-minute timeout — PDF generation can take time on serverless
+      const abortController = new AbortController();
+      const fetchTimer = setTimeout(() => abortController.abort(), 120000);
+
+      let response: Response;
+      try {
+        response = await authenticatedFetch('/api/export-pdf', {
+          method: 'POST',
+          body: JSON.stringify({ html: editedHtml }),
+          signal: abortController.signal,
+        });
+      } catch (fetchErr) {
+        clearTimeout(fetchTimer);
+        if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') {
+          throw new Error('PDF export timed out. Please try again.');
+        }
+        throw fetchErr;
+      }
+      clearTimeout(fetchTimer);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -493,11 +508,24 @@ export default function Home() {
       }
       const { html } = await genResponse.json();
 
-      // Export to PDF
-      const pdfResponse = await authenticatedFetch('/api/export-pdf', {
-        method: 'POST',
-        body: JSON.stringify({ html }),
-      });
+      // Export to PDF (2-minute timeout)
+      const pdfAbort = new AbortController();
+      const pdfTimer = setTimeout(() => pdfAbort.abort(), 120000);
+      let pdfResponse: Response;
+      try {
+        pdfResponse = await authenticatedFetch('/api/export-pdf', {
+          method: 'POST',
+          body: JSON.stringify({ html }),
+          signal: pdfAbort.signal,
+        });
+      } catch (e) {
+        clearTimeout(pdfTimer);
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          throw new Error('PDF export timed out. Please try again.');
+        }
+        throw e;
+      }
+      clearTimeout(pdfTimer);
       if (!pdfResponse.ok) {
         const errData = await pdfResponse.json();
         throw new Error(errData.error || 'Failed to export PDF');

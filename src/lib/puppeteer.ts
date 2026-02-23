@@ -1,4 +1,4 @@
-import puppeteerCore from 'puppeteer-core';
+import puppeteerCore, { Browser } from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 
 export interface PdfOptions {
@@ -8,7 +8,7 @@ export interface PdfOptions {
   marginBottom?: string;
 }
 
-export async function getBrowser() {
+async function getBrowser(): Promise<Browser> {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION) {
     const executablePath = await chromium.executablePath();
     return puppeteerCore.launch({
@@ -18,7 +18,6 @@ export async function getBrowser() {
       headless: true,
     });
   } else {
-    // Dynamic import — only loads full puppeteer (with bundled Chromium) locally
     const puppeteer = await import('puppeteer');
     return puppeteer.default.launch({
       headless: true,
@@ -29,56 +28,36 @@ export async function getBrowser() {
         '--disable-gpu',
         '--single-process',
         '--no-zygote',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-sync',
-        '--disable-translate',
-        '--hide-scrollbars',
-        '--metrics-recording-only',
-        '--mute-audio',
-        '--no-first-run',
-        '--safebrowsing-disable-auto-update',
       ],
-    });
+    }) as unknown as Browser;
   }
 }
 
 export async function htmlToPdfBase64(html: string, options?: PdfOptions): Promise<string> {
-  // Hard timeout: 120 seconds for the entire operation
-  let timer: ReturnType<typeof setTimeout>;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error('PDF generation timed out (120s)')), 120000);
-  });
+  let browser: Browser | null = null;
 
-  const generatePdf = async (): Promise<string> => {
-    const browser = await getBrowser();
+  // Hard timeout: 90s — must finish before Vercel's function timeout
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 90000);
+
+  try {
+    if (controller.signal.aborted) throw new Error('PDF generation aborted');
+
+    browser = await getBrowser();
+    const page = await browser.newPage();
+
     try {
-      const page = await browser.newPage();
-
-      page.setDefaultTimeout(60000);
+      page.setDefaultTimeout(30000);
 
       await page.setContent(html, {
         waitUntil: 'domcontentloaded',
-        timeout: 30000,
+        timeout: 20000,
       });
 
-      // Brief wait for base64 images to render (they're inline, should be instant)
-      await page.evaluate(() => {
-        return new Promise<void>((resolve) => {
-          const images = document.querySelectorAll('img');
-          if (images.length === 0) { resolve(); return; }
+      // Base64 images are inline — just give a short settle time
+      await new Promise((r) => setTimeout(r, 1500));
 
-          let loaded = 0;
-          const done = () => { loaded++; if (loaded >= images.length) resolve(); };
-          images.forEach((img) => {
-            if (img.complete) done();
-            else { img.onload = done; img.onerror = done; }
-          });
-
-          // Safety: resolve after 5s regardless
-          setTimeout(resolve, 5000);
-        });
-      });
+      if (controller.signal.aborted) throw new Error('PDF generation aborted');
 
       const useHeaderFooter = !!(options?.headerTemplate || options?.footerTemplate);
 
@@ -101,13 +80,12 @@ export async function htmlToPdfBase64(html: string, options?: PdfOptions): Promi
 
       return Buffer.from(pdfBuffer).toString('base64');
     } finally {
-      await browser.close();
+      await page.close().catch(() => {});
     }
-  };
-
-  try {
-    return await Promise.race([generatePdf(), timeoutPromise]);
   } finally {
-    clearTimeout(timer!);
+    clearTimeout(timer);
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
   }
 }

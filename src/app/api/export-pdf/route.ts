@@ -85,13 +85,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
     }
 
-    // Limit payload size to 10MB to prevent memory abuse
-    if (html.length > 10 * 1024 * 1024) {
+    // Limit payload size to 5MB to stay within serverless constraints
+    if (html.length > 5 * 1024 * 1024) {
       return NextResponse.json({ error: 'HTML content too large' }, { status: 413 });
     }
 
     // Convert HTML to PDF
     const pdfBase64 = await htmlToPdfBase64(html);
+
+    // Vercel serverless response limit is ~4.5MB — check before sending
+    const responseSizeBytes = pdfBase64.length + 20; // +20 for JSON wrapper
+    if (responseSizeBytes > 4 * 1024 * 1024) {
+      console.error(`PDF too large for response: ${(responseSizeBytes / 1024 / 1024).toFixed(1)}MB`);
+      return NextResponse.json(
+        { error: 'Generated PDF is too large. Try using fewer photos.' },
+        { status: 413 }
+      );
+    }
 
     // Increment trial counter server-side (admin SDK bypasses security rules)
     if (!isSubscribed) {
