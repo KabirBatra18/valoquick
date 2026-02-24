@@ -177,6 +177,7 @@ export interface ValuationReport {
 
   // Photos
   photos: string[]; // Base64 encoded images
+  coverPhotoIndex?: number;
 
   // Location
   location?: {

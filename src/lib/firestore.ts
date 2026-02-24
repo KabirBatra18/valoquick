@@ -472,6 +472,7 @@ export async function createReport(
     locationCapturedAt: '',
     locationMapUrl: '',
     photos: [],
+    coverPhotoIndex: 0,
     // Hidden fields tracking
     hiddenFields: [],
     ...initialData,

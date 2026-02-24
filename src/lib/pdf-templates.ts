@@ -362,14 +362,19 @@ export function getTemplateCSS(branding: FirmBranding): string {
     }
     .cover-photo {
       text-align: center;
-      margin: 30px 0;
+      margin-top: 20px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      overflow: hidden;
     }
     .cover-photo img {
-      max-width: 85%;
-      max-height: 280px;
-      border: 2px solid #444;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      max-width: 92%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 4px;
     }
 
     /* --- Inline title (non-cover pages) --- */

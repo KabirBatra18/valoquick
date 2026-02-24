@@ -357,6 +357,7 @@ export interface ReportFormData {
 
   // Photos
   photos: string[];
+  coverPhotoIndex: number;
 
   // Location
   locationLat: number | null;
@@ -516,6 +517,7 @@ export const DEFAULT_FORM_DATA: ReportFormData = {
   variationJustification: '',
   // Photos & Location
   photos: [],
+  coverPhotoIndex: 0,
   locationLat: null,
   locationLng: null,
   locationCapturedAt: '',

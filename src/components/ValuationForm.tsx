@@ -1088,6 +1088,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   // Photos (stored as Firebase Storage URLs)
   const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
+  const [coverPhotoIndex, setCoverPhotoIndex] = useState<number>(initialData?.coverPhotoIndex || 0);
   const [photoPage, setPhotoPage] = useState(0);
   const [uploadingPhotos, setUploadingPhotos] = useState(0);
   const [failedPhotos, setFailedPhotos] = useState<File[]>([]);
@@ -1335,6 +1336,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         variationJustification,
         // Photos & Location
         photos,
+        coverPhotoIndex,
         locationLat,
         locationLng,
         locationCapturedAt,
@@ -1372,7 +1374,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     locationAttributes, scarcityValue, demandSupplyComment, comparableSalePrices, lastTwoTransactions,
     guidelineValueLand, guidelineValueBuilding, marketRateTrend, forcedSaleValue, insuranceValue,
     valuationMethodology, variationJustification,
-    photos, locationLat, locationLng, locationCapturedAt, locationMapUrl,
+    photos, coverPhotoIndex, locationLat, locationLng, locationCapturedAt, locationMapUrl,
     hiddenFields, onDataChange
   ]);
 
@@ -1442,7 +1444,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     }
   };
 
-  const removePhoto = (index: number) => setPhotos(photos.filter((_, i) => i !== index));
+  const removePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+    setCoverPhotoIndex(prev => {
+      if (index === prev) return 0; // deleted cover → reset to first
+      if (index < prev) return prev - 1; // shifted down
+      return prev;
+    });
+  };
 
   const movePhoto = (index: number, direction: -1 | 1) => {
     const newIndex = index + direction;
@@ -1450,6 +1459,12 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
     const newPhotos = [...photos];
     [newPhotos[index], newPhotos[newIndex]] = [newPhotos[newIndex], newPhotos[index]];
     setPhotos(newPhotos);
+    // Keep cover selection following the photo
+    setCoverPhotoIndex(prev => {
+      if (prev === index) return newIndex;
+      if (prev === newIndex) return index;
+      return prev;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1511,7 +1526,11 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         floorSpaceIndex: 'As per Building Bye-Laws', propertyTax: 'N/A', buildingInsurance: 'N/A',
       },
       buildingSpecs: { roof, brickwork, flooring, tiles, electrical, electricalSwitches, sanitaryFixtures, woodwork, exterior },
-      calculatedValues, photos,
+      calculatedValues,
+      // Reorder photos so cover photo is first for PDF generation
+      photos: coverPhotoIndex > 0 && coverPhotoIndex < photos.length
+        ? [photos[coverPhotoIndex], ...photos.filter((_, i) => i !== coverPhotoIndex)]
+        : photos,
       location: locationLat && locationLng ? {
         lat: locationLat,
         lng: locationLng,
@@ -3029,7 +3048,11 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                     return (
                       <div
                         key={actualIndex}
-                        className="relative aspect-square rounded-lg lg:rounded-xl overflow-hidden border-2 border-surface-200 hover:border-brand/50 transition-colors group"
+                        className={`relative aspect-square rounded-lg lg:rounded-xl overflow-hidden border-2 transition-colors group ${
+                          coverPhotoIndex === actualIndex
+                            ? 'border-amber-400 ring-2 ring-amber-400/30'
+                            : 'border-surface-200 hover:border-brand/50'
+                        }`}
                       >
                         <img
                           src={photo}
@@ -3037,6 +3060,26 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity" />
+                        {/* Cover photo selector */}
+                        <button
+                          type="button"
+                          onClick={() => setCoverPhotoIndex(actualIndex)}
+                          className={`absolute top-1.5 left-1.5 lg:top-2 lg:left-2 p-1 lg:p-1.5 rounded-md transition-all z-10 ${
+                            coverPhotoIndex === actualIndex
+                              ? 'bg-amber-400 text-white shadow-lg'
+                              : 'bg-black/50 text-white/70 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-amber-400 hover:text-white'
+                          }`}
+                          title={coverPhotoIndex === actualIndex ? 'Cover photo' : 'Set as cover photo'}
+                        >
+                          <svg className="w-3.5 h-3.5 lg:w-4 lg:h-4" viewBox="0 0 24 24" fill={coverPhotoIndex === actualIndex ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                          </svg>
+                        </button>
+                        {coverPhotoIndex === actualIndex && (
+                          <div className="absolute top-1.5 left-8 lg:top-2 lg:left-10 px-1.5 py-0.5 rounded bg-amber-400 text-[9px] lg:text-[10px] font-bold text-white uppercase tracking-wide">
+                            Cover
+                          </div>
+                        )}
                         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-1.5 pb-1.5 lg:px-2 lg:pb-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                           <span className="text-[10px] lg:text-xs text-white font-medium">Photo {actualIndex + 1}</span>
                           <div className="flex gap-0.5">
