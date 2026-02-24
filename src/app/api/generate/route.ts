@@ -399,12 +399,12 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
 
     <div class="cover-owners">
-      <p><strong>OWNERS – IN ${originalOwnerYear} – ${originalOwner}</strong></p>
-      <p><strong>CURRENT OWNERS – ${currentOwnersShort}</strong></p>
+      ${originalOwner && originalOwner.trim() ? `<p><strong>OWNERS – IN ${originalOwnerYear} – ${originalOwner}</strong></p>` : ''}
+      ${currentOwnersShort.trim() ? `<p><strong>CURRENT OWNERS – ${currentOwnersShort}</strong></p>` : ''}
     </div>
 
     <div class="cover-meta">
-      <p><strong>ON BEHALF OF OWNERS</strong></p>
+      ${(originalOwner && originalOwner.trim()) || currentOwnersShort.trim() ? `<p><strong>ON BEHALF OF OWNERS</strong></p>` : ''}
       ${(valuationInputs.bankName && valuationInputs.bankName.trim() && !isIT) ? `<p style="margin-top: 6px;"><strong>SUBMITTED TO: ${valuationInputs.bankName.toUpperCase()}</strong></p>` : ''}
     </div>
 
@@ -430,8 +430,8 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     </div>
 
     <div class="owners">
-      <p><strong>OWNERS – IN ${originalOwnerYear} – ${originalOwner}</strong></p>
-      <p><strong>CURRENT OWNERS – ${currentOwnersShort}</strong></p>
+      ${originalOwner && originalOwner.trim() ? `<p><strong>OWNERS – IN ${originalOwnerYear} – ${originalOwner}</strong></p>` : ''}
+      ${currentOwnersShort.trim() ? `<p><strong>CURRENT OWNERS – ${currentOwnersShort}</strong></p>` : ''}
     </div>
 
     <div class="ref-date">
@@ -443,9 +443,9 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
     <table class="q-table">
       <tr><td>1</td><td>Purpose for which valuation is made</td><td>${valuationInputs.purpose}${valuationInputs.bankName ? ` (${valuationInputs.bankName})` : ''}</td></tr>
       <tr><td>2</td><td>Date as on which valuation is made</td><td>${valuationInputs.valuationDate} for the date ${valuationInputs.valuationForDate}</td></tr>
-      <tr><td>3</td><td>Name of owner/owners</td><td>IN ${originalOwnerYear} – ${originalOwner}<br>Current Owners – ${currentOwnersShort}</td></tr>
+      <tr><td>3</td><td>Name of owner/owners</td><td>${originalOwner && originalOwner.trim() ? `IN ${originalOwnerYear} – ${originalOwner}<br>` : ''}${currentOwnersShort.trim() ? `Current Owners – ${currentOwnersShort}` : 'N/A'}</td></tr>
       <tr><td>4</td><td>If the property is under joint ownership/co-ownership, share of each owner.</td><td>Joint Ownership<br>${currentOwnersText}</td></tr>
-      <tr><td>5</td><td>Brief description of property</td><td>${floorDescSentence} of the ${generalDetails.propertyType?.toLowerCase() || 'residential'} property${floors.length > 0 ? ` which consists of ${floors.map(f => f.floorName).join(', ')}` : ''}</td></tr>
+      <tr><td>5</td><td>Brief description of property</td><td>${floorDescSentence} of the ${generalDetails.propertyType?.toLowerCase() || 'residential'} property${floorNames.length > 0 ? ` which consists of ${joinNatural(floorNames)}` : ''}</td></tr>
       <tr><td>6</td><td>Location, street, and ward no.</td><td>${fullAddressUpper}</td></tr>
       <tr><td>7</td><td>Survey/ Plot no. of land</td><td>As above.</td></tr>
       <tr><td>8</td><td>Is the property situated in residential/ mixed area/ commercial/ industrial area?</td><td>${generalDetails.propertyType}</td></tr>

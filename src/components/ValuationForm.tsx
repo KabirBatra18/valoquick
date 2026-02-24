@@ -1500,15 +1500,15 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
         northEast: northEastBoundary, northWest: northWestBoundary, southEast: southEastBoundary, southWest: southWestBoundary
       },
       originalOwner, originalOwnerYear, currentOwners, valuationInputs,
-      floors: (portionsValued.length > 0 ? portionsValued : ['Ground Floor']).map(name => ({
+      floors: (portionsValued.length > 0 ? portionsValued : ['']).map(name => ({
         floorName: name, area: floorArea, height: floorHeight, yearOfConstruction,
         walls: 'Brick walls', doorsWindows: woodwork.includes('Teak') ? 'Teak Wood' : woodwork,
         flooring, finishing: 'Cement sand plaster with POP and Paint finish',
       })),
       technicalDetails: {
-        noOfFloors: portionsValued.join(', ') || 'Ground Floor',
-        heightOfFloors: `Ht of ${portionsValued.join(', ') || 'Ground floor'} -${floorHeight}`,
-        totalCoveredArea: `${portionsValued.join('+') || 'GF'}-${floorArea}Sqm`, yearOfConstruction,
+        noOfFloors: portionsValued.join(', ') || 'N/A',
+        heightOfFloors: `Ht of ${portionsValued.join(', ') || 'Property'} -${floorHeight}`,
+        totalCoveredArea: `${portionsValued.join('+') || 'Total'}-${floorArea}Sqm`, yearOfConstruction,
         estimatedLife: `${estimatedLifeYears} years from the year of construction`,
         constructionType, foundationType, partitions, roofingTerracing, architecturalFeatures,
         internalWiring: electrical, fittingsClass: electricalSwitches, noOfWaterClosets, noOfSinks,
