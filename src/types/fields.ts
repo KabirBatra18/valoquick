@@ -1,15 +1,7 @@
 // Field labels organized by section — shared between HiddenFieldsModal and TemplateBuilder
+// Note: "Property Address" section removed — the form uses a single address text field,
+// not individual sub-fields like propertyNo/block/ward/district.
 export const FIELD_SECTIONS: Record<string, Record<string, string>> = {
-  'Property Address': {
-    propertyNo: 'Property No.',
-    block: 'Block',
-    area: 'Area',
-    city: 'City',
-    wardVillageTaluka: 'Ward/Village/Taluka',
-    subRegistryBlock: 'Sub-Registry/Block',
-    district: 'District',
-    nearbyLandmark: 'Nearby Landmark',
-  },
   'Physical Characteristics': {
     landType: 'Land Type',
     accessApproach: 'Access/Approach',

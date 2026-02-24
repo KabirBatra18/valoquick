@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FirmTemplate, REPORT_TEMPLATES } from '@/types/report';
+import { FirmTemplate } from '@/types/report';
 import { FIELD_SECTIONS } from '@/types/fields';
 import FieldSectionToggles from './FieldSectionToggles';
 
@@ -10,7 +10,7 @@ const TEMPLATE_EMOJIS = ['📋', '🏦', '🏠', '📑', '🏢', '💰', '📊',
 
 interface TemplateBuilderModalProps {
   editingTemplate?: FirmTemplate | null;
-  onSave: (data: { name: string; subtitle: string; icon: string; purpose?: string; bankName?: string; hiddenFields: string[] }) => Promise<void>;
+  onSave: (data: { name: string; subtitle: string; icon: string; purpose?: string; bankName?: string; hiddenFields: string[] }) => Promise<void>; // subtitle kept for data compat
   onDelete?: () => Promise<void>;
   onClose: () => void;
 }
@@ -24,7 +24,6 @@ export default function TemplateBuilderModal({
   const isEditing = !!editingTemplate;
 
   const [name, setName] = useState(editingTemplate?.name || '');
-  const [subtitle, setSubtitle] = useState(editingTemplate?.subtitle || '');
   const [icon, setIcon] = useState(editingTemplate?.icon || '📋');
   const [purpose, setPurpose] = useState(editingTemplate?.purpose || '');
   const [bankName, setBankName] = useState(editingTemplate?.bankName || '');
@@ -52,24 +51,13 @@ export default function TemplateBuilderModal({
     });
   }, []);
 
-  const handleStartFrom = (templateId: string) => {
-    if (templateId === 'all-visible') {
-      setHiddenFields([]);
-      return;
-    }
-    const template = REPORT_TEMPLATES.find(t => t.id === templateId);
-    if (template) {
-      setHiddenFields(template.hiddenFields || []);
-    }
-  };
-
   const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
     try {
       await onSave({
         name: name.trim(),
-        subtitle: subtitle.trim(),
+        subtitle: '',
         icon,
         purpose: purpose.trim() || undefined,
         bankName: bankName.trim() || undefined,
@@ -177,15 +165,6 @@ export default function TemplateBuilderModal({
                 />
               </div>
 
-              <input
-                type="text"
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-                placeholder="Short description (optional)"
-                className="w-full px-4 py-3 bg-surface-200 border border-surface-300 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary outline-none focus:border-brand"
-                maxLength={100}
-              />
-
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
@@ -206,24 +185,10 @@ export default function TemplateBuilderModal({
 
             {/* Section 2: Field Visibility */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs flex items-center justify-center font-bold">2</span>
-                  Field Visibility
-                </h3>
-                {/* Start from dropdown */}
-                <select
-                  onChange={(e) => handleStartFrom(e.target.value)}
-                  className="text-xs bg-surface-200 border border-surface-300 rounded-lg px-2 py-1.5 text-text-secondary outline-none focus:border-brand"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Start from...</option>
-                  <option value="all-visible">All fields visible</option>
-                  {REPORT_TEMPLATES.filter(t => t.hiddenFields && t.hiddenFields.length > 0).map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.hiddenFields!.length} hidden)</option>
-                  ))}
-                </select>
-              </div>
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs flex items-center justify-center font-bold">2</span>
+                Field Visibility
+              </h3>
 
               <FieldSectionToggles
                 hiddenFields={hiddenFields}
@@ -246,7 +211,7 @@ export default function TemplateBuilderModal({
                       {name || 'Template Name'}
                     </p>
                     <p className="text-xs text-text-tertiary mt-0.5">
-                      {subtitle || 'Description'}
+                      {purpose || bankName || 'Custom template'}
                     </p>
                     {bankName && (
                       <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 bg-brand/10 text-brand rounded-full font-medium">
