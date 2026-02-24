@@ -1576,14 +1576,14 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <div className="space-y-4">
               <SwipeableField fieldName="propertyAddress" isHidden={hiddenFields.includes('propertyAddress')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
-                  <label className="form-label">Property Address <span className="text-red-400">*</span></label>
+                  <label className="form-label">Property Address {!hiddenFields.includes('propertyAddress') && <span className="text-red-400">*</span>}</label>
                   <textarea
                     className="form-input min-h-[80px] resize-y"
                     value={propertyAddress}
                     onChange={(e) => setPropertyAddress(e.target.value)}
                     placeholder="e.g., Property No. D-44, Block-F, Tagore Garden, New Delhi - 110027"
                     rows={3}
-                    required
+                    required={!hiddenFields.includes('propertyAddress')}
                   />
                 </div>
               </SwipeableField>
@@ -1919,10 +1919,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <h3 className="glass-card-title">{t('originalOwner')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="originalOwner" isHidden={hiddenFields.includes('originalOwner')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Owner Name" value={originalOwner} onChange={(e) => setOriginalOwner(e.target.value)} placeholder="e.g., SMT RAJ KHURANA" required />
+                <FormInput label="Owner Name" value={originalOwner} onChange={(e) => setOriginalOwner(e.target.value)} placeholder="e.g., SMT RAJ KHURANA" required={!hiddenFields.includes('originalOwner')} />
               </SwipeableField>
               <SwipeableField fieldName="originalOwnerYear" isHidden={hiddenFields.includes('originalOwnerYear')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Year of Ownership" value={originalOwnerYear} onChange={(e) => setOriginalOwnerYear(e.target.value)} placeholder="e.g., 2001" required />
+                <FormInput label="Year of Ownership" value={originalOwnerYear} onChange={(e) => setOriginalOwnerYear(e.target.value)} placeholder="e.g., 2001" required={!hiddenFields.includes('originalOwnerYear')} />
               </SwipeableField>
               <SwipeableField fieldName="ownerPhone" isHidden={hiddenFields.includes('ownerPhone')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Phone Number" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} placeholder="e.g., 9811741187" />
@@ -1991,7 +1991,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <h3 className="glass-card-title">{t('referenceDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="referenceNo" isHidden={hiddenFields.includes('referenceNo')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Reference No." value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="e.g., 19/2025" required />
+                <FormInput label="Reference No." value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="e.g., 19/2025" required={!hiddenFields.includes('referenceNo')} />
               </SwipeableField>
               <SwipeableField fieldName="bankName" isHidden={hiddenFields.includes('bankName')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom label="Bank / Institution Name" options={BANK_OPTIONS} value={bankName} onChange={setBankName} placeholder="Enter bank name" />
@@ -2008,7 +2008,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   label="Date of Valuation Report"
                   value={valuationDate}
                   onChange={setValuationDate}
-                  required
+                  required={!hiddenFields.includes('valuationDate')}
                 />
               </SwipeableField>
               <SwipeableField fieldName="valuationForDate" isHidden={hiddenFields.includes('valuationForDate')} onHide={handleHideField} onRestore={handleRestoreField}>
@@ -2016,7 +2016,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                   label="Valuation For Date"
                   value={valuationForDate}
                   onChange={setValuationForDate}
-                  required
+                  required={!hiddenFields.includes('valuationForDate')}
                 />
               </SwipeableField>
             </div>
@@ -2032,13 +2032,13 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <div className="grid-2">
               <SwipeableField fieldName="plotArea" isHidden={hiddenFields.includes('plotArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
-                  <label className="form-label">Plot Area ({areaLabel})<span className="text-red-400 ml-0.5">*</span></label>
+                  <label className="form-label">Plot Area ({areaLabel}){!hiddenFields.includes('plotArea') && <span className="text-red-400 ml-0.5">*</span>}</label>
                   <input type="number" inputMode="decimal" step="0.0001" className="form-input" value={toDisplay(plotArea) || ''} onChange={(e) => setPlotArea(fromInput(e.target.value))} placeholder="0" />
                   {plotArea > 0 && <p className="text-[10px] text-text-tertiary mt-1">{otherUnit(plotArea)}</p>}
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="landRatePerSqm" isHidden={hiddenFields.includes('landRatePerSqm')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Land Rate (Rs/Sqm)" type="number" value={landRatePerSqm || ''} onChange={(e) => setLandRatePerSqm(parseFloat(e.target.value) || 0)} required />
+                <FormInput label="Land Rate (Rs/Sqm)" type="number" value={landRatePerSqm || ''} onChange={(e) => setLandRatePerSqm(parseFloat(e.target.value) || 0)} required={!hiddenFields.includes('landRatePerSqm')} />
               </SwipeableField>
               <SwipeableField fieldName="landRateSource" isHidden={hiddenFields.includes('landRateSource')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelectWithCustom label="Land Rate Source" options={LAND_RATE_SOURCE_OPTIONS} value={landRateSource} onChange={setLandRateSource} placeholder="e.g., L&DO rates from 1-4-1998" />
@@ -2060,7 +2060,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <div className="grid-2">
               <SwipeableField fieldName="floorArea" isHidden={hiddenFields.includes('floorArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
-                  <label className="form-label">Floor Area ({areaLabel})<span className="text-red-400 ml-0.5">*</span></label>
+                  <label className="form-label">Floor Area ({areaLabel}){!hiddenFields.includes('floorArea') && <span className="text-red-400 ml-0.5">*</span>}</label>
                   <input type="number" inputMode="decimal" step="0.001" className="form-input" value={toDisplay(floorArea) || ''} onChange={(e) => setFloorArea(fromInput(e.target.value))} placeholder="0" />
                   {floorArea > 0 && <p className="text-[10px] text-text-tertiary mt-1">{otherUnit(floorArea)}</p>}
                 </div>
@@ -2081,7 +2081,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <h3 className="glass-card-title">{t('depreciation')}</h3>
             <div className="grid-3">
               <SwipeableField fieldName="yearOfConstruction" isHidden={hiddenFields.includes('yearOfConstruction')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Year of Construction" value={yearOfConstruction} onChange={(e) => setYearOfConstruction(e.target.value)} placeholder="e.g., 1968-69" required />
+                <FormInput label="Year of Construction" value={yearOfConstruction} onChange={(e) => setYearOfConstruction(e.target.value)} placeholder="e.g., 1968-69" required={!hiddenFields.includes('yearOfConstruction')} />
               </SwipeableField>
               <SwipeableField fieldName="estimatedLifeYears" isHidden={hiddenFields.includes('estimatedLifeYears')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Estimated Life (Years)" type="number" value={estimatedLifeYears || ''} onChange={(e) => setEstimatedLifeYears(parseInt(e.target.value) || 0)} />
