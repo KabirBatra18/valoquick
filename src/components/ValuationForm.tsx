@@ -1000,6 +1000,18 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
   const [carpetArea, setCarpetArea] = useState<number>(initialData?.carpetArea || 0);
   const [saleableArea, setSaleableArea] = useState<number>(initialData?.saleableArea || 0);
 
+  // Area unit toggle — internal state is always sqm; display converts to sqft when selected
+  const SQ_FT_TO_SQ_M = 0.09290304;
+  const [areaUnit, setAreaUnit] = useState<'sqm' | 'sqft'>('sqm');
+  const toDisplay = (sqm: number) => areaUnit === 'sqft' ? +(sqm / SQ_FT_TO_SQ_M).toFixed(2) : sqm;
+  const fromInput = (val: string) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) return 0;
+    return areaUnit === 'sqft' ? +(num * SQ_FT_TO_SQ_M).toFixed(4) : num;
+  };
+  const otherUnit = (sqm: number) => areaUnit === 'sqft' ? `${sqm.toFixed(2)} sqm` : `${(sqm / SQ_FT_TO_SQ_M).toFixed(2)} sqft`;
+  const areaLabel = areaUnit === 'sqft' ? 'Sq.ft.' : 'Sqm';
+
   // Additional Owner Details
   const [ownerPhone, setOwnerPhone] = useState(initialData?.ownerPhone || '');
   const [developerName, setDeveloperName] = useState(initialData?.developerName || '');
@@ -1555,7 +1567,7 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* Section 0: Property Details */}
       {activeSection === 0 && (
         <div className="space-y-4 lg:space-y-6 animate-fade-in">
@@ -1613,23 +1625,38 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 <FormInput label="Abutting Roads" value={abutingRoads} onChange={(e) => setAbutingRoads(e.target.value)} placeholder="e.g., 30ft road on East" />
               </SwipeableField>
             </div>
-            <div className="grid-3 mt-4">
+            {/* Area unit toggle */}
+            <div className="flex items-center gap-2 mt-4 mb-2 px-1">
+              <span className="text-xs text-text-tertiary">Area unit:</span>
+              <button
+                type="button"
+                onClick={() => setAreaUnit(areaUnit === 'sqm' ? 'sqft' : 'sqm')}
+                className="flex items-center bg-surface-200 rounded-lg p-0.5 text-xs border border-surface-300"
+              >
+                <span className={`px-2.5 py-1 rounded-md transition-colors ${areaUnit === 'sqm' ? 'bg-brand text-white' : 'text-text-tertiary'}`}>Sqm</span>
+                <span className={`px-2.5 py-1 rounded-md transition-colors ${areaUnit === 'sqft' ? 'bg-brand text-white' : 'text-text-tertiary'}`}>Sqft</span>
+              </button>
+            </div>
+            <div className="grid-3">
               <SwipeableField fieldName="plinthArea" isHidden={hiddenFields.includes('plinthArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
-                  <label className="form-label">Plinth Area (sq.m.)</label>
-                  <input type="number" inputMode="decimal" className="form-input" value={plinthArea || ''} onChange={(e) => setPlinthArea(Number(e.target.value))} placeholder="0" />
+                  <label className="form-label">Plinth Area ({areaLabel})</label>
+                  <input type="number" inputMode="decimal" className="form-input" value={toDisplay(plinthArea) || ''} onChange={(e) => setPlinthArea(fromInput(e.target.value))} placeholder="0" />
+                  {plinthArea > 0 && <p className="text-[10px] text-text-tertiary mt-1">{otherUnit(plinthArea)}</p>}
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="carpetArea" isHidden={hiddenFields.includes('carpetArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
-                  <label className="form-label">Carpet Area (sq.m.)</label>
-                  <input type="number" inputMode="decimal" className="form-input" value={carpetArea || ''} onChange={(e) => setCarpetArea(Number(e.target.value))} placeholder="0" />
+                  <label className="form-label">Carpet Area ({areaLabel})</label>
+                  <input type="number" inputMode="decimal" className="form-input" value={toDisplay(carpetArea) || ''} onChange={(e) => setCarpetArea(fromInput(e.target.value))} placeholder="0" />
+                  {carpetArea > 0 && <p className="text-[10px] text-text-tertiary mt-1">{otherUnit(carpetArea)}</p>}
                 </div>
               </SwipeableField>
               <SwipeableField fieldName="saleableArea" isHidden={hiddenFields.includes('saleableArea')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <div className="form-group">
-                  <label className="form-label">Saleable Area (sq.m.)</label>
-                  <input type="number" inputMode="decimal" className="form-input" value={saleableArea || ''} onChange={(e) => setSaleableArea(Number(e.target.value))} placeholder="0" />
+                  <label className="form-label">Saleable Area ({areaLabel})</label>
+                  <input type="number" inputMode="decimal" className="form-input" value={toDisplay(saleableArea) || ''} onChange={(e) => setSaleableArea(fromInput(e.target.value))} placeholder="0" />
+                  {saleableArea > 0 && <p className="text-[10px] text-text-tertiary mt-1">{otherUnit(saleableArea)}</p>}
                 </div>
               </SwipeableField>
             </div>
@@ -2004,7 +2031,11 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <h3 className="glass-card-title">{t('landDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="plotArea" isHidden={hiddenFields.includes('plotArea')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Plot Area (Sqm)" type="number" step="0.0001" value={plotArea || ''} onChange={(e) => setPlotArea(parseFloat(e.target.value) || 0)} required />
+                <div className="form-group">
+                  <label className="form-label">Plot Area ({areaLabel})<span className="text-red-400 ml-0.5">*</span></label>
+                  <input type="number" inputMode="decimal" step="0.0001" className="form-input" value={toDisplay(plotArea) || ''} onChange={(e) => setPlotArea(fromInput(e.target.value))} placeholder="0" />
+                  {plotArea > 0 && <p className="text-[10px] text-text-tertiary mt-1">{otherUnit(plotArea)}</p>}
+                </div>
               </SwipeableField>
               <SwipeableField fieldName="landRatePerSqm" isHidden={hiddenFields.includes('landRatePerSqm')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Land Rate (Rs/Sqm)" type="number" value={landRatePerSqm || ''} onChange={(e) => setLandRatePerSqm(parseFloat(e.target.value) || 0)} required />
@@ -2013,13 +2044,13 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 <FormSelectWithCustom label="Land Rate Source" options={LAND_RATE_SOURCE_OPTIONS} value={landRateSource} onChange={setLandRateSource} placeholder="e.g., L&DO rates from 1-4-1998" />
               </SwipeableField>
               <SwipeableField fieldName="locationIncreasePercent" isHidden={hiddenFields.includes('locationIncreasePercent')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Location Increase (%)" type="number" value={locationIncreasePercent} onChange={(e) => setLocationIncreasePercent(parseFloat(e.target.value) || 0)} />
+                <FormInput label="Location Increase (%)" type="number" value={locationIncreasePercent || ''} onChange={(e) => setLocationIncreasePercent(parseFloat(e.target.value) || 0)} />
               </SwipeableField>
               <SwipeableField fieldName="landShareFraction" isHidden={hiddenFields.includes('landShareFraction')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormInput label="Land Share Fraction" value={landShareFraction} onChange={(e) => setLandShareFraction(e.target.value)} placeholder="e.g., 1/3" />
               </SwipeableField>
               <SwipeableField fieldName="landShareDecimal" isHidden={hiddenFields.includes('landShareDecimal')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Land Share Decimal" type="number" step="0.001" value={landShareDecimal} onChange={(e) => setLandShareDecimal(parseFloat(e.target.value) || 0)} />
+                <FormInput label="Land Share Decimal" type="number" step="0.001" value={landShareDecimal || ''} onChange={(e) => setLandShareDecimal(parseFloat(e.target.value) || 0)} />
               </SwipeableField>
             </div>
           </div>
@@ -2028,16 +2059,20 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <h3 className="glass-card-title">{t('constructionDetails')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="floorArea" isHidden={hiddenFields.includes('floorArea')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Floor Area (Sqm)" type="number" step="0.001" value={floorArea || ''} onChange={(e) => setFloorArea(parseFloat(e.target.value) || 0)} required />
+                <div className="form-group">
+                  <label className="form-label">Floor Area ({areaLabel})<span className="text-red-400 ml-0.5">*</span></label>
+                  <input type="number" inputMode="decimal" step="0.001" className="form-input" value={toDisplay(floorArea) || ''} onChange={(e) => setFloorArea(fromInput(e.target.value))} placeholder="0" />
+                  {floorArea > 0 && <p className="text-[10px] text-text-tertiary mt-1">{otherUnit(floorArea)}</p>}
+                </div>
               </SwipeableField>
               <SwipeableField fieldName="plinthAreaRate" isHidden={hiddenFields.includes('plinthAreaRate')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Plinth Area Rate (as on 1.1.92)" type="number" value={plinthAreaRate} onChange={(e) => setPlinthAreaRate(parseFloat(e.target.value) || 0)} />
+                <FormInput label="Plinth Area Rate (as on 1.1.92)" type="number" value={plinthAreaRate || ''} onChange={(e) => setPlinthAreaRate(parseFloat(e.target.value) || 0)} />
               </SwipeableField>
               <SwipeableField fieldName="costIndex" isHidden={hiddenFields.includes('costIndex')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Cost Index" type="number" value={costIndex} onChange={(e) => setCostIndex(parseFloat(e.target.value) || 0)} />
+                <FormInput label="Cost Index" type="number" value={costIndex || ''} onChange={(e) => setCostIndex(parseFloat(e.target.value) || 0)} />
               </SwipeableField>
               <SwipeableField fieldName="specificationIncreasePercent" isHidden={hiddenFields.includes('specificationIncreasePercent')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Specification Increase (%)" type="number" value={specificationIncreasePercent} onChange={(e) => setSpecificationIncreasePercent(parseFloat(e.target.value) || 0)} />
+                <FormInput label="Specification Increase (%)" type="number" value={specificationIncreasePercent || ''} onChange={(e) => setSpecificationIncreasePercent(parseFloat(e.target.value) || 0)} />
               </SwipeableField>
             </div>
           </div>
@@ -2049,10 +2084,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
                 <FormInput label="Year of Construction" value={yearOfConstruction} onChange={(e) => setYearOfConstruction(e.target.value)} placeholder="e.g., 1968-69" required />
               </SwipeableField>
               <SwipeableField fieldName="estimatedLifeYears" isHidden={hiddenFields.includes('estimatedLifeYears')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Estimated Life (Years)" type="number" value={estimatedLifeYears} onChange={(e) => setEstimatedLifeYears(parseInt(e.target.value) || 0)} />
+                <FormInput label="Estimated Life (Years)" type="number" value={estimatedLifeYears || ''} onChange={(e) => setEstimatedLifeYears(parseInt(e.target.value) || 0)} />
               </SwipeableField>
               <SwipeableField fieldName="ageAtValuation" isHidden={hiddenFields.includes('ageAtValuation')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="Age at Valuation (Years)" type="number" value={ageAtValuation} onChange={(e) => setAgeAtValuation(parseInt(e.target.value) || 0)} />
+                <FormInput label="Age at Valuation (Years)" type="number" value={ageAtValuation || ''} onChange={(e) => setAgeAtValuation(parseInt(e.target.value) || 0)} />
               </SwipeableField>
             </div>
           </div>
@@ -2328,10 +2363,10 @@ export default function ValuationForm({ onGenerate, activeSection, initialData, 
             <h3 className="glass-card-title">{t('sanitaryUtilities')}</h3>
             <div className="grid-2">
               <SwipeableField fieldName="noOfWaterClosets" isHidden={hiddenFields.includes('noOfWaterClosets')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="No. of Water Closets" type="number" value={noOfWaterClosets} onChange={(e) => setNoOfWaterClosets(parseInt(e.target.value) || 0)} />
+                <FormInput label="No. of Water Closets" type="number" value={noOfWaterClosets || ''} onChange={(e) => setNoOfWaterClosets(parseInt(e.target.value) || 0)} />
               </SwipeableField>
               <SwipeableField fieldName="noOfSinks" isHidden={hiddenFields.includes('noOfSinks')} onHide={handleHideField} onRestore={handleRestoreField}>
-                <FormInput label="No. of Sinks" type="number" value={noOfSinks} onChange={(e) => setNoOfSinks(parseInt(e.target.value) || 0)} />
+                <FormInput label="No. of Sinks" type="number" value={noOfSinks || ''} onChange={(e) => setNoOfSinks(parseInt(e.target.value) || 0)} />
               </SwipeableField>
               <SwipeableField fieldName="sanitaryFittingsClass" isHidden={hiddenFields.includes('sanitaryFittingsClass')} onHide={handleHideField} onRestore={handleRestoreField}>
                 <FormSelect label="Sanitary Fittings Class" value={sanitaryFittingsClass} onChange={(e) => setSanitaryFittingsClass(e.target.value)} options={[
