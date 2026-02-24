@@ -105,6 +105,7 @@ export async function addToSyncQueue(
           firmId,
           formData,
           queuedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       }
     };
@@ -115,7 +116,7 @@ export async function addToSyncQueue(
 
 /** Get all pending sync items */
 export async function getSyncQueue(): Promise<
-  Array<{ id: number; reportId: string; firmId: string; formData: ReportFormData; queuedAt: string }>
+  Array<{ id: number; reportId: string; firmId: string; formData: ReportFormData; queuedAt: string; updatedAt?: string }>
 > {
   const db = await openDB();
   return new Promise((resolve, reject) => {

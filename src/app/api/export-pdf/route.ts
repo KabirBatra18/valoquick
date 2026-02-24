@@ -78,8 +78,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Parse the edited HTML from the request body
-    const { html } = await request.json();
+    // Check for DOCX format
+    const format = request.nextUrl.searchParams.get('format');
+    const body = await request.json();
+
+    if (format === 'docx' && body.reportData) {
+      const { generateDocx } = await import('@/lib/docx-generator');
+      const docxBuffer = await generateDocx(body.reportData);
+      const docxBase64 = docxBuffer.toString('base64');
+
+      if (!isSubscribed) {
+        try {
+          if (firmId) {
+            await adminDb.collection('firms').doc(firmId).update({ trialReportsUsed: FieldValue.increment(1) });
+          } else {
+            await adminDb.collection('users').doc(userId).update({ trialReportsUsed: FieldValue.increment(1) });
+          }
+        } catch (err) {
+          console.error('Failed to increment trial counter:', err);
+        }
+      }
+
+      return NextResponse.json({ docx: docxBase64 });
+    }
+
+    // PDF export path
+    const { html } = body;
 
     if (!html || typeof html !== 'string') {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });

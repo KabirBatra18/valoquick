@@ -1,6 +1,6 @@
-// Multi-language support (English + Hindi)
+// Multi-language support
 
-export type Language = 'en' | 'hi';
+export type Language = 'en' | 'hi' | 'gu' | 'mr' | 'ta';
 
 const STORAGE_KEY = 'valoquick_language';
 
@@ -122,7 +122,7 @@ const translations = {
 type TranslationKey = keyof typeof translations;
 
 export function t(key: TranslationKey, lang: Language): string {
-  const entry = translations[key];
+  const entry = translations[key] as Record<string, string> | undefined;
   if (!entry) return key;
   return entry[lang] || entry.en;
 }
@@ -130,4 +130,7 @@ export function t(key: TranslationKey, lang: Language): string {
 export const LANGUAGE_LABELS: Record<Language, string> = {
   en: 'EN',
   hi: 'हि',
+  gu: 'ગુ',
+  mr: 'म',
+  ta: 'த',
 };

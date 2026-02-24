@@ -134,6 +134,35 @@ export async function notifyAbuseAlert(
 }
 
 /**
+ * Notify admin of payment failure
+ */
+export async function notifyPaymentFailed(
+  firmName: string,
+  plan: string,
+  ownerEmail: string
+): Promise<EmailResult> {
+  const subject = `Payment Failed: ${firmName}`;
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #f59e0b;">Payment Failed</h2>
+      <p>A subscription payment has failed. The firm's subscription is now past due.</p>
+
+      <div style="background: #fffbeb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+        <p style="margin: 4px 0;"><strong>Firm:</strong> ${firmName}</p>
+        <p style="margin: 4px 0;"><strong>Plan:</strong> ${plan}</p>
+        <p style="margin: 4px 0;"><strong>Owner:</strong> ${ownerEmail}</p>
+      </div>
+
+      <p style="color: #6b7280; font-size: 14px;">
+        <a href="https://valuquick.in/admin" style="color: #6366f1;">View in Admin Dashboard</a>
+      </p>
+    </div>
+  `;
+
+  return sendAdminEmail(subject, html);
+}
+
+/**
  * Notify admin of new firm registration
  */
 export async function notifyNewFirm(

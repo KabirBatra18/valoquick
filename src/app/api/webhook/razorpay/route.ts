@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
-import { notifyNewSubscription, notifySubscriptionCancelled } from '@/lib/email';
+import { notifyNewSubscription, notifySubscriptionCancelled, notifyPaymentFailed } from '@/lib/email';
 import { logger } from '@/lib/logger';
 
 // App identifier to distinguish ValuQuick events from other apps using same Razorpay account
@@ -315,6 +315,19 @@ async function handlePaymentFailed(payload: RazorpayWebhookPayload['payload']) {
       updatedAt: Timestamp.now(),
     });
     logger.info(`Base payment failed for firm ${firmId}`);
+
+    // Notify admin about payment failure
+    try {
+      const firmDoc = await adminDb.collection('firms').doc(firmId).get();
+      const firmData = firmDoc.data();
+      const firmName = firmData?.name || 'Unknown Firm';
+      const membersSnapshot = await adminDb.collection('firms').doc(firmId).collection('members').where('role', '==', 'owner').get();
+      const ownerEmail = membersSnapshot.docs[0]?.data()?.email || 'Unknown';
+      const plan = (await adminDb.collection('subscriptions').doc(firmId).get()).data()?.plan || 'unknown';
+      await notifyPaymentFailed(firmName, plan, ownerEmail);
+    } catch (emailError) {
+      console.error('Error sending payment failure email:', emailError);
+    }
   }
 }
 

@@ -482,6 +482,33 @@ export default function AdminDashboard() {
                 />
               ) : (
                 <div className="bg-surface-100 rounded-xl border border-surface-200 overflow-hidden">
+                  <div className="flex justify-end p-3 border-b border-surface-200">
+                    <button
+                      onClick={() => {
+                        const header = 'Firm Name,Owner Email,Members,Reports,Plan,Status\n';
+                        const rows = firms.map((f) =>
+                          [
+                            `"${f.name}"`,
+                            f.ownerEmail,
+                            f.membersCount,
+                            f.reportsCount,
+                            f.subscription?.plan || 'none',
+                            f.subscription?.status || 'none',
+                          ].join(',')
+                        ).join('\n');
+                        const blob = new Blob([header + rows], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `valoquick-firms-${new Date().toISOString().split('T')[0]}.csv`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium bg-brand/10 text-brand rounded-lg hover:bg-brand/20 transition-colors"
+                    >
+                      Export CSV
+                    </button>
+                  </div>
                   <table className="w-full">
                     <thead className="bg-surface-200">
                       <tr>

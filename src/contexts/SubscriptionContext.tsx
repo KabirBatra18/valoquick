@@ -132,6 +132,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // Check both status AND expiry date
   const isSubscribed = useMemo(() => isSubscriptionValid(subscription), [subscription]);
+  const isPastDue = useMemo(() => subscription?.status === 'past_due', [subscription]);
   const canGenerateReport = isSubscribed || (trialStatus?.allowed ?? false);
 
   return (
@@ -141,6 +142,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         trialStatus,
         isLoading,
         isSubscribed,
+        isPastDue,
         canGenerateReport,
         seatInfo,
         refreshSubscription,

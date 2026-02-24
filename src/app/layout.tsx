@@ -37,6 +37,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'))}`,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${notoDevanagari.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>

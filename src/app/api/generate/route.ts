@@ -3,7 +3,7 @@ import { ValuationReport } from '@/types/valuation';
 import { verifyAuth, adminDb, verifySession } from '@/lib/firebase-admin';
 import { TRIAL_LIMIT } from '@/types/subscription';
 import { FirmBranding, ValuerInfo } from '@/types/branding';
-import { getTemplateCSS, renderHeader, renderCondensedHeader, renderFooter, renderPuppeteerFooter, mergeBrandingWithDefaults } from '@/lib/pdf-templates';
+import { getTemplateCSS, renderHeader, renderCondensedHeader, renderFooter, renderPuppeteerFooter, mergeBrandingWithDefaults, escapeHtml } from '@/lib/pdf-templates';
 import { htmlToPdfBase64 } from '@/lib/puppeteer';
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import sharp from 'sharp';
@@ -282,7 +282,29 @@ function generateAddendumPages(
   return pages;
 }
 
-function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64: string | null, isPreview: boolean): string {
+// Deep-sanitize all string values to prevent XSS injection in rendered HTML/PDF.
+// Preserves photos (base64), location (contains URLs with &), and numeric values.
+function sanitizeStrings<T>(obj: T): T {
+  if (typeof obj === 'string') return escapeHtml(obj) as unknown as T;
+  if (Array.isArray(obj)) return obj.map(item => sanitizeStrings(item)) as unknown as T;
+  if (obj && typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = sanitizeStrings(value);
+    }
+    return result as T;
+  }
+  return obj; // numbers, booleans, null, undefined pass through
+}
+
+function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase64: string | null, isPreview: boolean): string {
+  // Sanitize user-supplied strings, but keep photos and location intact (base64 + URLs)
+  const data: ValuationReport = {
+    ...sanitizeStrings(rawData),
+    photos: rawData.photos,               // base64 data URIs — safe, must not be escaped
+    location: rawData.location,           // contains mapUrl with & in query string
+  };
+
   const {
     valuerName,
     valuerQualification,

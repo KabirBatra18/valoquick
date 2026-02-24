@@ -118,6 +118,7 @@ export interface SubscriptionContextType {
   trialStatus: TrialStatus | null;
   isLoading: boolean;
   isSubscribed: boolean;
+  isPastDue: boolean;
   canGenerateReport: boolean;
   seatInfo: SeatUsageInfo | null;
   refreshSubscription: () => Promise<void>;

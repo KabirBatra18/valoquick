@@ -8,12 +8,15 @@ interface UseOfflineSyncOptions {
   reportId: string | null;
   firmId: string | null;
   onSyncItem: (reportId: string, formData: ReportFormData) => Promise<void>;
+  /** Optional: return the server's updatedAt ISO string for conflict detection */
+  getServerUpdatedAt?: (reportId: string) => Promise<string | null>;
 }
 
-export function useOfflineSync({ reportId, firmId, onSyncItem }: UseOfflineSyncOptions) {
+export function useOfflineSync({ reportId, firmId, onSyncItem, getServerUpdatedAt }: UseOfflineSyncOptions) {
   const [isOnline, setIsOnline] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [conflictCount, setConflictCount] = useState(0);
   const syncingRef = useRef(false);
 
   // Track online/offline status
@@ -44,6 +47,19 @@ export function useOfflineSync({ reportId, firmId, onSyncItem }: UseOfflineSyncO
 
       for (const item of queue) {
         try {
+          // Conflict detection: if we have a server timestamp checker and the item has updatedAt
+          if (getServerUpdatedAt && item.updatedAt) {
+            const serverUpdatedAt = await getServerUpdatedAt(item.reportId);
+            if (serverUpdatedAt && serverUpdatedAt > item.updatedAt) {
+              // Server version is newer — skip this item (keep server version)
+              console.warn(`[OfflineSync] Conflict detected for report ${item.reportId}: server is newer, discarding local changes`);
+              await removeSyncItem(item.id);
+              setConflictCount((prev) => prev + 1);
+              setPendingCount((prev) => Math.max(0, prev - 1));
+              continue;
+            }
+          }
+
           await onSyncItem(item.reportId, item.formData);
           await removeSyncItem(item.id);
           setPendingCount((prev) => Math.max(0, prev - 1));
@@ -58,7 +74,7 @@ export function useOfflineSync({ reportId, firmId, onSyncItem }: UseOfflineSyncO
       syncingRef.current = false;
       setIsSyncing(false);
     }
-  }, [onSyncItem]);
+  }, [onSyncItem, getServerUpdatedAt]);
 
   // Auto-sync when coming online
   useEffect(() => {
@@ -106,6 +122,7 @@ export function useOfflineSync({ reportId, firmId, onSyncItem }: UseOfflineSyncO
     isOnline,
     isSyncing,
     pendingCount,
+    conflictCount,
     saveWithOfflineFallback,
     processSyncQueue,
   };

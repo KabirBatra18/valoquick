@@ -148,7 +148,7 @@ function debounce<T extends (...args: Parameters<T>) => void>(
 export default function Home() {
   const { user, userDoc, loading: authLoading } = useAuth();
   const { firm, loading: firmLoading } = useFirm();
-  const { isSubscribed, canGenerateReport, refreshSubscription } = useSubscription();
+  const { isSubscribed, isPastDue, canGenerateReport, refreshSubscription } = useSubscription();
   const { t } = useLanguage();
 
   const firmId = userDoc?.firmId || null;
@@ -600,11 +600,18 @@ export default function Home() {
   // Show Dashboard
   if (view === 'dashboard') {
     return (
-      <Dashboard
-        onOpenReport={handleOpenReport}
-        onRedownloadPdf={handleRedownloadPdf}
-        redownloadingId={redownloadingId}
-      />
+      <>
+        {isPastDue && (
+          <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2.5 text-center text-sm text-amber-600 dark:text-amber-400">
+            Payment failed — please update your payment method to continue using all features.
+          </div>
+        )}
+        <Dashboard
+          onOpenReport={handleOpenReport}
+          onRedownloadPdf={handleRedownloadPdf}
+          redownloadingId={redownloadingId}
+        />
+      </>
     );
   }
 

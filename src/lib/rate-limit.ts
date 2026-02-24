@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 interface RateLimitEntry {
   count: number;
@@ -6,6 +7,7 @@ interface RateLimitEntry {
 }
 
 const store = new Map<string, RateLimitEntry>();
+const MAX_STORE_SIZE = 10_000;
 
 // Cleanup old entries every 5 minutes
 const CLEANUP_INTERVAL = 300_000;
@@ -15,21 +17,27 @@ function cleanup() {
   const now = Date.now();
   if (now - lastCleanup < CLEANUP_INTERVAL) return;
   lastCleanup = now;
+  // Remove expired entries
   for (const [key, entry] of store) {
     if (now > entry.resetAt) store.delete(key);
+  }
+  // If still over limit, evict oldest entries
+  if (store.size > MAX_STORE_SIZE) {
+    const entries = [...store.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
+    const toRemove = entries.slice(0, store.size - MAX_STORE_SIZE);
+    for (const [key] of toRemove) store.delete(key);
   }
 }
 
 function getClientIdentifier(req: NextRequest): string {
-  // Extract per-user identifier from the JWT payload segment
-  // Firebase JWTs: header.payload.signature — the header is identical for all users,
-  // but the payload contains uid/iat/exp which differ per user
+  // Use SHA-256 hash of full JWT payload for collision-resistant user identification
   const authHeader = req.headers.get('authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     const parts = token.split('.');
     if (parts.length === 3) {
-      return `user:${parts[1].substring(0, 32)}`;
+      const hash = crypto.createHash('sha256').update(parts[1]).digest('hex').substring(0, 16);
+      return `user:${hash}`;
     }
   }
 
