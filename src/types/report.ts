@@ -1,8 +1,21 @@
 // Report template definitions
-export type ReportTemplateId = 'custom' | 'sbi' | 'uco' | 'axis' | 'income-tax' | 'hdfc' | 'pnb';
+export type BuiltinTemplateId = 'custom' | 'sbi' | 'uco' | 'axis' | 'income-tax' | 'hdfc' | 'pnb';
+export type ReportTemplateId = BuiltinTemplateId | `firm-${string}`;
+
+export function isBuiltinTemplate(id: string): id is BuiltinTemplateId {
+  return ['custom', 'sbi', 'uco', 'axis', 'income-tax', 'hdfc', 'pnb'].includes(id);
+}
+
+export function isFirmTemplate(id: string): boolean {
+  return id.startsWith('firm-');
+}
+
+export function firmTemplateDocId(id: string): string {
+  return id.slice(5); // strip "firm-" prefix
+}
 
 export interface ReportTemplate {
-  id: ReportTemplateId;
+  id: BuiltinTemplateId;
   name: string;
   subtitle: string;
   icon: string; // emoji
@@ -14,6 +27,20 @@ export interface ReportTemplate {
   hiddenFields?: string[];
   /** Fields to pre-fill */
   prefill?: Partial<ReportFormData>;
+}
+
+/** Custom template created by a firm */
+export interface FirmTemplate {
+  id: string;              // Firestore doc ID
+  name: string;
+  subtitle: string;
+  icon: string;            // emoji
+  purpose?: string;
+  bankName?: string;
+  hiddenFields: string[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
 }
 
 export const REPORT_TEMPLATES: ReportTemplate[] = [

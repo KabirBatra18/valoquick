@@ -1,16 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SavedReport, REPORT_TEMPLATES, ReportTemplateId } from '@/types/report';
+import { SavedReport, REPORT_TEMPLATES, ReportTemplateId, FirmTemplate } from '@/types/report';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
 import { useReports } from '@/hooks/useReports';
+import { useFirmTemplates } from '@/hooks/useFirmTemplates';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import TrialBanner from './TrialBanner';
 import PricingSection from './PricingSection';
 import TeamManagement from './TeamManagement';
 import BrandingSettings from './BrandingSettings';
+import TemplateBuilderModal from './TemplateBuilderModal';
 import WelcomeTour from './WelcomeTour';
 import LanguageToggle from './LanguageToggle';
 import ReferralCard from './ReferralCard';
@@ -36,6 +38,8 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
     copyReport,
   } = useReports(firmId, userId);
 
+  const { templates: firmTemplates, create: createTemplate, update: updateTemplate, remove: removeTemplate } = useFirmTemplates(firmId, userId);
+
   const { canGenerateReport, trialStatus, isSubscribed, refreshSubscription } = useSubscription();
   const { t } = useLanguage();
 
@@ -51,6 +55,8 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showTemplateSelect, setShowTemplateSelect] = useState(false);
+  const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<FirmTemplate | null>(null);
   const [referralDismissed, setReferralDismissed] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('valoquick_referral_dismissed') === 'true';
@@ -176,6 +182,28 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
       {/* Branding Settings Modal */}
       {showBranding && <BrandingSettings onClose={() => setShowBranding(false)} />}
 
+      {/* Template Builder Modal */}
+      {showTemplateBuilder && (
+        <TemplateBuilderModal
+          editingTemplate={editingTemplate}
+          onSave={async (data) => {
+            if (editingTemplate) {
+              await updateTemplate(editingTemplate.id, data);
+            } else {
+              await createTemplate({ ...data, createdBy: userId || '' });
+            }
+            setShowTemplateBuilder(false);
+            setEditingTemplate(null);
+          }}
+          onDelete={editingTemplate ? async () => {
+            await removeTemplate(editingTemplate.id);
+            setShowTemplateBuilder(false);
+            setEditingTemplate(null);
+          } : undefined}
+          onClose={() => { setShowTemplateBuilder(false); setEditingTemplate(null); }}
+        />
+      )}
+
       {/* Template Selection Modal */}
       {showTemplateSelect && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowTemplateSelect(false)}>
@@ -206,6 +234,80 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
                   </svg>
                 </button>
               ))}
+
+              {/* Firm Custom Templates */}
+              {firmTemplates.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 pt-2 pb-1 px-1">
+                    <div className="flex-1 h-px bg-surface-300" />
+                    <span className="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold">Your Templates</span>
+                    <div className="flex-1 h-px bg-surface-300" />
+                  </div>
+                  {firmTemplates.map((tmpl) => (
+                    <div key={tmpl.id} className="relative group">
+                      <button
+                        onClick={() => handleTemplateSelect(`firm-${tmpl.id}` as ReportTemplateId)}
+                        className="w-full flex items-start gap-3 p-4 rounded-xl bg-surface-200/50 hover:bg-surface-200 border border-transparent hover:border-brand/30 transition-all text-left"
+                      >
+                        <span className="text-2xl mt-0.5">{tmpl.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-text-primary">{tmpl.name}</p>
+                          {tmpl.subtitle && <p className="text-xs text-text-tertiary mt-0.5">{tmpl.subtitle}</p>}
+                          {tmpl.bankName && (
+                            <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 bg-brand/10 text-brand rounded-full font-medium">
+                              {tmpl.bankName}
+                            </span>
+                          )}
+                        </div>
+                        <svg className="w-5 h-5 text-text-tertiary mt-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {/* Edit button for admins */}
+                      {canEditBranding && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingTemplate(tmpl);
+                            setShowTemplateBuilder(true);
+                            setShowTemplateSelect(false);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-surface-100/80 text-text-tertiary hover:text-text-primary hover:bg-surface-200 opacity-0 group-hover:opacity-100 transition-all"
+                          title="Edit template"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Create Template Button */}
+              {canEditBranding && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingTemplate(null);
+                    setShowTemplateBuilder(true);
+                    setShowTemplateSelect(false);
+                  }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-surface-300 hover:border-brand/40 hover:bg-brand/5 transition-all text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-brand">Create Custom Template</p>
+                    <p className="text-xs text-text-tertiary">Configure fields for your use case</p>
+                  </div>
+                </button>
+              )}
             </div>
             <div className="p-4 border-t border-surface-200">
               <button onClick={() => setShowTemplateSelect(false)} className="w-full btn btn-secondary py-2.5 text-sm">Cancel</button>
@@ -251,6 +353,16 @@ export default function Dashboard({ onOpenReport, onRedownloadPdf, redownloading
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                         </svg>
                         Branding
+                      </button>
+                      <button
+                        onClick={() => { setEditingTemplate(null); setShowTemplateBuilder(true); setShowSettingsMenu(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:bg-surface-200 transition-colors ${!canEditBranding ? 'opacity-50' : ''}`}
+                        disabled={!canEditBranding}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                        </svg>
+                        Templates
                       </button>
                       <button
                         onClick={() => { setShowTeam(true); setShowSettingsMenu(false); }}

@@ -187,8 +187,8 @@ export interface ValuationReport {
     mapUrl: string;
   };
 
-  // Template identification
-  templateId?: 'custom' | 'sbi' | 'pnb' | 'uco' | 'axis' | 'hdfc' | 'income-tax';
+  // Template identification (builtin IDs or 'firm-{docId}' for custom)
+  templateId?: string;
 
   // Extended data for template-specific PDF sections
   extendedData?: {

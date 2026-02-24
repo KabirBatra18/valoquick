@@ -19,7 +19,7 @@ import {
 import { db } from './firebase';
 import { Firm, FirmMember, FirmInvite, FirestoreReportMetadata } from '@/types/firebase';
 import { FirmBranding } from '@/types/branding';
-import { SavedReport, ReportFormData } from '@/types/report';
+import { SavedReport, ReportFormData, FirmTemplate } from '@/types/report';
 import { TrialRecord, Subscription, TRIAL_LIMIT, MAX_DEVICES_PER_ACCOUNT } from '@/types/subscription';
 import { updateUserFirmId, clearUserFirmId } from './auth';
 import { arrayUnion, increment } from 'firebase/firestore';
@@ -900,4 +900,59 @@ export async function getPendingInviteCount(firmId: string): Promise<number> {
     const data = doc.data();
     return data.expiresAt?.toDate() > now;
   }).length;
+}
+
+// ============ FIRM TEMPLATE FUNCTIONS ============
+
+export async function createFirmTemplate(
+  firmId: string,
+  template: Omit<FirmTemplate, 'id' | 'createdAt' | 'updatedAt'>,
+  userId: string
+): Promise<string> {
+  const templatesRef = collection(db, 'firms', firmId, 'templates');
+  const templateRef = doc(templatesRef);
+  await setDoc(templateRef, {
+    ...template,
+    createdBy: userId,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return templateRef.id;
+}
+
+export async function updateFirmTemplate(
+  firmId: string,
+  templateId: string,
+  updates: Partial<Omit<FirmTemplate, 'id' | 'createdAt' | 'createdBy'>>
+): Promise<void> {
+  const templateRef = doc(db, 'firms', firmId, 'templates', templateId);
+  await updateDoc(templateRef, {
+    ...updates,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteFirmTemplate(
+  firmId: string,
+  templateId: string
+): Promise<void> {
+  const templateRef = doc(db, 'firms', firmId, 'templates', templateId);
+  await deleteDoc(templateRef);
+}
+
+export function subscribeToFirmTemplates(
+  firmId: string,
+  callback: (templates: FirmTemplate[]) => void
+): () => void {
+  const templatesRef = collection(db, 'firms', firmId, 'templates');
+  const q = query(templatesRef, orderBy('createdAt', 'asc'));
+  return onSnapshot(q, (snapshot) => {
+    const templates = snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: d.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      updatedAt: d.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+    })) as FirmTemplate[];
+    callback(templates);
+  });
 }

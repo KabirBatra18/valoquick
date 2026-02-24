@@ -6,11 +6,12 @@ import ValuationForm from '@/components/ValuationForm';
 import LandingPage from '@/components/LandingPage';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import { ValuationReport } from '@/types/valuation';
-import { ReportFormData, DEFAULT_FORM_DATA, prefillFromReport, REPORT_TEMPLATES, ReportTemplateId } from '@/types/report';
+import { ReportFormData, DEFAULT_FORM_DATA, prefillFromReport, REPORT_TEMPLATES, ReportTemplateId, isFirmTemplate, firmTemplateDocId } from '@/types/report';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirm } from '@/contexts/FirmContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useReports } from '@/hooks/useReports';
+import { useFirmTemplates } from '@/hooks/useFirmTemplates';
 import { updateReportStatus as updateReportStatusFirestore } from '@/lib/firestore';
 import ReportEditor from '@/components/ReportEditor';
 import { authenticatedFetch } from '@/lib/api-client';
@@ -154,6 +155,7 @@ export default function Home() {
   const userId = user?.uid || null;
 
   const { reports: allReports, fetchReport, saveCurrentReport } = useReports(firmId, userId);
+  const { templates: firmTemplates } = useFirmTemplates(firmId, userId);
 
   const [view, setView] = useState<'dashboard' | 'editor'>('dashboard');
   const [currentReportId, setCurrentReportId] = useState<string | null>(null);
@@ -312,13 +314,26 @@ export default function Home() {
 
       // Apply template prefills if a template was selected
       if (templateId && templateId !== 'custom') {
-        const template = REPORT_TEMPLATES.find(t => t.id === templateId);
-        if (template) {
-          data = { ...data, templateId };
-          if (template.purpose) data = { ...data, purpose: template.purpose };
-          if (template.bankName) data = { ...data, bankName: template.bankName };
-          if (template.prefill) data = { ...data, ...template.prefill };
-          if (template.hiddenFields) data = { ...data, hiddenFields: template.hiddenFields };
+        if (isFirmTemplate(templateId)) {
+          // Firm custom template
+          const docId = firmTemplateDocId(templateId);
+          const ft = firmTemplates.find(t => t.id === docId);
+          if (ft) {
+            data = { ...data, templateId };
+            if (ft.purpose) data = { ...data, purpose: ft.purpose };
+            if (ft.bankName) data = { ...data, bankName: ft.bankName };
+            if (ft.hiddenFields?.length) data = { ...data, hiddenFields: ft.hiddenFields };
+          }
+        } else {
+          // Built-in template
+          const template = REPORT_TEMPLATES.find(t => t.id === templateId);
+          if (template) {
+            data = { ...data, templateId };
+            if (template.purpose) data = { ...data, purpose: template.purpose };
+            if (template.bankName) data = { ...data, bankName: template.bankName };
+            if (template.prefill) data = { ...data, ...template.prefill };
+            if (template.hiddenFields) data = { ...data, hiddenFields: template.hiddenFields };
+          }
         }
       } else if (templateId === 'custom') {
         data = { ...data, templateId: 'custom' };
@@ -329,7 +344,7 @@ export default function Home() {
       setView('editor');
       setActiveStep(0);
     }
-  }, [firmId, fetchReport, allReports]);
+  }, [firmId, fetchReport, allReports, firmTemplates]);
 
   const handleFormDataChange = useCallback((newData: Partial<ReportFormData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
