@@ -147,7 +147,16 @@ export async function POST(request: NextRequest) {
     const htmlContent = generateHTML(data, firmBranding, logoBase64, isPreview);
 
     if (isPreview) {
-      return NextResponse.json({ html: htmlContent });
+      // Fill in page numbers server-side (iframe sandbox blocks scripts)
+      let pageNum = 0;
+      const htmlWithPageNums = htmlContent.replace(
+        /<div class="page">|<span class="page-number"><\/span>/g,
+        (match) => {
+          if (match === '<div class="page">') { pageNum++; return match; }
+          return `<span class="page-number">${pageNum}</span>`;
+        }
+      );
+      return NextResponse.json({ html: htmlWithPageNums });
     }
 
     // Puppeteer footer for reliable page numbering (headers are embedded in HTML)
@@ -767,12 +776,6 @@ function generateHTML(data: ValuationReport, branding: FirmBranding, logoBase64:
   </div>
   ` : ''}
 
-${isPreview ? `<script>
-document.querySelectorAll('.page').forEach(function(page, i) {
-  var nums = page.querySelectorAll('.page-number');
-  nums.forEach(function(n) { n.textContent = String(i + 1); });
-});
-</script>` : ''}
 </body>
 </html>
   `;

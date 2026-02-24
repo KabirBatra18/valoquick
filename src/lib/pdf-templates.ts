@@ -32,28 +32,28 @@ export function renderPuppeteerHeader(
   // Build left side
   const leftParts: string[] = [];
   if (h.showLogo && logoBase64) {
-    leftParts.push(`<img src="${logoBase64}" style="max-height: 44px; max-width: 160px; object-fit: contain; display: block; margin-bottom: 3px;" />`);
+    leftParts.push(`<img src="${logoBase64}" style="max-height: 50px; max-width: 180px; object-fit: contain; display: block; margin-bottom: 4px;" />`);
   }
   if (h.showFirmName && branding.firmName) {
-    leftParts.push(`<div style="font-size: 16px; font-weight: bold; color: ${color}; line-height: 1.2; letter-spacing: 0.3px;">${escapeHtml(branding.firmName)}</div>`);
+    leftParts.push(`<div style="font-size: 20px; font-weight: 800; color: ${color}; line-height: 1.15; letter-spacing: 0.5px;">${escapeHtml(branding.firmName)}</div>`);
   }
   if (h.showSubtitle && branding.subtitle) {
-    leftParts.push(`<div style="font-size: 9px; color: #444; line-height: 1.3; margin-top: 1px;">${escapeHtml(branding.subtitle)}</div>`);
+    leftParts.push(`<div style="font-size: 10px; color: #333; line-height: 1.3; margin-top: 2px; letter-spacing: 0.3px;">${escapeHtml(branding.subtitle)}</div>`);
   }
   if (h.showAddress && branding.address) {
-    leftParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(branding.address)}</div>`);
+    leftParts.push(`<div style="font-size: 9.5px; color: #333; line-height: 1.3; margin-top: 1px;">${escapeHtml(branding.address)}</div>`);
   }
   if (h.showContact && (branding.contact || branding.email)) {
-    leftParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${[branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</div>`);
+    leftParts.push(`<div style="font-size: 9.5px; color: #333; line-height: 1.3;">${[branding.contact, branding.email].filter(Boolean).map(escapeHtml).join(' | ')}</div>`);
   }
 
   // Build right side (valuer info)
   const rightParts: string[] = [];
   if (h.showValuerInfo && valuerInfo.name) {
-    rightParts.push(`<div style="font-size: 10px; font-weight: bold; line-height: 1.3;">${escapeHtml(valuerInfo.name)}</div>`);
-    if (valuerInfo.qualification) rightParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.qualification)}</div>`);
-    if (valuerInfo.designation) rightParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.designation)}</div>`);
-    if (valuerInfo.categoryNo) rightParts.push(`<div style="font-size: 9px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.categoryNo)}</div>`);
+    rightParts.push(`<div style="font-size: 11px; font-weight: bold; line-height: 1.3;">${escapeHtml(valuerInfo.name)}</div>`);
+    if (valuerInfo.qualification) rightParts.push(`<div style="font-size: 9.5px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.qualification)}</div>`);
+    if (valuerInfo.designation) rightParts.push(`<div style="font-size: 9.5px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.designation)}</div>`);
+    if (valuerInfo.categoryNo) rightParts.push(`<div style="font-size: 9.5px; color: #333; line-height: 1.3;">${escapeHtml(valuerInfo.categoryNo)}</div>`);
   }
 
   const hasContent = leftParts.length > 0 || rightParts.length > 0;
@@ -166,7 +166,7 @@ function renderClassicHeader(
 ): string {
   const hasLeftContent = logo || name || subtitle || address || contact;
   return `
-    <div class="header" style="border-bottom: 2px solid ${color};">
+    <div class="header" style="border-bottom: 3px solid ${color}; padding-bottom: 12px;">
       ${hasLeftContent ? `
       <div class="header-left" style="color: ${color};">
         ${logo}${name}${subtitle}${address}${contact}
@@ -241,8 +241,8 @@ export function renderCondensedHeader(branding: FirmBranding, valuerName?: strin
   const fontFamily = getFontFamily(branding.templateStyle);
   return `
     <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-bottom: 15px; margin-left: -4mm; margin-right: -4mm; padding-left: 4mm; padding-right: 4mm; font-family: ${fontFamily};">
-      ${firmName ? `<span style="font-size: 16px; color: ${color}; font-weight: bold; letter-spacing: 0.3px;">${escapeHtml(firmName)}</span>` : ''}
-      ${valuerName ? `<span style="font-size: 10px; color: #555;">${escapeHtml(valuerName)}</span>` : ''}
+      ${firmName ? `<span style="font-size: 18px; color: ${color}; font-weight: 800; letter-spacing: 0.4px;">${escapeHtml(firmName)}</span>` : ''}
+      ${valuerName ? `<span style="font-size: 10.5px; color: #444;">${escapeHtml(valuerName)}</span>` : ''}
     </div>`;
 }
 
@@ -665,14 +665,14 @@ export function getTemplateCSS(branding: FirmBranding): string {
     }
     .header-left { flex: 1; }
     .header-right { text-align: right; }
-    .header-logo { max-height: 56px; max-width: 180px; object-fit: contain; display: block; margin-bottom: 4px; }
-    .header-firm-name { font-size: 16pt; margin: 0; line-height: 1.2; letter-spacing: 0.3px; }
-    .header-subtitle { font-size: 9pt; margin: 3px 0 1px; color: #444; }
-    .header-address, .header-contact { font-size: 9pt; margin: 1px 0; color: #333; }
-    .valuer-info p { font-size: 9.5pt; margin: 1px 0; }
-    .valuer-name { font-weight: bold; }
-    .valuer-badge { display: inline-block; font-size: 8.5pt; background: #f0f0f0; padding: 2px 7px; border-radius: 3px; margin: 1px 2px; }
-    .valuer-cat { font-size: 8.5pt; margin-top: 2px; }
+    .header-logo { max-height: 60px; max-width: 200px; object-fit: contain; display: block; margin-bottom: 6px; }
+    .header-firm-name { font-size: 20pt; margin: 0; line-height: 1.15; letter-spacing: 0.5px; font-weight: 800; }
+    .header-subtitle { font-size: 10.5pt; margin: 4px 0 2px; color: #333; letter-spacing: 0.3px; }
+    .header-address, .header-contact { font-size: 9.5pt; margin: 2px 0; color: #333; }
+    .valuer-info p { font-size: 10pt; margin: 2px 0; }
+    .valuer-name { font-weight: bold; font-size: 11pt; }
+    .valuer-badge { display: inline-block; font-size: 9pt; background: #f0f0f0; padding: 2px 7px; border-radius: 3px; margin: 1px 2px; }
+    .valuer-cat { font-size: 9pt; margin-top: 2px; }
     .page-footer { margin-top: auto; padding-top: 8px; font-size: 8pt; }
     .footer-row { display: flex; justify-content: space-between; align-items: center; }
     .footer-contact, .footer-page-num { font-size: 8pt; color: #666; }
