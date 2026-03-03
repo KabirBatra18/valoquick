@@ -5,13 +5,15 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 interface ReportEditorProps {
   html: string;
   onExportPdf: (html: string) => void;
+  onExportDocx?: () => void;
   onBack: () => void;
   isExporting: boolean;
+  isExportingDocx?: boolean;
 }
 
 const A4_WIDTH_PX = 794; // 210mm at 96dpi
 
-export default function ReportEditor({ html, onExportPdf, onBack, isExporting }: ReportEditorProps) {
+export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, isExporting, isExportingDocx }: ReportEditorProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(1);
@@ -207,9 +209,33 @@ export default function ReportEditor({ html, onExportPdf, onBack, isExporting }:
           </div>
         </div>
 
+        {onExportDocx && (
+          <button
+            onClick={onExportDocx}
+            disabled={isExporting || isExportingDocx}
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium bg-surface-200 hover:bg-surface-300 text-text-primary border border-surface-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            title="Export as Word document (.docx)"
+          >
+            {isExportingDocx ? (
+              <>
+                <div className="w-4 h-4 border-2 border-text-primary border-t-transparent rounded-full animate-spin" />
+                <span className="hidden sm:inline">Exporting...</span>
+              </>
+            ) : (
+              <>
+                {/* Word-style W icon */}
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="hidden sm:inline">DOCX</span>
+              </>
+            )}
+          </button>
+        )}
+
         <button
           onClick={handleExport}
-          disabled={isExporting}
+          disabled={isExporting || isExportingDocx}
           className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium bg-brand hover:bg-brand/90 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
         >
           {isExporting ? (
@@ -229,13 +255,15 @@ export default function ReportEditor({ html, onExportPdf, onBack, isExporting }:
       </div>
 
       {/* Export overlay */}
-      {isExporting && (
+      {(isExporting || isExportingDocx) && (
         <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-surface-100 rounded-2xl p-6 text-center shadow-2xl border border-surface-200 max-w-xs w-full">
             <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-brand/10 flex items-center justify-center">
               <div className="w-6 h-6 border-[3px] border-brand border-t-transparent rounded-full animate-spin" />
             </div>
-            <p className="text-sm font-semibold text-text-primary">Exporting PDF</p>
+            <p className="text-sm font-semibold text-text-primary">
+              {isExportingDocx ? 'Exporting DOCX' : 'Exporting PDF'}
+            </p>
             <p className="text-xs text-text-tertiary mt-1">This may take 15–30 seconds</p>
           </div>
         </div>

@@ -168,6 +168,8 @@ export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
+  const [lastReportData, setLastReportData] = useState<ValuationReport | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [redownloadingId, setRedownloadingId] = useState<string | null>(null);
@@ -357,6 +359,7 @@ export default function Home() {
       return;
     }
 
+    setLastReportData(data);
     setIsGenerating(true);
     setGenerationStep(0);
     setGenerationProgress(0);
@@ -497,6 +500,46 @@ export default function Home() {
 
   const handleBackFromEditor = () => {
     setPreviewHtml(null);
+  };
+
+  const handleExportDocx = async () => {
+    if (!lastReportData) return;
+    setIsExportingDocx(true);
+    try {
+      const abortController = new AbortController();
+      const fetchTimer = setTimeout(() => abortController.abort(), 120000);
+      let response: Response;
+      try {
+        response = await authenticatedFetch('/api/export-pdf?format=docx', {
+          method: 'POST',
+          body: JSON.stringify({ reportData: lastReportData }),
+          signal: abortController.signal,
+        });
+      } catch (fetchErr) {
+        clearTimeout(fetchTimer);
+        if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') {
+          throw new Error('DOCX export timed out. Please try again.');
+        }
+        throw fetchErr;
+      }
+      clearTimeout(fetchTimer);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to export DOCX');
+      }
+      const result = await response.json();
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const namePart = lastReportData.propertyAddress?.fullAddress?.split(',')[0]?.trim() || 'Report';
+      downloadFile(
+        result.docx,
+        `Valuation_${namePart.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}.docx`,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export DOCX');
+    } finally {
+      setIsExportingDocx(false);
+    }
   };
 
   const handleRedownloadPdf = useCallback(async (reportId: string) => {
@@ -656,8 +699,10 @@ export default function Home() {
         <ReportEditor
           html={previewHtml}
           onExportPdf={handleExportPdf}
+          onExportDocx={handleExportDocx}
           onBack={handleBackFromEditor}
           isExporting={isExporting}
+          isExportingDocx={isExportingDocx}
         />
       )}
 

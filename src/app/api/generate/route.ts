@@ -466,8 +466,8 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
       <tr><td>1</td><td>Purpose for which valuation is made</td><td>${valuationInputs.purpose}${valuationInputs.bankName ? ` (${valuationInputs.bankName})` : ''}</td></tr>
       <tr><td>2</td><td>Date as on which valuation is made</td><td>${valuationInputs.valuationDate} for the date ${valuationInputs.valuationForDate}</td></tr>
       <tr><td>3</td><td>Name of owner/owners</td><td>${originalOwner && originalOwner.trim() ? `IN ${originalOwnerYear} – ${originalOwner}<br>` : ''}${currentOwnersShort.trim() ? `Current Owners – ${currentOwnersShort}` : 'N/A'}</td></tr>
-      <tr><td>4</td><td>If the property is under joint ownership/co-ownership, share of each owner.</td><td>Joint Ownership<br>${currentOwnersText}</td></tr>
-      <tr><td>5</td><td>Brief description of property</td><td>${floorDescSentence} of the ${generalDetails.propertyType?.toLowerCase() || 'residential'} property${floorNames.length > 0 ? ` which consists of ${joinNatural(floorNames)}` : ''}</td></tr>
+      <tr><td>4</td><td>If the property is under joint ownership/co-ownership, share of each owner.</td><td>${currentOwners.length > 1 ? `Joint Ownership<br>${currentOwnersText}` : `Sole Ownership<br>${currentOwnersText}`}</td></tr>
+      <tr><td>5</td><td>Brief description of property</td><td>${floorDescSentence} of the ${generalDetails.propertyType?.toLowerCase() || 'residential'} property</td></tr>
       <tr><td>6</td><td>Location, street, and ward no.</td><td>${fullAddressUpper}</td></tr>
       <tr><td>7</td><td>Survey/ Plot no. of land</td><td>As above.</td></tr>
       <tr><td>8</td><td>Is the property situated in residential/ mixed area/ commercial/ industrial area?</td><td>${generalDetails.propertyType}</td></tr>
@@ -484,7 +484,16 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
     <p class="section-title">LAND</p>
     <table class="q-table">
       <tr><td>12</td><td>Area of land supported by documentary proof<br>shape, dimensions and physical features</td><td>Plot Area – ${formatNumber(valuationInputs.plotArea, 4)} Sqm<br>${generalDetails.plotShape}</td></tr>
-      <tr><td>13</td><td>Road or lanes on which the land is abutting</td><td>North – ${boundaries.north}<br>South – ${boundaries.south}<br>East – ${boundaries.east}<br>West – ${boundaries.west}</td></tr>
+      <tr><td>13</td><td>Road or lanes on which the land is abutting</td><td>${[
+        `North – ${boundaries.north}`,
+        `South – ${boundaries.south}`,
+        `East – ${boundaries.east}`,
+        `West – ${boundaries.west}`,
+        ...(boundaries.northEast ? [`North East – ${boundaries.northEast}`] : []),
+        ...(boundaries.northWest ? [`North West – ${boundaries.northWest}`] : []),
+        ...(boundaries.southEast ? [`South East – ${boundaries.southEast}`] : []),
+        ...(boundaries.southWest ? [`South West – ${boundaries.southWest}`] : []),
+      ].join('<br>')}</td></tr>
       <tr><td>14</td><td>Is it freehold or lease-hold land?</td><td>${generalDetails.isLeasehold ? 'Leasehold' : 'Freehold'}</td></tr>
       <tr><td>15</td><td>If lease-hold, the name of lessor etc.<br>(i) initial premium<br>(ii) Ground rent payable<br>(iii) Unearned increase payable to the lessor in the event of sale or transfer</td><td>${generalDetails.isLeasehold ? generalDetails.lessorDetails || '<span class="na">N/A</span>' : '<span class="na">N/A</span>'}</td></tr>
       <tr><td>16</td><td>Are there any restrictive covenant in regard to use of land? If so, attach a copy of the covenant</td><td>${generalDetails.restrictiveCovenants}</td></tr>
@@ -557,11 +566,11 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
       <tr><td>4</td><td>Estimated total life of building</td><td>${technicalDetails.estimatedLife}</td></tr>
       <tr><td>5</td><td>Type of Construction – Load Bearing Walls / RCC Frame / Steel Frame</td><td>${technicalDetails.constructionType}</td></tr>
       <tr><td>6</td><td>Type of foundation</td><td>${technicalDetails.foundationType}</td></tr>
-      <tr><td>7</td><td>Walls<br>(a) Ground Floor</td><td>Brick walls</td></tr>
+      <tr><td>7</td><td>Walls<br>(a) Ground Floor</td><td>${floors[0]?.walls || 'Brick Masonry Walls'}</td></tr>
       <tr><td>8</td><td>Partitions</td><td>${technicalDetails.partitions}</td></tr>
       <tr><td>9</td><td>Doors and windows (Floor wise)<br>(a) Ground Floor</td><td>${floors[0]?.doorsWindows || 'Teak Wood'}</td></tr>
       <tr><td>10</td><td>Flooring (Floor Wise)<br>(a) Ground Floor</td><td>${buildingSpecs.flooring}</td></tr>
-      <tr><td>11</td><td>Finishing (Floor Wise)<br>(a) Ground Floor<br>(b) First Floor<br>(c) Second Floor</td><td>Cement sand plaster with POP and Paint finish</td></tr>
+      <tr><td>11</td><td>Finishing (Floor Wise)<br>(a) Ground Floor<br>(b) First Floor<br>(c) Second Floor</td><td>${floors.map((f, i) => `(${String.fromCharCode(97 + i)}) ${f.finishing || 'Cement sand plaster with POP and Paint finish'}`).join('<br>') || 'Cement sand plaster with POP and Paint finish'}</td></tr>
       <tr><td>12</td><td>Roofing &amp; Terracing</td><td>${technicalDetails.roofingTerracing}</td></tr>
       <tr><td>13</td><td>Special Architectural decorative features, if any</td><td>${technicalDetails.architecturalFeatures || buildingSpecs.exterior}</td></tr>
       <tr><td>14</td><td>(a) Internal wiring – surface or conduit<br>(b) Class of fittings – superior / ordinary / poor</td><td>${technicalDetails.internalWiring}, ${technicalDetails.fittingsClass}</td></tr>
@@ -616,7 +625,7 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
 
     <p>This valuation report is based on the information and documents provided by the owner. This valuation report is prepared <strong>FOR THE FAIR MARKET VALUE OF ${floorDescUpper} IMMOVABLE PROPERTY SITUATED AT – ${fullAddressUpper}</strong></p>
 
-    <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for ${floorListSentence} of the building${floors.length > 0 ? ` which consists of ${floors.map(f => f.floorName).join(', ')}` : ''}.</p>
+    <p style="margin: 15px 0;">The details are furnished with this report. This valuation report is prepared on ${valuationInputs.valuationDate}. The Area of the plot is ${formatNumber(valuationInputs.plotArea, 4)} Sqm. This valuation report is prepared for ${floorListSentence} of the building.</p>
 
     <p class="section-title">Specification of Construction</p>
     <table class="specs-table">
@@ -643,14 +652,14 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
     <p>Cost index as on ${valuationInputs.valuationForDate} = ${valuationInputs.costIndex}</p>
 
     <div class="calculation-box">
-      <p class="calculation-line"><strong>1. Ground Floor</strong> (Year of construction: ${valuationInputs.yearOfConstruction})</p>
-      <p class="calculation-line">Area of floor = ${formatNumber(floors[0]?.area || 0, 3)} Sqm</p>
+      <p class="calculation-line"><strong>1. ${floors.map(f => f.floorName).filter(Boolean).join(' and ') || 'Ground Floor'}</strong> (Year of construction: ${valuationInputs.yearOfConstruction})</p>
+      <p class="calculation-line">${floors.length > 1 ? 'Total area of valued portions' : 'Area of floor'} = ${formatNumber(floors[0]?.area || 0, 3)} Sqm</p>
       <p class="calculation-line">Plinth area rate (as on 1.1.92) = Rs ${valuationInputs.plinthAreaRate} per Sqm</p>
       <p class="calculation-line">Cost index as on ${valuationInputs.valuationForDate} = ${valuationInputs.costIndex}</p>
       <p class="calculation-line">Rate of construction = ${valuationInputs.plinthAreaRate} × ${valuationInputs.costIndex / 100} = Rs ${formatNumber(calculatedValues.rateOfConstruction, 1)} per Sqm</p>
       <p class="calculation-line">Percentage increase due to superior specifications = ${valuationInputs.specificationIncreasePercent}%</p>
       <p class="calculation-line">Net rate = ${formatNumber(1 + valuationInputs.specificationIncreasePercent / 100, 2)} × ${formatNumber(calculatedValues.rateOfConstruction, 1)} = Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)} per Sqm</p>
-      <p class="calculation-line"><strong>Cost of construction = ${formatNumber(floors[0]?.area || 0, 3)} Sqm × Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)} = ${formatCurrency(calculatedValues.costOfConstruction)}</strong></p>
+      <p class="calculation-line"><strong>Cost of construction = ${formatNumber(floors[0]?.area || 0, 3)} Sqm × Rs ${formatNumber(calculatedValues.netRateOfConstruction, 2)} per Sqm = ${formatCurrency(calculatedValues.costOfConstruction)}</strong></p>
     </div>
 
     <p class="section-title">DEPRECIATION DUE TO AGE OF THE CONSTRUCTION</p>
@@ -665,7 +674,7 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
       </tr>
       <tr>
         <td>1</td>
-        <td>Ground Floor and First Floor</td>
+        <td>${floors.map(f => f.floorName).filter(Boolean).join(' and ') || 'Ground Floor'}</td>
         <td>${valuationInputs.yearOfConstruction}</td>
         <td>${valuationInputs.ageAtValuation} Years</td>
         <td>${valuationInputs.estimatedLifeYears} years</td>
@@ -756,7 +765,6 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
             `).join('')}
           </div>
         </div>
-        ${footerHtml}
       </div>
       `;
     }

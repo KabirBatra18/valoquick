@@ -369,10 +369,11 @@ export function getTemplateCSS(branding: FirmBranding): string {
       justify-content: center;
       min-height: 0;
       overflow: hidden;
+      max-height: 145mm;
     }
     .cover-photo img {
       max-width: 92%;
-      max-height: 100%;
+      max-height: 145mm;
       object-fit: contain;
       border-radius: 4px;
     }
