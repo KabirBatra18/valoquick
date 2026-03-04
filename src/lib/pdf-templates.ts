@@ -367,6 +367,10 @@ export function getTemplateCSS(branding: FirmBranding): string {
       border-bottom: 2px solid #e0e0e0;
       margin-bottom: 8mm;
     }
+    /* In preview mode the cover-photo has no height cap, so limit it explicitly */
+    body.preview-mode .cover-photo {
+      max-height: 130mm;
+    }
 
     /* --- Cover page: fixed height in PDF mode so flex:1 on .cover-photo is properly bounded --- */
     body:not(.preview-mode) .cover-page {
@@ -392,20 +396,24 @@ export function getTemplateCSS(branding: FirmBranding): string {
     }
     .cover-photo {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 16px;
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 0;
       overflow: hidden;
-      max-height: 145mm;
     }
     .cover-photo img {
       max-width: 92%;
-      max-height: 145mm;
+      max-height: 100%;
       object-fit: contain;
       border-radius: 4px;
+    }
+    /* Footer on cover page: don't auto-margin — let cover-photo (flex:1) fill the space */
+    .cover-page .page-footer {
+      margin-top: 0;
+      flex-shrink: 0;
     }
 
     /* --- Inline title (non-cover pages) --- */

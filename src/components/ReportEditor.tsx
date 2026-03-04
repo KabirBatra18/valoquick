@@ -152,8 +152,14 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
       }, 350); // delay for virtual keyboard animation
     });
 
-    // Track selection to update formatting toolbar state
+    // Track selection — update formatting state AND always keep savedRange current
+    // This ensures savedRange is populated before iOS blurs the iframe on toolbar tap
     doc.addEventListener('selectionchange', () => {
+      const sel = doc.getSelection();
+      // Always snapshot non-collapsed selections so toolbar can restore them
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        savedRange.current = sel.getRangeAt(0).cloneRange();
+      }
       setIsBold(doc.queryCommandState('bold'));
       setIsItalic(doc.queryCommandState('italic'));
       setIsUnderline(doc.queryCommandState('underline'));
@@ -169,14 +175,6 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
           }
         }
         setCurrentColor(hex);
-      }
-    });
-
-    // Save selection before focus leaves (needed when using select/color-picker controls)
-    doc.addEventListener('focusout', () => {
-      const sel = doc.getSelection();
-      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-        savedRange.current = sel.getRangeAt(0).cloneRange();
       }
     });
 
@@ -321,6 +319,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Bold */}
         <button
           onMouseDown={e => { saveSelection(); e.preventDefault(); }}
+          onTouchStart={e => { saveSelection(); e.preventDefault(); }}
           onClick={() => execFormat('bold')}
           className={`w-7 h-7 rounded text-sm font-bold flex items-center justify-center transition-colors ${isBold ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Bold"
@@ -329,6 +328,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Italic */}
         <button
           onMouseDown={e => { saveSelection(); e.preventDefault(); }}
+          onTouchStart={e => { saveSelection(); e.preventDefault(); }}
           onClick={() => execFormat('italic')}
           className={`w-7 h-7 rounded text-sm italic flex items-center justify-center transition-colors ${isItalic ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Italic"
@@ -337,6 +337,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Underline */}
         <button
           onMouseDown={e => { saveSelection(); e.preventDefault(); }}
+          onTouchStart={e => { saveSelection(); e.preventDefault(); }}
           onClick={() => execFormat('underline')}
           className={`w-7 h-7 rounded text-sm font-medium flex items-center justify-center transition-colors ${isUnderline ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Underline"
@@ -348,6 +349,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Font Family */}
         <select
           onMouseDown={() => saveSelection()}
+          onTouchStart={() => saveSelection()}
           onChange={e => execFormat('fontName', e.target.value)}
           className="h-7 text-xs px-1.5 rounded border border-gray-300 bg-white text-gray-800 hover:border-gray-400 focus:outline-none focus:border-indigo-500 cursor-pointer"
           defaultValue=""
@@ -366,6 +368,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Font Size */}
         <select
           onMouseDown={() => saveSelection()}
+          onTouchStart={() => saveSelection()}
           onChange={e => execFormat('fontSize', e.target.value)}
           className="h-7 text-xs px-1.5 rounded border border-gray-300 bg-white text-gray-800 hover:border-gray-400 focus:outline-none focus:border-indigo-500 cursor-pointer"
           defaultValue="3"
@@ -385,6 +388,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Text Color */}
         <label
           onMouseDown={() => saveSelection()}
+          onTouchStart={() => saveSelection()}
           className="flex items-center gap-1.5 cursor-pointer px-2 h-7 rounded bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
           title="Text color"
         >
