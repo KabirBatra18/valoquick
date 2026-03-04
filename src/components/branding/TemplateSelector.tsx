@@ -256,7 +256,7 @@ function CompactTemplateIcon({ style, color }: { style: TemplateStyle; color: st
     case 'boxed':
       return (
         <div className="h-full flex flex-col justify-center p-1.5">
-          <div style={{ border: '1.5px solid #333', padding: '3px 5px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ padding: '3px 5px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ width: 28, height: 3, backgroundColor: '#000', borderRadius: 1 }} />
               <div style={{ width: 22, height: 1.5, backgroundColor: '#555', borderRadius: 1, marginTop: 2 }} />
@@ -551,7 +551,6 @@ function FullTemplatePreview({ style, color }: { style: TemplateStyle; color: st
         >
           <div
             style={{
-              border: '1.5px solid #222',
               margin: '6px 8px 4px',
               padding: '4px 7px',
               display: 'flex',

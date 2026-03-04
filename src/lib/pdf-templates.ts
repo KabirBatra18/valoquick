@@ -225,7 +225,7 @@ function renderBoxedHeader(
 ): string {
   const hasLeftContent = logo || name || subtitle || address || contact;
   return `
-    <div class="header header-boxed" style="border: 1.5px solid #222; padding-top: 8px; padding-bottom: 8px; align-items: flex-start;">
+    <div class="header header-boxed" style="padding-top: 8px; padding-bottom: 8px; align-items: flex-start;">
       ${hasLeftContent ? `
       <div class="header-left" style="color: #000;">
         ${logo}${name}${subtitle}${address}${contact}
@@ -259,7 +259,7 @@ export function renderCondensedHeader(branding: FirmBranding, valuerName?: strin
   const isBoxed = branding.templateStyle === 'boxed';
 
   const borderStyle = isBoxed
-    ? 'border: 1.5px solid #222; padding: 5px 4mm;'
+    ? 'padding-bottom: 6px; padding-left: 4mm; padding-right: 4mm;'
     : `border-bottom: 2.5px solid ${color}; padding-bottom: 6px; padding-left: 4mm; padding-right: 4mm;`;
   const firmNameColor = isBoxed ? '#000' : color;
 
