@@ -13,6 +13,7 @@ function getFontFamily(style?: string): string {
       return "Georgia, 'Times New Roman', serif";
     case 'boldCorporate':
       return "Arial, Helvetica, sans-serif";
+    case 'boxed':
     case 'classic':
     default:
       return "'Times New Roman', Times, serif";
@@ -136,6 +137,8 @@ export function renderHeader(
       return renderBoldCorporateHeader(logoHtml, firmNameHtml, subtitleHtml, addressHtml, contactHtml, valuerHtml, color);
     case 'minimal':
       return renderMinimalHeader(logoHtml, firmNameHtml, subtitleHtml, addressHtml, contactHtml, valuerHtml);
+    case 'boxed':
+      return renderBoxedHeader(logoHtml, firmNameHtml, subtitleHtml, addressHtml, contactHtml, valuerHtml);
     case 'classic':
     default:
       return renderClassicHeader(logoHtml, firmNameHtml, subtitleHtml, addressHtml, contactHtml, valuerHtml, color);
@@ -217,6 +220,20 @@ function renderBoldCorporateHeader(
     </div>`;
 }
 
+function renderBoxedHeader(
+  logo: string, name: string, subtitle: string, address: string, contact: string, valuer: string
+): string {
+  const hasLeftContent = logo || name || subtitle || address || contact;
+  return `
+    <div class="header header-boxed" style="border: 1.5px solid #222; padding-top: 8px; padding-bottom: 8px; align-items: flex-start;">
+      ${hasLeftContent ? `
+      <div class="header-left" style="color: #000;">
+        ${logo}${name}${subtitle}${address}${contact}
+      </div>` : ''}
+      ${valuer ? `<div class="header-right" style="color: #000;">${valuer}</div>` : ''}
+    </div>`;
+}
+
 function renderMinimalHeader(
   logo: string, name: string, subtitle: string, address: string, contact: string, valuer: string
 ): string {
@@ -239,10 +256,17 @@ export function renderCondensedHeader(branding: FirmBranding, valuerName?: strin
   if (!firmName && !valuerName) return '';
 
   const fontFamily = getFontFamily(branding.templateStyle);
+  const isBoxed = branding.templateStyle === 'boxed';
+
+  const borderStyle = isBoxed
+    ? 'border: 1.5px solid #222; padding: 5px 4mm;'
+    : `border-bottom: 2.5px solid ${color}; padding-bottom: 6px; padding-left: 4mm; padding-right: 4mm;`;
+  const firmNameColor = isBoxed ? '#000' : color;
+
   return `
-    <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2.5px solid ${color}; padding-bottom: 6px; margin-bottom: 15px; margin-left: -4mm; margin-right: -4mm; padding-left: 4mm; padding-right: 4mm; font-family: ${fontFamily};">
-      ${firmName ? `<span style="font-size: 18px; color: ${color}; font-weight: 800; letter-spacing: 0.4px;">${escapeHtml(firmName)}</span>` : ''}
-      ${valuerName ? `<span style="font-size: 10.5px; color: #444;">${escapeHtml(valuerName)}</span>` : ''}
+    <div style="display: flex; justify-content: space-between; align-items: baseline; ${borderStyle} margin-bottom: 15px; margin-left: -4mm; margin-right: -4mm; font-family: ${fontFamily};">
+      ${firmName ? `<span style="font-size: 18px; color: ${firmNameColor}; font-weight: 800; letter-spacing: 0.4px;">${escapeHtml(firmName)}</span>` : ''}
+      ${valuerName ? `<span style="font-size: 10.5px; color: ${isBoxed ? '#000' : '#444'};">${escapeHtml(valuerName)}</span>` : ''}
     </div>`;
 }
 
@@ -722,6 +746,18 @@ export function getTemplateCSS(branding: FirmBranding): string {
     case 'minimal':
       styleCSS = `
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      `;
+      break;
+
+    case 'boxed':
+      styleCSS = `
+        body { font-family: 'Times New Roman', Times, serif; }
+        .header-boxed .header-firm-name { color: #000 !important; font-size: 18pt; font-weight: 900; }
+        .header-boxed .header-subtitle { font-weight: bold; color: #111 !important; font-size: 10pt; }
+        .header-boxed .header-address,
+        .header-boxed .header-contact { color: #111 !important; font-size: 9.5pt; }
+        .header-boxed .valuer-info p { color: #000; }
+        .header-boxed .valuer-info strong { font-size: 11pt; }
       `;
       break;
 

@@ -1,6 +1,6 @@
 // Types for firm branding configuration
 
-export type TemplateStyle = 'classic' | 'modern' | 'elegant' | 'boldCorporate' | 'minimal';
+export type TemplateStyle = 'classic' | 'modern' | 'elegant' | 'boldCorporate' | 'minimal' | 'boxed';
 
 export interface HeaderConfig {
   showLogo: boolean;
@@ -92,5 +92,9 @@ export const TEMPLATE_STYLES: Record<TemplateStyle, {
   minimal: {
     name: 'Minimal',
     description: 'Logo and firm name only, maximum whitespace',
+  },
+  boxed: {
+    name: 'Boxed',
+    description: 'Full-border box, bold firm name, professional two-column layout',
   },
 };

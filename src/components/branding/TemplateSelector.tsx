@@ -10,7 +10,7 @@ interface TemplateSelectorProps {
   compact?: boolean;
 }
 
-const TEMPLATE_ORDER: TemplateStyle[] = ['classic', 'modern', 'elegant', 'boldCorporate', 'minimal'];
+const TEMPLATE_ORDER: TemplateStyle[] = ['classic', 'modern', 'elegant', 'boldCorporate', 'minimal', 'boxed'];
 
 const COMPACT_NAMES: Record<TemplateStyle, string> = {
   classic: 'Classic',
@@ -18,6 +18,7 @@ const COMPACT_NAMES: Record<TemplateStyle, string> = {
   elegant: 'Elegant',
   boldCorporate: 'Bold',
   minimal: 'Minimal',
+  boxed: 'Boxed',
 };
 
 export default function TemplateSelector({
@@ -248,6 +249,26 @@ function CompactTemplateIcon({ style, color }: { style: TemplateStyle; color: st
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div style={{ width: '40%', height: 1.5, backgroundColor: '#e5e5e5', borderRadius: 1 }} />
+          </div>
+        </div>
+      );
+
+    case 'boxed':
+      return (
+        <div className="h-full flex flex-col justify-center p-1.5">
+          <div style={{ border: '1.5px solid #333', padding: '3px 5px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ width: 28, height: 3, backgroundColor: '#000', borderRadius: 1 }} />
+              <div style={{ width: 22, height: 1.5, backgroundColor: '#555', borderRadius: 1, marginTop: 2 }} />
+              <div style={{ width: 20, height: 1.5, backgroundColor: '#999', borderRadius: 1, marginTop: 1.5 }} />
+              <div style={{ width: 24, height: 1.5, backgroundColor: '#999', borderRadius: 1, marginTop: 1.5 }} />
+            </div>
+            <div className="flex flex-col items-end">
+              <div style={{ width: 16, height: 2.5, backgroundColor: '#000', borderRadius: 1 }} />
+              <div style={{ width: 14, height: 1.5, backgroundColor: '#888', borderRadius: 1, marginTop: 1.5 }} />
+              <div style={{ width: 16, height: 1.5, backgroundColor: '#888', borderRadius: 1, marginTop: 1.5 }} />
+              <div style={{ width: 14, height: 1.5, backgroundColor: '#aaa', borderRadius: 1, marginTop: 1.5 }} />
+            </div>
           </div>
         </div>
       );
@@ -513,6 +534,43 @@ function FullTemplatePreview({ style, color }: { style: TemplateStyle; color: st
               <div style={{ fontSize: 8, fontWeight: 500, color: '#333' }}>{firmName}</div>
             </div>
             <div style={{ fontSize: 5, color: '#999' }}>{valuerName}</div>
+          </div>
+          {bodyLines}
+        </div>
+      );
+
+    case 'boxed':
+      return (
+        <div
+          style={{
+            fontFamily: "'Times New Roman', Times, serif",
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              border: '1.5px solid #222',
+              margin: '6px 8px 4px',
+              padding: '4px 7px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.1 }}>{firmName}</div>
+              <div style={{ fontSize: 5.5, fontWeight: 'bold', color: '#111', marginTop: 1 }}>{subtitle}</div>
+              <div style={{ fontSize: 4.5, color: '#222', marginTop: 1 }}>{address}</div>
+              <div style={{ fontSize: 4.5, color: '#222', marginTop: 0.5 }}>{contact}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 6 }}>
+              <div style={{ fontSize: 6, fontWeight: 700, color: '#000' }}>{valuerName}</div>
+              <div style={{ fontSize: 5, color: '#333', marginTop: 1 }}>{valuerQual}</div>
+              <div style={{ fontSize: 5, color: '#333', marginTop: 0.5 }}>Govt. Approved Valuer</div>
+              <div style={{ fontSize: 4.5, color: '#555', marginTop: 0.5 }}>CAT-I/XXX/XXX</div>
+            </div>
           </div>
           {bodyLines}
         </div>
