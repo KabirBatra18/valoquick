@@ -114,20 +114,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'HTML content too large' }, { status: 413 });
     }
 
-    // Prepare HTML for PDF: strip preview-mode styling and hide embedded footers
-    // (Puppeteer native footer handles page numbers reliably on every page)
-    const cleanHtml = html
-      .replace('class="preview-mode"', '')
-      .replace('</style>', '.page-footer { display: none !important; }\n</style>');
+    // Strip preview-mode class so PDF-mode CSS applies (cover page height, etc.)
+    // Keep embedded footers — they already have correct page numbers and correctly
+    // exclude photo pages. Using Puppeteer footerTemplate would put a footer on every
+    // page including photo pages, which is unwanted.
+    const cleanHtml = html.replace('class="preview-mode"', '');
 
-    // Puppeteer footer with page numbers — font-size must be explicit for Chromium header/footer context
-    const footerTemplate = `<div style="width: 100%; margin: 0 10mm; font-size: 10px; font-family: Arial, sans-serif; color: #555; border-top: 1px solid #bbb; padding-top: 4px; text-align: right;"><span>Page </span><span class="pageNumber"></span></div>`;
-
-    // Convert HTML to PDF with proper footer and margins
+    // No footerTemplate — footers are embedded in the HTML per-page
     const pdfBase64 = await htmlToPdfBase64(cleanHtml, {
-      footerTemplate,
       marginTop: '12mm',
-      marginBottom: '15mm',
+      marginBottom: '10mm',
     });
 
     // Vercel serverless response limit is ~4.5MB — check before sending

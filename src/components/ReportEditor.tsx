@@ -24,6 +24,8 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [currentColor, setCurrentColor] = useState('#000000');
+  const [currentFont, setCurrentFont] = useState('');
+  const [currentFontSize, setCurrentFontSize] = useState('3');
 
   // Keep ref in sync for use inside iframe event handlers
   useEffect(() => {
@@ -176,6 +178,11 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         }
         setCurrentColor(hex);
       }
+      // Reflect current font and size in toolbar dropdowns
+      const fontName = doc.queryCommandValue('fontName').replace(/['"]/g, '');
+      if (fontName) setCurrentFont(fontName);
+      const fontSize = doc.queryCommandValue('fontSize');
+      if (fontSize) setCurrentFontSize(fontSize);
     });
 
     updateIframeHeight();
@@ -319,7 +326,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Bold */}
         <button
           onMouseDown={e => { saveSelection(); e.preventDefault(); }}
-          onTouchStart={e => { saveSelection(); e.preventDefault(); }}
+          onTouchStart={e => { e.preventDefault(); saveSelection(); execFormat('bold'); }}
           onClick={() => execFormat('bold')}
           className={`w-7 h-7 rounded text-sm font-bold flex items-center justify-center transition-colors ${isBold ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Bold"
@@ -328,7 +335,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Italic */}
         <button
           onMouseDown={e => { saveSelection(); e.preventDefault(); }}
-          onTouchStart={e => { saveSelection(); e.preventDefault(); }}
+          onTouchStart={e => { e.preventDefault(); saveSelection(); execFormat('italic'); }}
           onClick={() => execFormat('italic')}
           className={`w-7 h-7 rounded text-sm italic flex items-center justify-center transition-colors ${isItalic ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Italic"
@@ -337,7 +344,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         {/* Underline */}
         <button
           onMouseDown={e => { saveSelection(); e.preventDefault(); }}
-          onTouchStart={e => { saveSelection(); e.preventDefault(); }}
+          onTouchStart={e => { e.preventDefault(); saveSelection(); execFormat('underline'); }}
           onClick={() => execFormat('underline')}
           className={`w-7 h-7 rounded text-sm font-medium flex items-center justify-center transition-colors ${isUnderline ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Underline"
@@ -350,9 +357,9 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         <select
           onMouseDown={() => saveSelection()}
           onTouchStart={() => saveSelection()}
-          onChange={e => execFormat('fontName', e.target.value)}
+          value={currentFont}
+          onChange={e => { setCurrentFont(e.target.value); execFormat('fontName', e.target.value); }}
           className="h-7 text-xs px-1.5 rounded border border-gray-300 bg-white text-gray-800 hover:border-gray-400 focus:outline-none focus:border-indigo-500 cursor-pointer"
-          defaultValue=""
           title="Font family"
         >
           <option value="" disabled>Font</option>
@@ -369,9 +376,9 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         <select
           onMouseDown={() => saveSelection()}
           onTouchStart={() => saveSelection()}
-          onChange={e => execFormat('fontSize', e.target.value)}
+          value={currentFontSize}
+          onChange={e => { setCurrentFontSize(e.target.value); execFormat('fontSize', e.target.value); }}
           className="h-7 text-xs px-1.5 rounded border border-gray-300 bg-white text-gray-800 hover:border-gray-400 focus:outline-none focus:border-indigo-500 cursor-pointer"
-          defaultValue="3"
           title="Font size"
         >
           <option value="1">8pt</option>

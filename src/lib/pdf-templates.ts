@@ -692,6 +692,15 @@ export function getTemplateCSS(branding: FirmBranding): string {
       font-style: italic;
       margin-bottom: 8px;
     }
+
+    /* --- Editor font-size commands use <font size="1-7"> — map to real pt values --- */
+    font[size="1"] { font-size: 8pt; }
+    font[size="2"] { font-size: 10pt; }
+    font[size="3"] { font-size: 12pt; }
+    font[size="4"] { font-size: 14pt; }
+    font[size="5"] { font-size: 18pt; }
+    font[size="6"] { font-size: 24pt; }
+    font[size="7"] { font-size: 36pt; }
   `;
 
   // Preview-mode header/footer CSS (embedded headers; Puppeteer handles these in PDF mode)
