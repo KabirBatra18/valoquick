@@ -440,6 +440,7 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
       <img src="${photos[0]}" alt="Property Photo">
     </div>
     ` : ''}
+    ${footerHtml}
   </div>
 
   <!-- Page 2: General Details -->
