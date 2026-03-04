@@ -17,8 +17,13 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(1);
+  const savedRange = useRef<Range | null>(null);
   const [scale, setScale] = useState(1);
   const [iframeHeight, setIframeHeight] = useState(1122); // A4 default
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [currentColor, setCurrentColor] = useState('#000000');
 
   // Keep ref in sync for use inside iframe event handlers
   useEffect(() => {
@@ -147,6 +152,34 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
       }, 350); // delay for virtual keyboard animation
     });
 
+    // Track selection to update formatting toolbar state
+    doc.addEventListener('selectionchange', () => {
+      setIsBold(doc.queryCommandState('bold'));
+      setIsItalic(doc.queryCommandState('italic'));
+      setIsUnderline(doc.queryCommandState('underline'));
+      const raw = doc.queryCommandValue('foreColor');
+      if (raw) {
+        let hex = '#000000';
+        if (raw.startsWith('#')) {
+          hex = raw;
+        } else {
+          const m = raw.match(/\d+/g);
+          if (m && m.length >= 3) {
+            hex = '#' + m.slice(0, 3).map((n: string) => (+n).toString(16).padStart(2, '0')).join('');
+          }
+        }
+        setCurrentColor(hex);
+      }
+    });
+
+    // Save selection before focus leaves (needed when using select/color-picker controls)
+    doc.addEventListener('focusout', () => {
+      const sel = doc.getSelection();
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        savedRange.current = sel.getRangeAt(0).cloneRange();
+      }
+    });
+
     updateIframeHeight();
 
     // Re-measure on content edits
@@ -165,6 +198,24 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
 
     return `<!DOCTYPE html>\n${clone.outerHTML}`;
   }, [html]);
+
+  // Apply a formatting command to the current (or last saved) selection in the iframe
+  const execFormat = useCallback((command: string, value?: string) => {
+    const doc = iframeRef.current?.contentDocument;
+    const win = iframeRef.current?.contentWindow;
+    if (!doc || !win) return;
+    win.focus();
+    const sel = doc.getSelection();
+    // Restore saved selection if the iframe lost focus (e.g. user used a dropdown/color picker)
+    if (sel && (!sel.rangeCount || sel.isCollapsed) && savedRange.current) {
+      sel.removeAllRanges();
+      sel.addRange(savedRange.current);
+    }
+    doc.execCommand(command, false, value ?? '');
+    setIsBold(doc.queryCommandState('bold'));
+    setIsItalic(doc.queryCommandState('italic'));
+    setIsUnderline(doc.queryCommandState('underline'));
+  }, []);
 
   const handleExport = () => {
     onExportPdf(getEditedHtml());
@@ -252,6 +303,89 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
             </>
           )}
         </button>
+      </div>
+
+      {/* ── Formatting Toolbar ── */}
+      <div className="flex items-center gap-0.5 px-2 sm:px-4 py-1.5 bg-white border-b border-surface-200 shrink-0 overflow-x-auto">
+        {/* Bold */}
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => execFormat('bold')}
+          className={`w-7 h-7 rounded text-sm font-bold flex items-center justify-center transition-colors ${isBold ? 'bg-indigo-100 text-indigo-700' : 'text-text-secondary hover:bg-surface-100'}`}
+          title="Bold"
+        >B</button>
+
+        {/* Italic */}
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => execFormat('italic')}
+          className={`w-7 h-7 rounded text-sm italic flex items-center justify-center transition-colors ${isItalic ? 'bg-indigo-100 text-indigo-700' : 'text-text-secondary hover:bg-surface-100'}`}
+          title="Italic"
+        >I</button>
+
+        {/* Underline */}
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => execFormat('underline')}
+          className={`w-7 h-7 rounded text-sm font-medium flex items-center justify-center transition-colors ${isUnderline ? 'bg-indigo-100 text-indigo-700' : 'text-text-secondary hover:bg-surface-100'}`}
+          title="Underline"
+          style={{ textDecoration: 'underline' }}
+        >U</button>
+
+        <div className="w-px h-5 bg-surface-300 mx-1 shrink-0" />
+
+        {/* Font Family */}
+        <select
+          onChange={e => execFormat('fontName', e.target.value)}
+          className="h-7 text-xs px-1.5 rounded border border-surface-200 bg-white text-text-secondary hover:border-surface-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
+          defaultValue=""
+          title="Font family"
+        >
+          <option value="" disabled>Font</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Calibri">Calibri</option>
+          <option value="Courier New">Courier New</option>
+        </select>
+
+        <div className="w-px h-5 bg-surface-300 mx-1 shrink-0" />
+
+        {/* Font Size */}
+        <select
+          onChange={e => execFormat('fontSize', e.target.value)}
+          className="h-7 text-xs px-1.5 rounded border border-surface-200 bg-white text-text-secondary hover:border-surface-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
+          defaultValue="3"
+          title="Font size"
+        >
+          <option value="1">8pt</option>
+          <option value="2">10pt</option>
+          <option value="3">12pt</option>
+          <option value="4">14pt</option>
+          <option value="5">18pt</option>
+          <option value="6">24pt</option>
+          <option value="7">36pt</option>
+        </select>
+
+        <div className="w-px h-5 bg-surface-300 mx-1 shrink-0" />
+
+        {/* Text Color */}
+        <label
+          className="flex items-center gap-1.5 cursor-pointer px-1.5 h-7 rounded hover:bg-surface-100 transition-colors"
+          title="Text color"
+        >
+          <span className="text-xs font-bold text-text-secondary" style={{ textDecoration: 'underline', textDecorationColor: currentColor, textDecorationThickness: '2.5px' }}>A</span>
+          <div className="w-3.5 h-3.5 rounded-sm border border-black/10 shrink-0" style={{ backgroundColor: currentColor }} />
+          <input
+            type="color"
+            className="sr-only"
+            value={currentColor}
+            onChange={e => {
+              setCurrentColor(e.target.value);
+              execFormat('foreColor', e.target.value);
+            }}
+          />
+        </label>
       </div>
 
       {/* Export overlay */}
