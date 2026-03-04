@@ -344,6 +344,12 @@ export function getTemplateCSS(branding: FirmBranding): string {
       margin-bottom: 8mm;
     }
 
+    /* --- Cover page: fixed height in PDF mode so flex:1 on .cover-photo is properly bounded --- */
+    body:not(.preview-mode) .cover-page {
+      height: 260mm;
+      overflow: hidden;
+    }
+
     /* --- Cover page --- */
     .cover-title {
       text-align: left;

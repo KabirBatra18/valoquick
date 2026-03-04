@@ -3,7 +3,7 @@ import { ValuationReport } from '@/types/valuation';
 import { verifyAuth, adminDb, verifySession } from '@/lib/firebase-admin';
 import { TRIAL_LIMIT } from '@/types/subscription';
 import { FirmBranding, ValuerInfo } from '@/types/branding';
-import { getTemplateCSS, renderHeader, renderCondensedHeader, renderFooter, renderPuppeteerFooter, mergeBrandingWithDefaults, escapeHtml } from '@/lib/pdf-templates';
+import { getTemplateCSS, renderHeader, renderCondensedHeader, renderFooter, mergeBrandingWithDefaults, escapeHtml } from '@/lib/pdf-templates';
 import { htmlToPdfBase64 } from '@/lib/puppeteer';
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import sharp from 'sharp';
@@ -146,26 +146,25 @@ export async function POST(request: NextRequest) {
     // in PDF mode, they're empty because Puppeteer renders them natively on every page
     const htmlContent = generateHTML(data, firmBranding, logoBase64, isPreview);
 
+    // Fill in page numbers server-side (iframe sandbox blocks scripts in preview;
+    // embedded footers in PDF mode also need this since Puppeteer footer is not used)
+    let pageNum = 0;
+    const htmlWithPageNums = htmlContent.replace(
+      /<div class="page[^"]*">|<span class="page-number"><\/span>/g,
+      (match) => {
+        if (match.startsWith('<div class="page')) { pageNum++; return match; }
+        return `<span class="page-number">${pageNum}</span>`;
+      }
+    );
+
     if (isPreview) {
-      // Fill in page numbers server-side (iframe sandbox blocks scripts)
-      let pageNum = 0;
-      const htmlWithPageNums = htmlContent.replace(
-        /<div class="page">|<span class="page-number"><\/span>/g,
-        (match) => {
-          if (match === '<div class="page">') { pageNum++; return match; }
-          return `<span class="page-number">${pageNum}</span>`;
-        }
-      );
       return NextResponse.json({ html: htmlWithPageNums });
     }
 
-    // Puppeteer footer for reliable page numbering (headers are embedded in HTML)
-    const footerTemplate = renderPuppeteerFooter(firmBranding);
-
-    const pdfBase64 = await htmlToPdfBase64(htmlContent, {
-      footerTemplate,
+    // No Puppeteer footerTemplate — footers are embedded in HTML so photo pages can opt out.
+    const pdfBase64 = await htmlToPdfBase64(htmlWithPageNums, {
       marginTop: '12mm',
-      marginBottom: '15mm',
+      marginBottom: '10mm',
     });
 
     return NextResponse.json({
@@ -399,8 +398,9 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
   // Full header on cover page (page 1), condensed on pages 2+ — always embedded in HTML
   const fullHeaderHtml = renderHeader(branding, valuerInfo, logoBase64);
   const headerHtml = renderCondensedHeader(branding, valuerInfo.name);
-  // Footer: embedded in preview, Puppeteer native in PDF (for reliable page numbers on every page)
-  const footerHtml = isPreview ? renderFooter(branding) : '';
+  // Footer: always embedded in HTML so photo pages can opt out.
+  // Puppeteer footer template is NOT used (it prints on every page with no per-page control).
+  const footerHtml = renderFooter(branding);
 
   return `
 <!DOCTYPE html>
@@ -412,8 +412,8 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
   </style>
 </head>
 <body${isPreview ? ' class="preview-mode"' : ''}>
-  <!-- Page 1: Cover Page (full header) -->
-  <div class="page">
+  <!-- Page 1: Cover Page (full header) — cover-page class gives fixed 260mm height in PDF mode -->
+  <div class="page cover-page">
     ${fullHeaderHtml}
 
     <div class="cover-title">
@@ -440,7 +440,6 @@ function generateHTML(rawData: ValuationReport, branding: FirmBranding, logoBase
       <img src="${photos[0]}" alt="Property Photo">
     </div>
     ` : ''}
-    ${footerHtml}
   </div>
 
   <!-- Page 2: General Details -->
