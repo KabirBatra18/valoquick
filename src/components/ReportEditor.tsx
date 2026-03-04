@@ -199,18 +199,27 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
     return `<!DOCTYPE html>\n${clone.outerHTML}`;
   }, [html]);
 
+  // Save current iframe selection into savedRange (called on mousedown of toolbar controls)
+  const saveSelection = useCallback(() => {
+    const doc = iframeRef.current?.contentDocument;
+    const sel = doc?.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      savedRange.current = sel.getRangeAt(0).cloneRange();
+    }
+  }, []);
+
   // Apply a formatting command to the current (or last saved) selection in the iframe
   const execFormat = useCallback((command: string, value?: string) => {
     const doc = iframeRef.current?.contentDocument;
     const win = iframeRef.current?.contentWindow;
     if (!doc || !win) return;
-    win.focus();
+    // Restore selection BEFORE focusing (focus can sometimes clear it)
     const sel = doc.getSelection();
-    // Restore saved selection if the iframe lost focus (e.g. user used a dropdown/color picker)
-    if (sel && (!sel.rangeCount || sel.isCollapsed) && savedRange.current) {
+    if (sel && savedRange.current && (!sel.rangeCount || sel.isCollapsed)) {
       sel.removeAllRanges();
-      sel.addRange(savedRange.current);
+      sel.addRange(savedRange.current.cloneRange());
     }
+    win.focus();
     doc.execCommand(command, false, value ?? '');
     setIsBold(doc.queryCommandState('bold'));
     setIsItalic(doc.queryCommandState('italic'));
@@ -306,12 +315,12 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
       </div>
 
       {/* ── Formatting Toolbar ── */}
-      <div className="flex items-center gap-0.5 px-2 sm:px-4 py-1.5 bg-white border-b border-surface-200 shrink-0 overflow-x-auto">
+      <div className="flex items-center gap-1 px-3 sm:px-4 py-1.5 bg-gray-100 border-b border-gray-300 shrink-0 overflow-x-auto">
         {/* Bold */}
         <button
           onMouseDown={e => e.preventDefault()}
           onClick={() => execFormat('bold')}
-          className={`w-7 h-7 rounded text-sm font-bold flex items-center justify-center transition-colors ${isBold ? 'bg-indigo-100 text-indigo-700' : 'text-text-secondary hover:bg-surface-100'}`}
+          className={`w-7 h-7 rounded text-sm font-bold flex items-center justify-center transition-colors ${isBold ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Bold"
         >B</button>
 
@@ -319,7 +328,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         <button
           onMouseDown={e => e.preventDefault()}
           onClick={() => execFormat('italic')}
-          className={`w-7 h-7 rounded text-sm italic flex items-center justify-center transition-colors ${isItalic ? 'bg-indigo-100 text-indigo-700' : 'text-text-secondary hover:bg-surface-100'}`}
+          className={`w-7 h-7 rounded text-sm italic flex items-center justify-center transition-colors ${isItalic ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Italic"
         >I</button>
 
@@ -327,17 +336,18 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
         <button
           onMouseDown={e => e.preventDefault()}
           onClick={() => execFormat('underline')}
-          className={`w-7 h-7 rounded text-sm font-medium flex items-center justify-center transition-colors ${isUnderline ? 'bg-indigo-100 text-indigo-700' : 'text-text-secondary hover:bg-surface-100'}`}
+          className={`w-7 h-7 rounded text-sm font-medium flex items-center justify-center transition-colors ${isUnderline ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Underline"
           style={{ textDecoration: 'underline' }}
         >U</button>
 
-        <div className="w-px h-5 bg-surface-300 mx-1 shrink-0" />
+        <div className="w-px h-5 bg-gray-400 mx-0.5 shrink-0" />
 
         {/* Font Family */}
         <select
+          onMouseDown={() => saveSelection()}
           onChange={e => execFormat('fontName', e.target.value)}
-          className="h-7 text-xs px-1.5 rounded border border-surface-200 bg-white text-text-secondary hover:border-surface-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
+          className="h-7 text-xs px-1.5 rounded border border-gray-300 bg-white text-gray-800 hover:border-gray-400 focus:outline-none focus:border-indigo-500 cursor-pointer"
           defaultValue=""
           title="Font family"
         >
@@ -349,12 +359,13 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
           <option value="Courier New">Courier New</option>
         </select>
 
-        <div className="w-px h-5 bg-surface-300 mx-1 shrink-0" />
+        <div className="w-px h-5 bg-gray-400 mx-0.5 shrink-0" />
 
         {/* Font Size */}
         <select
+          onMouseDown={() => saveSelection()}
           onChange={e => execFormat('fontSize', e.target.value)}
-          className="h-7 text-xs px-1.5 rounded border border-surface-200 bg-white text-text-secondary hover:border-surface-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
+          className="h-7 text-xs px-1.5 rounded border border-gray-300 bg-white text-gray-800 hover:border-gray-400 focus:outline-none focus:border-indigo-500 cursor-pointer"
           defaultValue="3"
           title="Font size"
         >
@@ -367,15 +378,16 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
           <option value="7">36pt</option>
         </select>
 
-        <div className="w-px h-5 bg-surface-300 mx-1 shrink-0" />
+        <div className="w-px h-5 bg-gray-400 mx-0.5 shrink-0" />
 
         {/* Text Color */}
         <label
-          className="flex items-center gap-1.5 cursor-pointer px-1.5 h-7 rounded hover:bg-surface-100 transition-colors"
+          onMouseDown={() => saveSelection()}
+          className="flex items-center gap-1.5 cursor-pointer px-2 h-7 rounded bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
           title="Text color"
         >
-          <span className="text-xs font-bold text-text-secondary" style={{ textDecoration: 'underline', textDecorationColor: currentColor, textDecorationThickness: '2.5px' }}>A</span>
-          <div className="w-3.5 h-3.5 rounded-sm border border-black/10 shrink-0" style={{ backgroundColor: currentColor }} />
+          <span className="text-xs font-bold text-gray-800" style={{ textDecoration: 'underline', textDecorationColor: currentColor, textDecorationThickness: '3px' }}>A</span>
+          <div className="w-4 h-4 rounded-sm border border-gray-400 shrink-0" style={{ backgroundColor: currentColor }} />
           <input
             type="color"
             className="sr-only"
