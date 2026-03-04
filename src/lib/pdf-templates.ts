@@ -225,12 +225,12 @@ function renderBoxedHeader(
 ): string {
   const hasLeftContent = logo || name || subtitle || address || contact;
   return `
-    <div class="header header-boxed" style="padding-top: 8px; padding-bottom: 8px; border-bottom: 2px solid #222; align-items: flex-start;">
+    <div class="header header-boxed" style="padding-top: 10px; padding-bottom: 10px; border-bottom: 2px solid #222; align-items: flex-start;">
       ${hasLeftContent ? `
-      <div class="header-left" style="color: #000;">
+      <div class="header-left" style="color: #000; flex: 1;">
         ${logo}${name}${subtitle}${address}${contact}
       </div>` : ''}
-      ${valuer ? `<div class="header-right" style="color: #000;">${valuer}</div>` : ''}
+      ${valuer ? `<div class="header-right" style="color: #000; text-align: right; flex-shrink: 0;">${valuer}</div>` : ''}
     </div>`;
 }
 
@@ -752,12 +752,13 @@ export function getTemplateCSS(branding: FirmBranding): string {
     case 'boxed':
       styleCSS = `
         body { font-family: 'Times New Roman', Times, serif; }
-        .header-boxed .header-firm-name { color: #000 !important; font-size: 18pt; font-weight: 900; }
-        .header-boxed .header-subtitle { font-weight: bold; color: #111 !important; font-size: 10pt; }
+        .header-boxed .header-firm-name { color: #000 !important; font-size: 20pt; font-weight: 900; letter-spacing: 0.4px; }
+        .header-boxed .header-subtitle { font-weight: bold; color: #000 !important; font-size: 9.5pt; margin-top: 3px; letter-spacing: 0.2px; }
         .header-boxed .header-address,
-        .header-boxed .header-contact { color: #111 !important; font-size: 9.5pt; }
-        .header-boxed .valuer-info p { color: #000; }
-        .header-boxed .valuer-info strong { font-size: 11pt; }
+        .header-boxed .header-contact { color: #000 !important; font-size: 9pt; margin: 1px 0; }
+        .header-boxed .valuer-info { text-align: right; }
+        .header-boxed .valuer-info p { color: #000; font-size: 9pt; margin: 1px 0; line-height: 1.35; }
+        .header-boxed .valuer-info p:first-child strong { font-size: 11pt; font-weight: bold; }
       `;
       break;
 

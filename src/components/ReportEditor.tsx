@@ -213,13 +213,15 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
     const doc = iframeRef.current?.contentDocument;
     const win = iframeRef.current?.contentWindow;
     if (!doc || !win) return;
-    // Restore selection BEFORE focusing (focus can sometimes clear it)
-    const sel = doc.getSelection();
-    if (sel && savedRange.current && (!sel.rangeCount || sel.isCollapsed)) {
-      sel.removeAllRanges();
-      sel.addRange(savedRange.current.cloneRange());
-    }
+    // Focus FIRST — then restore selection (win.focus() clears selection)
     win.focus();
+    if (savedRange.current) {
+      const sel = doc.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(savedRange.current.cloneRange());
+      }
+    }
     doc.execCommand(command, false, value ?? '');
     setIsBold(doc.queryCommandState('bold'));
     setIsItalic(doc.queryCommandState('italic'));
@@ -318,7 +320,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
       <div className="flex items-center gap-1 px-3 sm:px-4 py-1.5 bg-gray-100 border-b border-gray-300 shrink-0 overflow-x-auto">
         {/* Bold */}
         <button
-          onMouseDown={e => e.preventDefault()}
+          onMouseDown={e => { saveSelection(); e.preventDefault(); }}
           onClick={() => execFormat('bold')}
           className={`w-7 h-7 rounded text-sm font-bold flex items-center justify-center transition-colors ${isBold ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Bold"
@@ -326,7 +328,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
 
         {/* Italic */}
         <button
-          onMouseDown={e => e.preventDefault()}
+          onMouseDown={e => { saveSelection(); e.preventDefault(); }}
           onClick={() => execFormat('italic')}
           className={`w-7 h-7 rounded text-sm italic flex items-center justify-center transition-colors ${isItalic ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Italic"
@@ -334,7 +336,7 @@ export default function ReportEditor({ html, onExportPdf, onExportDocx, onBack, 
 
         {/* Underline */}
         <button
-          onMouseDown={e => e.preventDefault()}
+          onMouseDown={e => { saveSelection(); e.preventDefault(); }}
           onClick={() => execFormat('underline')}
           className={`w-7 h-7 rounded text-sm font-medium flex items-center justify-center transition-colors ${isUnderline ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-800 bg-white border border-gray-300 hover:bg-gray-50'}`}
           title="Underline"
